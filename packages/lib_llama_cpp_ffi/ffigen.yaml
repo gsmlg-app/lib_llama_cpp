@@ -1,0 +1,35 @@
+name: LlamaCppBindings
+description: Generated bindings for llama.cpp.
+output: lib/src/generated/llama_cpp_bindings.g.dart
+headers:
+  entry-points:
+    - ../../third_party/llama.cpp/include/llama.h
+compiler-opts:
+  - -I../../third_party/llama.cpp/include
+  - -I../../third_party/llama.cpp/ggml/include
+functions:
+  include:
+    - llama_.*
+structs:
+  include:
+    - llama_.*
+    - ggml_.*
+    - gguf_.*
+enums:
+  include:
+    - llama_.*
+    - ggml_.*
+    - gguf_.*
+typedefs:
+  include:
+    - llama_.*
+    - ggml_.*
+    - gguf_.*
+globals:
+  include:
+    - LLAMA_.*
+    - llama_.*
+silence-enum-warning: true
+comments:
+  style: any
+  length: full

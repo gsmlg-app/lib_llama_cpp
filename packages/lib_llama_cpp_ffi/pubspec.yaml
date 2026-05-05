@@ -1,0 +1,17 @@
+name: lib_llama_cpp_ffi
+description: Low-level Dart FFI bridge for llama.cpp.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+
+resolution: workspace
+
+dependencies:
+  ffi: ^2.1.4
+
+dev_dependencies:
+  ffigen: ^18.1.0
+  lints: ^6.0.0
+  test: ^1.26.3

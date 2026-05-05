@@ -1,0 +1,48 @@
+name: lib_llama_cpp
+description: App-facing Flutter plugin facade and inference isolate scheduler for llama.cpp.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+  flutter: '>=3.41.0'
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  lib_llama_cpp_android:
+    path: ../lib_llama_cpp_android
+  lib_llama_cpp_ffi:
+    path: ../lib_llama_cpp_ffi
+  lib_llama_cpp_ios:
+    path: ../lib_llama_cpp_ios
+  lib_llama_cpp_linux:
+    path: ../lib_llama_cpp_linux
+  lib_llama_cpp_macos:
+    path: ../lib_llama_cpp_macos
+  lib_llama_cpp_platform_interface:
+    path: ../lib_llama_cpp_platform_interface
+  lib_llama_cpp_windows:
+    path: ../lib_llama_cpp_windows
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  plugin_platform_interface: ^2.1.8
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        default_package: lib_llama_cpp_android
+      ios:
+        default_package: lib_llama_cpp_ios
+      linux:
+        default_package: lib_llama_cpp_linux
+      macos:
+        default_package: lib_llama_cpp_macos
+      windows:
+        default_package: lib_llama_cpp_windows

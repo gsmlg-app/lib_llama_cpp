@@ -1,0 +1,53 @@
+name: lib_llama_cpp
+
+packages:
+  - packages/**
+  - example
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: |
+      if grep -q "sdk: flutter" pubspec.yaml; then
+        flutter analyze
+      else
+        dart analyze .
+      fi
+    exec:
+      concurrency: 4
+    packageFilters:
+      dirExists: lib
+
+  test:
+    run: |
+      if grep -q "flutter_test:" pubspec.yaml; then
+        flutter test
+      else
+        dart test
+      fi
+    exec:
+      concurrency: 4
+    packageFilters:
+      dirExists: test
+
+  flutter_test:
+    run: flutter test
+    exec:
+      concurrency: 2
+    packageFilters:
+      dependsOn: flutter_test
+
+  ffigen:
+    run: dart run ffigen --config ffigen.yaml
+    exec:
+      concurrency: 1
+    packageFilters:
+      scope: lib_llama_cpp_ffi
+
+  format:
+    run: dart format .
+    exec:
+      concurrency: 4

@@ -1,0 +1,29 @@
+name: lib_llama_cpp_windows
+description: Windows native build and Dart registration for lib_llama_cpp.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+  flutter: '>=3.41.0'
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  lib_llama_cpp_platform_interface:
+    path: ../lib_llama_cpp_platform_interface
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    implements: lib_llama_cpp
+    platforms:
+      windows:
+        dartPluginClass: LibLlamaCppWindows
+        ffiPlugin: true

@@ -1,0 +1,97 @@
+import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
+
+import 'llama_state.dart';
+
+sealed class LlamaResponse {
+  const LlamaResponse();
+}
+
+final class LlamaReadyResponse extends LlamaResponse {
+  const LlamaReadyResponse({required this.library});
+
+  final LlamaCppLibraryDescriptor library;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is LlamaReadyResponse && other.library == library;
+  }
+
+  @override
+  int get hashCode => library.hashCode;
+
+  @override
+  String toString() => 'LlamaReadyResponse(library: $library)';
+}
+
+final class LlamaStateChangedResponse extends LlamaResponse {
+  const LlamaStateChangedResponse({required this.state});
+
+  final LlamaState state;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is LlamaStateChangedResponse && other.state == state;
+  }
+
+  @override
+  int get hashCode => state.hashCode;
+
+  @override
+  String toString() => 'LlamaStateChangedResponse(state: $state)';
+}
+
+final class LlamaTokenResponse extends LlamaResponse {
+  const LlamaTokenResponse({required this.text, required this.index});
+
+  final String text;
+  final int index;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is LlamaTokenResponse &&
+            other.text == text &&
+            other.index == index;
+  }
+
+  @override
+  int get hashCode => Object.hash(text, index);
+
+  @override
+  String toString() => 'LlamaTokenResponse(text: $text, index: $index)';
+}
+
+final class LlamaErrorResponse extends LlamaResponse {
+  const LlamaErrorResponse({required this.message});
+
+  final String message;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is LlamaErrorResponse && other.message == message;
+  }
+
+  @override
+  int get hashCode => message.hashCode;
+
+  @override
+  String toString() => 'LlamaErrorResponse(message: $message)';
+}
+
+final class LlamaDoneResponse extends LlamaResponse {
+  const LlamaDoneResponse();
+
+  @override
+  bool operator ==(Object other) {
+    return other is LlamaDoneResponse;
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  String toString() => 'LlamaDoneResponse()';
+}

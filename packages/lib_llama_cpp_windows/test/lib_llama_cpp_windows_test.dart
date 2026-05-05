@@ -1,0 +1,22 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
+import 'package:lib_llama_cpp_windows/lib_llama_cpp_windows.dart';
+
+void main() {
+  test('registerWith installs the Windows platform implementation', () {
+    final initial = LibLlamaCppPlatform.instance;
+    addTearDown(() => LibLlamaCppPlatform.instance = initial);
+
+    LibLlamaCppWindows.registerWith();
+
+    expect(LibLlamaCppPlatform.instance, isA<LibLlamaCppWindows>());
+  });
+
+  test('resolveLibrary returns the bundled Windows DLL name', () async {
+    final descriptor = await LibLlamaCppWindows().resolveLibrary();
+
+    expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
+    expect(descriptor.lookupName, 'lib_llama_cpp_windows.dll');
+    expect(descriptor.capabilities, contains(LlamaCppLibraryCapability.vulkan));
+  });
+}
