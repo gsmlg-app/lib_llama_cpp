@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Install Dart and Flutter dependencies
+        run: dart pub get
+
+      - name: Run pure Dart tests
+        run: dart test packages/lib_llama_cpp_platform_interface/test && dart test packages/lib_llama_cpp_ffi/test
+
+      - name: Run Flutter tests
+        run: >
+          flutter test
+          packages/lib_llama_cpp/test
+          packages/lib_llama_cpp_android/test
+          packages/lib_llama_cpp_ios/test
+          packages/lib_llama_cpp_macos/test
+          packages/lib_llama_cpp_linux/test
+          packages/lib_llama_cpp_windows/test
+          example/test
