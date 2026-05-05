@@ -3,16 +3,22 @@ name: End-to-End
 on:
   workflow_dispatch:
     inputs:
-      model_url:
-        description: GGUF model URL to run with llama.cpp
+      platform:
+        description: Platform to run
         required: true
-        default: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct.Q4_0.gguf?download=true
-        type: string
-      model_sha256:
-        description: Expected SHA256 of the GGUF model
-        required: true
-        default: f68203bfb98b1b1e8c64fac75fab10c4e36acac081609573b4df0fcc19c90dd9
-        type: string
+        default: all
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+          - macos
+          - linux
+          - windows
+
+env:
+  MODEL_URL: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct.Q4_0.gguf?download=true
+  MODEL_SHA256: f68203bfb98b1b1e8c64fac75fab10c4e36acac081609573b4df0fcc19c90dd9
 
 permissions:
   contents: read
@@ -24,18 +30,13 @@ concurrency:
 jobs:
   real-model-smoke:
     name: Real model smoke (${{ matrix.platform }})
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' || inputs.platform == 'macos' || inputs.platform == 'windows' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: linux
-            os: ubuntu-latest
-          - platform: macos
-            os: macos-14
-          - platform: windows
-            os: windows-latest
+        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"linux","os":"ubuntu-latest"},{"platform":"macos","os":"macos-14"},{"platform":"windows","os":"windows-latest"}]' || inputs.platform == 'linux' && '[{"platform":"linux","os":"ubuntu-latest"}]' || inputs.platform == 'macos' && '[{"platform":"macos","os":"macos-14"}]' || inputs.platform == 'windows' && '[{"platform":"windows","os":"windows-latest"}]' || '[]') }}
 
     steps:
       - name: Checkout
@@ -89,9 +90,6 @@ jobs:
       - name: Download and verify GGUF model
         if: runner.os != 'Windows'
         shell: bash
-        env:
-          MODEL_URL: ${{ inputs.model_url }}
-          MODEL_SHA256: ${{ inputs.model_sha256 }}
         run: |
           mkdir -p "$RUNNER_TEMP/models"
           model_path="$RUNNER_TEMP/models/SmolLM2-135M-Instruct.Q4_0.gguf"
@@ -106,9 +104,6 @@ jobs:
       - name: Download and verify GGUF model
         if: runner.os == 'Windows'
         shell: pwsh
-        env:
-          MODEL_URL: ${{ inputs.model_url }}
-          MODEL_SHA256: ${{ inputs.model_sha256 }}
         run: |
           $modelDir = Join-Path $env:RUNNER_TEMP "models"
           New-Item -ItemType Directory -Force -Path $modelDir | Out-Null
@@ -175,22 +170,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: android
-            os: ubuntu-latest
-            command: flutter build apk --debug
-          - platform: ios
-            os: macos-14
-            command: flutter build ios --debug --simulator --no-codesign
-          - platform: linux
-            os: ubuntu-latest
-            command: flutter build linux --debug
-          - platform: macos
-            os: macos-14
-            command: flutter build macos --debug
-          - platform: windows
-            os: windows-latest
-            command: flutter build windows --debug
+        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"android","os":"ubuntu-latest","command":"flutter build apk --debug"},{"platform":"ios","os":"macos-14","command":"flutter build ios --debug --simulator --no-codesign"},{"platform":"linux","os":"ubuntu-latest","command":"flutter build linux --debug"},{"platform":"macos","os":"macos-14","command":"flutter build macos --debug"},{"platform":"windows","os":"windows-latest","command":"flutter build windows --debug"}]' || inputs.platform == 'android' && '[{"platform":"android","os":"ubuntu-latest","command":"flutter build apk --debug"}]' || inputs.platform == 'ios' && '[{"platform":"ios","os":"macos-14","command":"flutter build ios --debug --simulator --no-codesign"}]' || inputs.platform == 'linux' && '[{"platform":"linux","os":"ubuntu-latest","command":"flutter build linux --debug"}]' || inputs.platform == 'macos' && '[{"platform":"macos","os":"macos-14","command":"flutter build macos --debug"}]' || inputs.platform == 'windows' && '[{"platform":"windows","os":"windows-latest","command":"flutter build windows --debug"}]' || '[]') }}
 
     steps:
       - name: Checkout
