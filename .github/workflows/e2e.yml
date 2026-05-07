@@ -231,19 +231,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
           emulator-boot-timeout: 900
           disable-animations: true
-          script: |
-            adb -s emulator-5554 wait-for-device
-            attempts=0
-            until adb -s emulator-5554 shell service check package 2>/dev/null | grep -q found; do
-              attempts=$((attempts + 1))
-              if [ "$attempts" -ge 90 ]; then
-                adb -s emulator-5554 shell service check package || true
-                exit 1
-              fi
-              sleep 2
-            done
-            cd example
-            flutter drive --no-pub --use-application-binary=build/app/outputs/flutter-apk/app-debug.apk --driver=test_driver/integration_test.dart --target=integration_test/mobile_smoke_test.dart -d emulator-5554
+          script: bash .github/scripts/android-mobile-e2e.sh
 
       - name: Boot iOS simulator
         if: matrix.platform == 'ios'
