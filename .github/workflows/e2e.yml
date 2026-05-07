@@ -162,7 +162,8 @@ jobs:
             --temp 0 `
             --single-turn 2>&1
           $output | Tee-Object -FilePath "$env:RUNNER_TEMP\llama-output.txt"
-          if ($output -notmatch "Generation:") {
+          $outputText = $output -join "`n"
+          if ($outputText -notmatch "Generation:") {
             Write-Error "Model output did not contain llama.cpp generation timing."
             exit 1
           }
