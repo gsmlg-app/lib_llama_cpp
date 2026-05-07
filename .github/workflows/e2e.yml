@@ -198,6 +198,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup Android SDK
+        if: matrix.platform == 'android'
+        uses: android-actions/setup-android@v3
+
       - name: Enable Linux KVM for Android emulator
         if: matrix.platform == 'android'
         run: |

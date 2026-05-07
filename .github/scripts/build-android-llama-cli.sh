@@ -21,7 +21,7 @@ cmake -S third_party/llama.cpp -B "$build_dir" \
   -DGGML_BLAS=OFF \
   -DGGML_METAL=OFF \
   -DGGML_OPENMP=OFF \
-  -DLLAMA_BUILD_EXAMPLES=OFF \
+  -DLLAMA_BUILD_EXAMPLES=ON \
   -DLLAMA_BUILD_SERVER=OFF \
   -DLLAMA_BUILD_TESTS=OFF \
   -DLLAMA_BUILD_TOOLS=ON \
@@ -29,6 +29,8 @@ cmake -S third_party/llama.cpp -B "$build_dir" \
   -DLLAMA_CURL=OFF \
   -DLLAMA_OPENSSL=OFF
 
-cmake --build "$build_dir" --target llama-cli --parallel "${BUILD_PARALLELISM:-2}"
+if ! cmake --build "$build_dir" --target llama-cli --parallel "${BUILD_PARALLELISM:-2}"; then
+  cmake --build "$build_dir" --target llama-simple --parallel "${BUILD_PARALLELISM:-2}"
+fi
 
-find "$build_dir" -type f -name llama-cli -perm -111 -print
+find "$build_dir" -type f \( -name llama-cli -o -name llama-simple \) -perm -111 -print

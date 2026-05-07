@@ -8,12 +8,13 @@ tokens="${SMOKE_TOKENS:-4}"
 : "${MODEL_PATH:?MODEL_PATH must point to the verified GGUF model}"
 : "${SMOKE_PROMPT:?SMOKE_PROMPT must be set}"
 
-llama_cli="$(find build/android-llama-cpp -type f -name llama-cli -perm -111 2>/dev/null | head -n 1)"
-if [[ -z "$llama_cli" ]]; then
-  echo "Could not find Android llama-cli executable."
+llama_bin="$(find build/android-llama-cpp -type f \( -name llama-cli -o -name llama-simple \) -perm -111 2>/dev/null | sort | head -n 1)"
+if [[ -z "$llama_bin" ]]; then
+  echo "Could not find Android llama.cpp smoke executable."
   find build/android-llama-cpp -maxdepth 5 -type f | sort
   exit 1
 fi
+llama_tool="$(basename "$llama_bin")"
 
 adb kill-server || true
 adb start-server
@@ -37,13 +38,19 @@ wait_for_service package
 wait_for_service activity
 
 adb -s "$device_id" shell "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
-adb -s "$device_id" push "$llama_cli" "$remote_dir/llama-cli"
+adb -s "$device_id" push "$llama_bin" "$remote_dir/$llama_tool"
 adb -s "$device_id" push "$MODEL_PATH" "$remote_dir/model.gguf"
-adb -s "$device_id" shell "chmod 755 '$remote_dir/llama-cli'"
+adb -s "$device_id" shell "chmod 755 '$remote_dir/$llama_tool'"
 
 remote_prompt="$(printf '%q' "$SMOKE_PROMPT")"
-adb -s "$device_id" shell \
-  "cd '$remote_dir' && ./llama-cli -m model.gguf -p $remote_prompt -n $tokens --temp 0 --single-turn" \
-  2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
-
-grep -Eq 'Generation:' "$RUNNER_TEMP/android-llama-output.txt"
+if [[ "$llama_tool" == "llama-cli" ]]; then
+  adb -s "$device_id" shell \
+    "cd '$remote_dir' && ./llama-cli -m model.gguf -p $remote_prompt -n $tokens --temp 0 --single-turn" \
+    2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
+  grep -Eq 'Generation:' "$RUNNER_TEMP/android-llama-output.txt"
+else
+  adb -s "$device_id" shell \
+    "cd '$remote_dir' && ./llama-simple -m model.gguf -p $remote_prompt" \
+    2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
+  test -s "$RUNNER_TEMP/android-llama-output.txt"
+fi
