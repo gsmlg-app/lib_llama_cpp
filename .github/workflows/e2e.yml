@@ -176,7 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"android","os":"macos-14","android_arch":"arm64-v8a"},{"platform":"ios","os":"macos-14"}]' || inputs.platform == 'android' && '[{"platform":"android","os":"macos-14","android_arch":"arm64-v8a"}]' || inputs.platform == 'ios' && '[{"platform":"ios","os":"macos-14"}]' || '[]') }}
+        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"android","os":"macos-15-intel","android_arch":"x86_64"},{"platform":"ios","os":"macos-14"}]' || inputs.platform == 'android' && '[{"platform":"android","os":"macos-15-intel","android_arch":"x86_64"}]' || inputs.platform == 'ios' && '[{"platform":"ios","os":"macos-14"}]' || '[]') }}
 
     steps:
       - name: Checkout
@@ -220,6 +220,8 @@ jobs:
           target: google_apis
           arch: ${{ matrix.android_arch }}
           profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
+          emulator-boot-timeout: 900
           disable-animations: true
           script: cd example && flutter drive --driver=test_driver/integration_test.dart --target=integration_test/mobile_smoke_test.dart -d emulator-5554
 
