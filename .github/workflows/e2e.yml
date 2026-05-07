@@ -213,7 +213,6 @@ jobs:
         if: matrix.platform == 'android'
         shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null
           sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
           echo "ANDROID_ABI=${{ matrix.android_arch }}" >> "$GITHUB_ENV"
