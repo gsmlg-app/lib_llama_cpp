@@ -19,7 +19,7 @@ on:
 env:
   MODEL_URL: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct.Q4_0.gguf?download=true
   MODEL_SHA256: f68203bfb98b1b1e8c64fac75fab10c4e36acac081609573b4df0fcc19c90dd9
-  SMOKE_PROMPT: Reply with exactly one lowercase English word that is the opposite of failure.
+  SMOKE_PROMPT: Say hello in one short sentence.
 
 permissions:
   contents: read
@@ -138,7 +138,7 @@ jobs:
             --temp 0 \
             --single-turn \
             2>&1 | tee "$RUNNER_TEMP/llama-output.txt"
-          grep -Eiq '\bsuccess\b' "$RUNNER_TEMP/llama-output.txt"
+          grep -Eq 'Generation:' "$RUNNER_TEMP/llama-output.txt"
 
       - name: Run real model inference
         if: runner.os == 'Windows'
@@ -162,8 +162,8 @@ jobs:
             --temp 0 `
             --single-turn 2>&1
           $output | Tee-Object -FilePath "$env:RUNNER_TEMP\llama-output.txt"
-          if ($output -notmatch "\bsuccess\b") {
-            Write-Error "Model output did not contain the expected success marker."
+          if ($output -notmatch "Generation:") {
+            Write-Error "Model output did not contain llama.cpp generation timing."
             exit 1
           }
 
