@@ -20,12 +20,13 @@ env:
   MODEL_URL: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct.Q4_0.gguf?download=true
   MODEL_SHA256: f68203bfb98b1b1e8c64fac75fab10c4e36acac081609573b4df0fcc19c90dd9
   SMOKE_PROMPT: Say hello in one short sentence.
+  SMOKE_TOKENS: '4'
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.platform }}
   cancel-in-progress: true
 
 jobs:
@@ -167,6 +168,126 @@ jobs:
             Write-Error "Model output did not contain llama.cpp generation timing."
             exit 1
           }
+
+  android-real-model-smoke:
+    name: Real model smoke (android)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      ANDROID_ABI: x86_64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux mobile build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Enable Linux KVM for Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+
+      - name: Build Android llama.cpp CLI
+        shell: bash
+        run: bash .github/scripts/build-android-llama-cli.sh
+
+      - name: Download and verify GGUF model
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/models"
+          model_path="$RUNNER_TEMP/models/SmolLM2-135M-Instruct.Q4_0.gguf"
+          curl -L --fail --retry 3 --retry-delay 10 "$MODEL_URL" -o "$model_path"
+          if command -v sha256sum >/dev/null 2>&1; then
+            echo "$MODEL_SHA256  $model_path" | sha256sum -c -
+          else
+            echo "$MODEL_SHA256  $model_path" | shasum -a 256 -c -
+          fi
+          echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
+
+      - name: Run Android real model E2E
+        timeout-minutes: 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_atd
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 2048M
+          heap-size: 512
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
+          emulator-boot-timeout: 900
+          disable-animations: true
+          script: bash .github/scripts/android-real-model-smoke.sh
+
+  ios-real-model-smoke:
+    name: Real model smoke (ios)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'ios' }}
+    runs-on: macos-14
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build iOS simulator llama.cpp CLI
+        shell: bash
+        run: bash .github/scripts/build-ios-sim-llama-cli.sh
+
+      - name: Download and verify GGUF model
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/models"
+          model_path="$RUNNER_TEMP/models/SmolLM2-135M-Instruct.Q4_0.gguf"
+          curl -L --fail --retry 3 --retry-delay 10 "$MODEL_URL" -o "$model_path"
+          if command -v sha256sum >/dev/null 2>&1; then
+            echo "$MODEL_SHA256  $model_path" | sha256sum -c -
+          else
+            echo "$MODEL_SHA256  $model_path" | shasum -a 256 -c -
+          fi
+          echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
+
+      - name: Boot iOS simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          device_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && /Shutdown/ {print $2; exit}')"
+          if [[ -z "$device_id" ]]; then
+            xcrun simctl list devices available
+            exit 1
+          fi
+          xcrun simctl boot "$device_id"
+          xcrun simctl bootstatus "$device_id" -b
+          echo "IOS_SIMULATOR_ID=$device_id" >> "$GITHUB_ENV"
+
+      - name: Run iOS real model E2E
+        timeout-minutes: 10
+        shell: bash
+        run: bash .github/scripts/ios-real-model-smoke.sh
 
   flutter-platform-builds:
     name: Flutter platform build (${{ matrix.platform }})
