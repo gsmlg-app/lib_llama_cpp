@@ -1,0 +1,7 @@
+# lib_llama_cpp_ios
+
+iOS implementation package for the `lib_llama_cpp` federated Flutter plugin.
+
+This package registers the iOS platform implementation and CocoaPods metadata
+used by the app-facing `lib_llama_cpp` package. It is usually consumed as a
+transitive dependency through `lib_llama_cpp`.
