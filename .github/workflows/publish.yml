@@ -1,0 +1,188 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'pub-v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.41.7'
+
+jobs:
+  publish-foundation:
+    name: Publish ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: lib_llama_cpp_platform_interface
+            working-directory: packages/lib_llama_cpp_platform_interface
+          - package: lib_llama_cpp_ffi
+            working-directory: packages/lib_llama_cpp_ffi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart OIDC credentials
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Publish ${{ matrix.package }}
+        working-directory: ${{ matrix.working-directory }}
+        run: flutter pub publish --force
+
+  wait-for-foundation:
+    name: Wait for foundation packages
+    runs-on: ubuntu-latest
+    needs:
+      - publish-foundation
+    timeout-minutes: 12
+
+    steps:
+      - name: Wait for pub.dev indexing
+        env:
+          PACKAGES: lib_llama_cpp_platform_interface lib_llama_cpp_ffi
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#pub-v}"
+          for package in $PACKAGES; do
+            echo "Waiting for ${package} ${version} on pub.dev"
+            for attempt in {1..40}; do
+              latest="$(
+                curl -fsSL "https://pub.dev/api/packages/${package}" |
+                  python3 -c 'import json, sys; print(json.load(sys.stdin)["latest"]["version"])'
+              )"
+              if [[ "$latest" == "$version" ]]; then
+                echo "${package} ${version} is indexed"
+                break
+              fi
+              if [[ "$attempt" == "40" ]]; then
+                echo "::error::${package} latest version is ${latest}, expected ${version}"
+                exit 1
+              fi
+              sleep 15
+            done
+          done
+
+  publish-platforms:
+    name: Publish ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    needs:
+      - wait-for-foundation
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: lib_llama_cpp_android
+            working-directory: packages/lib_llama_cpp_android
+          - package: lib_llama_cpp_ios
+            working-directory: packages/lib_llama_cpp_ios
+          - package: lib_llama_cpp_macos
+            working-directory: packages/lib_llama_cpp_macos
+          - package: lib_llama_cpp_linux
+            working-directory: packages/lib_llama_cpp_linux
+          - package: lib_llama_cpp_windows
+            working-directory: packages/lib_llama_cpp_windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart OIDC credentials
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Publish ${{ matrix.package }}
+        working-directory: ${{ matrix.working-directory }}
+        run: flutter pub publish --force
+
+  wait-for-platforms:
+    name: Wait for platform packages
+    runs-on: ubuntu-latest
+    needs:
+      - publish-platforms
+    timeout-minutes: 12
+
+    steps:
+      - name: Wait for pub.dev indexing
+        env:
+          PACKAGES: lib_llama_cpp_android lib_llama_cpp_ios lib_llama_cpp_macos lib_llama_cpp_linux lib_llama_cpp_windows
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#pub-v}"
+          for package in $PACKAGES; do
+            echo "Waiting for ${package} ${version} on pub.dev"
+            for attempt in {1..40}; do
+              latest="$(
+                curl -fsSL "https://pub.dev/api/packages/${package}" |
+                  python3 -c 'import json, sys; print(json.load(sys.stdin)["latest"]["version"])'
+              )"
+              if [[ "$latest" == "$version" ]]; then
+                echo "${package} ${version} is indexed"
+                break
+              fi
+              if [[ "$attempt" == "40" ]]; then
+                echo "::error::${package} latest version is ${latest}, expected ${version}"
+                exit 1
+              fi
+              sleep 15
+            done
+          done
+
+  publish-facade:
+    name: Publish lib_llama_cpp
+    runs-on: ubuntu-latest
+    needs:
+      - wait-for-foundation
+      - wait-for-platforms
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart OIDC credentials
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Publish lib_llama_cpp
+        working-directory: packages/lib_llama_cpp
+        run: flutter pub publish --force

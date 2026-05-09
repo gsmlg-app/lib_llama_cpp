@@ -61,6 +61,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Check publish trigger token
+        env:
+          PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
+        run: |
+          if [[ -z "$PUBLISH_WORKFLOW_TOKEN" ]]; then
+            echo "::error::Set the PUBLISH_WORKFLOW_TOKEN secret to a token that can push tags and trigger workflows."
+            exit 1
+          fi
+
       - name: Update package versions
         env:
           VERSION: ${{ inputs.version }}
@@ -142,3 +151,22 @@ jobs:
           gh release create "v${VERSION}" dist/* \
             --generate-notes \
             --title "v${VERSION}"
+
+      - name: Trigger pub.dev publish
+        env:
+          PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$PUBLISH_WORKFLOW_TOKEN" ]]; then
+            echo "::error::Set the PUBLISH_WORKFLOW_TOKEN secret to a token that can push tags and trigger workflows."
+            exit 1
+          fi
+          publish_tag="pub-v${VERSION}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${publish_tag}" >/dev/null 2>&1; then
+            echo "::error::Tag ${publish_tag} already exists."
+            exit 1
+          fi
+          git tag "$publish_tag"
+          git push "https://x-access-token:${PUBLISH_WORKFLOW_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "$publish_tag"
