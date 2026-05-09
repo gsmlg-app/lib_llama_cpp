@@ -169,15 +169,13 @@ jobs:
             exit 1
           }
 
-  mobile-real-model-smoke:
-    name: Real model smoke (${{ matrix.platform }})
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' || inputs.platform == 'ios' }}
-    runs-on: ${{ matrix.os }}
+  android-real-model-smoke:
+    name: Real model smoke (android)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 75
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"android","os":"ubuntu-latest","android_arch":"x86_64"},{"platform":"ios","os":"macos-14"}]' || inputs.platform == 'android' && '[{"platform":"android","os":"ubuntu-latest","android_arch":"x86_64"}]' || inputs.platform == 'ios' && '[{"platform":"ios","os":"macos-14"}]' || '[]') }}
+    env:
+      ANDROID_ABI: x86_64
 
     steps:
       - name: Checkout
@@ -186,44 +184,77 @@ jobs:
           submodules: recursive
 
       - name: Install Linux mobile build dependencies
-        if: matrix.platform == 'android'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build
 
       - name: Setup Java for Android
-        if: matrix.platform == 'android'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Setup Android SDK
-        if: matrix.platform == 'android'
         uses: android-actions/setup-android@v3
 
       - name: Enable Linux KVM for Android emulator
-        if: matrix.platform == 'android'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
       - name: Install Android SDK packages
-        if: matrix.platform == 'android'
         shell: bash
         run: |
           sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
-          echo "ANDROID_ABI=${{ matrix.android_arch }}" >> "$GITHUB_ENV"
 
       - name: Build Android llama.cpp CLI
-        if: matrix.platform == 'android'
         shell: bash
         run: bash .github/scripts/build-android-llama-cli.sh
 
+      - name: Download and verify GGUF model
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/models"
+          model_path="$RUNNER_TEMP/models/SmolLM2-135M-Instruct.Q4_0.gguf"
+          curl -L --fail --retry 3 --retry-delay 10 "$MODEL_URL" -o "$model_path"
+          if command -v sha256sum >/dev/null 2>&1; then
+            echo "$MODEL_SHA256  $model_path" | sha256sum -c -
+          else
+            echo "$MODEL_SHA256  $model_path" | shasum -a 256 -c -
+          fi
+          echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
+
+      - name: Run Android real model E2E
+        timeout-minutes: 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_atd
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 2048M
+          heap-size: 512
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
+          emulator-boot-timeout: 900
+          disable-animations: true
+          script: bash .github/scripts/android-real-model-smoke.sh
+
+  ios-real-model-smoke:
+    name: Real model smoke (ios)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'ios' }}
+    runs-on: macos-14
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - name: Build iOS simulator llama.cpp CLI
-        if: matrix.platform == 'ios'
         shell: bash
         run: bash .github/scripts/build-ios-sim-llama-cli.sh
 
@@ -240,25 +271,7 @@ jobs:
           fi
           echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
 
-      - name: Run Android real model E2E
-        if: matrix.platform == 'android'
-        timeout-minutes: 35
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_atd
-          arch: ${{ matrix.android_arch }}
-          profile: pixel_2
-          cores: 2
-          ram-size: 2048M
-          heap-size: 512
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
-          emulator-boot-timeout: 900
-          disable-animations: true
-          script: bash .github/scripts/android-real-model-smoke.sh
-
       - name: Boot iOS simulator
-        if: matrix.platform == 'ios'
         shell: bash
         run: |
           set -euo pipefail
@@ -272,7 +285,6 @@ jobs:
           echo "IOS_SIMULATOR_ID=$device_id" >> "$GITHUB_ENV"
 
       - name: Run iOS real model E2E
-        if: matrix.platform == 'ios'
         timeout-minutes: 10
         shell: bash
         run: bash .github/scripts/ios-real-model-smoke.sh
