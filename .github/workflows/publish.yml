@@ -1,19 +1,32 @@
 name: Publish to pub.dev
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version or tag to publish (e.g. 0.3.1 or v0.3.1)
+        required: true
+        type: string
+      git_ref:
+        description: Git ref to publish from
+        required: true
+        default: main
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.release.tag_name || inputs.version || github.ref }}
   cancel-in-progress: true
 
 env:
   FLUTTER_VERSION: '3.41.7'
+  PUBLISH_TAG: ${{ github.event.release.tag_name || inputs.version || github.ref_name }}
+  PUBLISH_REF: ${{ github.event.release.tag_name || inputs.git_ref || github.ref }}
 
 jobs:
   publish-foundation:
@@ -35,6 +48,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PUBLISH_REF }}
 
       - name: Setup Dart OIDC credentials
         uses: dart-lang/setup-dart@v1
@@ -82,7 +97,7 @@ jobs:
           PACKAGE: lib_llama_cpp
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${PUBLISH_TAG#v}"
           echo "Waiting for ${PACKAGE} ${version} on pub.dev"
           for attempt in {1..40}; do
             latest="$(
@@ -138,7 +153,7 @@ jobs:
         shell: bash
         env:
           PLATFORM: ${{ matrix.platform }}
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ env.PUBLISH_TAG }}
           BUILD_COMMAND: ${{ matrix.build-command }}
         run: |
           set -euo pipefail
@@ -164,7 +179,7 @@ jobs:
           PACKAGES: lib_llama_cpp_platform_interface lib_llama_cpp_ffi
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${PUBLISH_TAG#v}"
           for package in $PACKAGES; do
             echo "Waiting for ${package} ${version} on pub.dev"
             for attempt in {1..40}; do
@@ -211,6 +226,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PUBLISH_REF }}
 
       - name: Setup Dart OIDC credentials
         uses: dart-lang/setup-dart@v1
@@ -225,7 +242,7 @@ jobs:
       - name: Download native prebuilts from GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/download-release-prebuilts.sh "${GITHUB_REF_NAME#v}" "$RUNNER_TEMP/prebuilt"
+        run: .github/scripts/download-release-prebuilts.sh "${PUBLISH_TAG#v}" "$RUNNER_TEMP/prebuilt"
 
       - name: Install prebuilts into platform packages
         run: .github/scripts/install-prebuilt-packages.sh "$RUNNER_TEMP/prebuilt"
@@ -266,7 +283,7 @@ jobs:
           PACKAGES: lib_llama_cpp_android lib_llama_cpp_ios lib_llama_cpp_macos lib_llama_cpp_linux lib_llama_cpp_windows
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${PUBLISH_TAG#v}"
           for package in $PACKAGES; do
             echo "Waiting for ${package} ${version} on pub.dev"
             for attempt in {1..40}; do
@@ -300,6 +317,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PUBLISH_REF }}
 
       - name: Setup Dart OIDC credentials
         uses: dart-lang/setup-dart@v1

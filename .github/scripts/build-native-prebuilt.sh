@@ -83,10 +83,14 @@ android_strip() {
   local file="$2"
   local strip_bin
 
-  strip_bin="$(find "${ndk_dir}/toolchains/llvm/prebuilt" -type f -name llvm-strip | head -n 1)"
-  if [[ -n "$strip_bin" ]]; then
-    "$strip_bin" --strip-unneeded "$file" || true
+  strip_bin="$(find "${ndk_dir}/toolchains/llvm/prebuilt" \
+    \( -type f -o -type l \) -name llvm-strip | head -n 1)"
+  if [[ -z "$strip_bin" ]]; then
+    echo "Could not find llvm-strip under ${ndk_dir}/toolchains/llvm/prebuilt" >&2
+    exit 1
   fi
+
+  "$strip_bin" --strip-unneeded "$file"
 }
 
 build_android() {

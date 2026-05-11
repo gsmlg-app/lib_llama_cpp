@@ -195,7 +195,7 @@ jobs:
           PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
         run: |
           if [[ -z "$PUBLISH_WORKFLOW_TOKEN" ]]; then
-            echo "::error::Set the PUBLISH_WORKFLOW_TOKEN secret to a token that can push tags and trigger workflows."
+            echo "::error::Set the PUBLISH_WORKFLOW_TOKEN secret to a token that can create releases and trigger workflows."
             exit 1
           fi
 
@@ -267,20 +267,48 @@ jobs:
             fi
           done
 
+      - name: Validate pub package sizes
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          limit = 100 * 1024 * 1024
+          failed = False
+          for package_dir in sorted(Path("packages").iterdir()):
+              if not (package_dir / "pubspec.yaml").is_file():
+                  continue
+              total = sum(
+                  path.stat().st_size
+                  for path in package_dir.rglob("*")
+                  if path.is_file()
+              )
+              print(f"{package_dir.name}: {total / 1024 / 1024:.1f} MiB")
+              if total >= limit:
+                  print(
+                      f"::error::{package_dir.name} is {total} bytes, "
+                      f"which exceeds pub.dev's {limit} byte package scan limit."
+                  )
+                  failed = True
+          if failed:
+              sys.exit(1)
+          PY
+
       - name: Create release artifacts
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          mkdir -p dist
-          tar -czf "dist/lib_llama_cpp-prebuilt-${VERSION}.tar.gz" \
+          mkdir -p dist/release
+          tar -czf "dist/release/lib_llama_cpp-prebuilt-${VERSION}.tar.gz" \
             -C dist/prebuilt \
             .
           (
-            cd dist
+            cd dist/release
             sha256sum "lib_llama_cpp-prebuilt-${VERSION}.tar.gz" \
               > "lib_llama_cpp-prebuilt-${VERSION}.tar.gz.sha256"
           )
-          tar -czf "dist/lib_llama_cpp-source-${VERSION}.tar.gz" \
+          tar -czf "dist/release/lib_llama_cpp-source-${VERSION}.tar.gz" \
             --exclude='.git' \
             --exclude='.dart_tool' \
             --exclude='.github' \
@@ -293,28 +321,28 @@ jobs:
             --exclude='packages/lib_llama_cpp_macos/macos/Frameworks' \
             --exclude='packages/lib_llama_cpp_windows/windows/prebuilt' \
             .
-          tar -czf "dist/lib_llama_cpp_example-linux-${VERSION}.tar.gz" \
+          tar -czf "dist/release/lib_llama_cpp_example-linux-${VERSION}.tar.gz" \
             -C example/build/linux/x64/release/bundle \
             .
 
-      - name: Commit version bump and tag
+      - name: Commit version bump
         env:
           VERSION: ${{ inputs.version }}
-          PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
         run: |
           git add packages/*/pubspec.yaml example/pubspec.yaml
-          git commit -m "chore(release): v${VERSION}"
-          git tag "v${VERSION}"
+          if git diff --cached --quiet; then
+            echo "Package versions are already set to v${VERSION}."
+          else
+            git commit -m "chore(release): v${VERSION}"
+          fi
           git push origin "HEAD:${{ inputs.git_ref }}"
-          git config --unset-all http.https://github.com/.extraheader || true
-          git push "https://x-access-token:${PUBLISH_WORKFLOW_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            "v${VERSION}"
 
-      - name: Create GitHub release
+      - name: Create GitHub release and tag
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
-          gh release create "v${VERSION}" dist/* \
+          gh release create "v${VERSION}" dist/release/* \
+            --target "$(git rev-parse HEAD)" \
             --generate-notes \
             --title "v${VERSION}"
