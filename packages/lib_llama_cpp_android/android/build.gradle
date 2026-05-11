@@ -21,14 +21,26 @@ rootProject.allprojects {
 
 apply plugin: "com.android.library"
 
+def prebuiltJniLibsDir = file("src/main/jniLibs")
+def hasPrebuiltJniLibs = prebuiltJniLibsDir.exists() &&
+    fileTree(prebuiltJniLibsDir).matching { include "**/*.so" }.files.size() > 0
+
 android {
     namespace = "com.gsmlg.libllamacpp.android"
     compileSdk = 36
     ndkVersion = android.ndkVersion
 
-    externalNativeBuild {
-        cmake {
-            path = "../src/CMakeLists.txt"
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ["src/main/jniLibs"]
+        }
+    }
+
+    if (!hasPrebuiltJniLibs) {
+        externalNativeBuild {
+            cmake {
+                path = "../src/CMakeLists.txt"
+            }
         }
     }
 

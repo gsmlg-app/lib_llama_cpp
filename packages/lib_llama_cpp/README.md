@@ -181,11 +181,11 @@ Current platform defaults:
 
 | Platform | Resolution | Capabilities |
 | --- | --- | --- |
-| Android | lookup name `liblib_llama_cpp_android.so` | `cpu`, `vulkan` |
-| iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu`, `metal` |
-| Linux | lookup name `liblib_llama_cpp_linux.so` | `cpu`, `openBlas`, `vulkan` |
-| macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu`, `metal` |
-| Windows | lookup name `lib_llama_cpp_windows.dll` | `cpu`, `vulkan` |
+| Android | lookup name `liblib_llama_cpp_android.so` | `cpu` |
+| iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu` |
+| Linux | lookup name `liblib_llama_cpp_linux.so` | `cpu` |
+| macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu` |
+| Windows | lookup name `lib_llama_cpp_windows.dll` | `cpu` |
 
 `preferredPath` is honored by the current platform resolvers. The
 `requiredCapabilities` set is carried in the request API, but the current

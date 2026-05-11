@@ -21,9 +21,138 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-prebuilt-linux:
+    name: Native prebuilt (linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Linux native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build
+
+      - name: Build Linux prebuilt library
+        run: .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
+
+      - name: Upload Linux prebuilt library
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-linux-${{ inputs.version }}
+          path: ${{ runner.temp }}/prebuilt
+          if-no-files-found: error
+
+  native-prebuilt-android:
+    name: Native prebuilt (android)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Android native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+
+      - name: Build Android prebuilt libraries
+        run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
+
+      - name: Upload Android prebuilt libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-android-${{ inputs.version }}
+          path: ${{ runner.temp }}/prebuilt
+          if-no-files-found: error
+
+  native-prebuilt-apple:
+    name: Native prebuilt (apple)
+    runs-on: macos-14
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Apple native build dependencies
+        run: brew install cmake ninja
+
+      - name: Build macOS prebuilt framework
+        run: .github/scripts/build-native-prebuilt.sh macos "$RUNNER_TEMP/prebuilt"
+
+      - name: Build iOS prebuilt framework
+        run: .github/scripts/build-native-prebuilt.sh ios "$RUNNER_TEMP/prebuilt"
+
+      - name: Upload Apple prebuilt frameworks
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-apple-${{ inputs.version }}
+          path: ${{ runner.temp }}/prebuilt
+          if-no-files-found: error
+
+  native-prebuilt-windows:
+    name: Native prebuilt (windows)
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Build Windows prebuilt library
+        shell: pwsh
+        run: .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP\prebuilt"
+
+      - name: Upload Windows prebuilt library
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-windows-${{ inputs.version }}
+          path: ${{ runner.temp }}/prebuilt
+          if-no-files-found: error
+
   release:
     name: Build and publish GitHub release
     runs-on: ubuntu-latest
+    needs:
+      - native-prebuilt-linux
+      - native-prebuilt-android
+      - native-prebuilt-apple
+      - native-prebuilt-windows
     timeout-minutes: 45
 
     steps:
@@ -117,11 +246,40 @@ jobs:
         working-directory: example
         run: flutter build linux --release
 
+      - name: Download native prebuilts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lib-llama-cpp-prebuilt-*-${{ inputs.version }}
+          path: dist/prebuilt
+          merge-multiple: true
+
+      - name: Install prebuilts into publish packages
+        run: .github/scripts/install-prebuilt-packages.sh dist/prebuilt
+
+      - name: Validate pub package archives
+        run: |
+          set -euo pipefail
+          for package_dir in packages/*; do
+            if [[ -f "$package_dir/pubspec.yaml" ]]; then
+              echo "::group::flutter pub publish --dry-run ($package_dir)"
+              (cd "$package_dir" && flutter pub publish --dry-run --ignore-warnings)
+              echo "::endgroup::"
+            fi
+          done
+
       - name: Create release artifacts
         env:
           VERSION: ${{ inputs.version }}
         run: |
           mkdir -p dist
+          tar -czf "dist/lib_llama_cpp-prebuilt-${VERSION}.tar.gz" \
+            -C dist/prebuilt \
+            .
+          (
+            cd dist
+            sha256sum "lib_llama_cpp-prebuilt-${VERSION}.tar.gz" \
+              > "lib_llama_cpp-prebuilt-${VERSION}.tar.gz.sha256"
+          )
           tar -czf "dist/lib_llama_cpp-source-${VERSION}.tar.gz" \
             --exclude='.git' \
             --exclude='.dart_tool' \
@@ -129,6 +287,11 @@ jobs:
             --exclude='build' \
             --exclude='dist' \
             --exclude='example/build' \
+            --exclude='packages/lib_llama_cpp_android/android/src/main/jniLibs' \
+            --exclude='packages/lib_llama_cpp_ios/ios/Frameworks' \
+            --exclude='packages/lib_llama_cpp_linux/linux/prebuilt' \
+            --exclude='packages/lib_llama_cpp_macos/macos/Frameworks' \
+            --exclude='packages/lib_llama_cpp_windows/windows/prebuilt' \
             .
           tar -czf "dist/lib_llama_cpp_example-linux-${VERSION}.tar.gz" \
             -C example/build/linux/x64/release/bundle \

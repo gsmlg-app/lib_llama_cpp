@@ -1,3 +1,8 @@
+## Unreleased
+
+- Prefer packaged prebuilt CPU-only macOS xcframeworks when present, with
+  source-build fallback for monorepo development.
+
 ## 0.1.0
 
 - Initial macOS federated plugin implementation.

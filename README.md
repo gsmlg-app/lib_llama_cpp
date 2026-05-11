@@ -15,6 +15,10 @@ The repository is intentionally split into narrow packages:
 - `third_party/llama.cpp` is a pinned git submodule.
 - `example` is the Flutter integration app.
 
+Published platform packages ship CPU-only native binaries built by the GitHub
+release workflow. Local monorepo builds fall back to compiling the pinned
+`third_party/llama.cpp` checkout when those prebuilts are not present.
+
 ## Current App-Facing API
 
 Flutter apps should import the facade package:
