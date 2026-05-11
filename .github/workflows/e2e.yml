@@ -306,13 +306,15 @@ jobs:
           xcrun simctl bootstatus "$device_id" -b
           echo "IOS_SIMULATOR_ID=$device_id" >> "$GITHUB_ENV"
 
-      - name: Run iOS real model E2E
-        timeout-minutes: 10
+      - name: Run iOS native real model smoke
+        timeout-minutes: 5
         shell: bash
-        run: |
-          bash .github/scripts/ios-real-model-smoke.sh
-          cd example
-          flutter test integration_test/mobile_smoke_test.dart -d "$IOS_SIMULATOR_ID"
+        run: bash .github/scripts/ios-real-model-smoke.sh
+
+      - name: Run iOS Flutter integration smoke
+        timeout-minutes: 15
+        shell: bash
+        run: cd example && flutter test integration_test/mobile_smoke_test.dart -d "$IOS_SIMULATOR_ID"
 
   flutter-platform-builds:
     name: Flutter platform build (${{ matrix.platform }})
