@@ -163,7 +163,17 @@ jobs:
           rm -rf "$app_dir"
           flutter create --platforms="$PLATFORM" "$app_dir"
           cd "$app_dir"
-          flutter pub add "lib_llama_cpp:${version}"
+          for attempt in {1..40}; do
+            if flutter pub add "lib_llama_cpp:${version}"; then
+              break
+            fi
+            if [[ "$attempt" == "40" ]]; then
+              echo "::error::lib_llama_cpp ${version} is not resolvable from pub.dev"
+              exit 1
+            fi
+            echo "Waiting for lib_llama_cpp ${version} to become resolvable from pub.dev (attempt ${attempt}/40)."
+            sleep 15
+          done
           $BUILD_COMMAND
 
   wait-for-foundation:
