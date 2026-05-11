@@ -1,9 +1,6 @@
 name: Publish to pub.dev
 
 on:
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       version:
@@ -20,13 +17,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.release.tag_name || inputs.version || github.ref }}
+  group: ${{ github.workflow }}-${{ inputs.version || github.ref }}
   cancel-in-progress: true
 
 env:
   FLUTTER_VERSION: '3.41.7'
-  PUBLISH_TAG: ${{ github.event.release.tag_name || inputs.version || github.ref_name }}
-  PUBLISH_REF: ${{ github.event.release.tag_name || inputs.git_ref || github.ref }}
+  PUBLISH_TAG: ${{ inputs.version || github.ref_name }}
+  PUBLISH_REF: ${{ inputs.git_ref || github.ref }}
 
 jobs:
   publish-foundation:

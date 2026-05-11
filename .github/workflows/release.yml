@@ -346,3 +346,14 @@ jobs:
             --target "$(git rev-parse HEAD)" \
             --generate-notes \
             --title "v${VERSION}"
+
+      - name: Dispatch pub.dev publish
+        env:
+          GH_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh workflow run publish.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref "${{ inputs.git_ref }}" \
+            -f version="${VERSION}" \
+            -f git_ref="v${VERSION}"
