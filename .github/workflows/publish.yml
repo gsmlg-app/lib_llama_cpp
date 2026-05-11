@@ -3,7 +3,7 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'pub-v*.*.*'
+      - 'v*.*.*'
 
 permissions:
   contents: read
@@ -63,7 +63,7 @@ jobs:
           PACKAGES: lib_llama_cpp_platform_interface lib_llama_cpp_ffi
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#pub-v}"
+          version="${GITHUB_REF_NAME#v}"
           for package in $PACKAGES; do
             echo "Waiting for ${package} ${version} on pub.dev"
             for attempt in {1..40}; do
@@ -138,7 +138,7 @@ jobs:
           PACKAGES: lib_llama_cpp_android lib_llama_cpp_ios lib_llama_cpp_macos lib_llama_cpp_linux lib_llama_cpp_windows
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#pub-v}"
+          version="${GITHUB_REF_NAME#v}"
           for package in $PACKAGES; do
             echo "Waiting for ${package} ${version} on pub.dev"
             for attempt in {1..40}; do

@@ -137,12 +137,15 @@ jobs:
       - name: Commit version bump and tag
         env:
           VERSION: ${{ inputs.version }}
+          PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
         run: |
           git add packages/*/pubspec.yaml example/pubspec.yaml
           git commit -m "chore(release): v${VERSION}"
           git tag "v${VERSION}"
           git push origin "HEAD:${{ inputs.git_ref }}"
-          git push origin "v${VERSION}"
+          git config --unset-all http.https://github.com/.extraheader || true
+          git push "https://x-access-token:${PUBLISH_WORKFLOW_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "v${VERSION}"
 
       - name: Create GitHub release
         env:
@@ -152,23 +155,3 @@ jobs:
           gh release create "v${VERSION}" dist/* \
             --generate-notes \
             --title "v${VERSION}"
-
-      - name: Trigger pub.dev publish
-        env:
-          PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$PUBLISH_WORKFLOW_TOKEN" ]]; then
-            echo "::error::Set the PUBLISH_WORKFLOW_TOKEN secret to a token that can push tags and trigger workflows."
-            exit 1
-          fi
-          publish_tag="pub-v${VERSION}"
-          if git ls-remote --exit-code --tags origin "refs/tags/${publish_tag}" >/dev/null 2>&1; then
-            echo "::error::Tag ${publish_tag} already exists."
-            exit 1
-          fi
-          git tag "$publish_tag"
-          git config --unset-all http.https://github.com/.extraheader || true
-          git push "https://x-access-token:${PUBLISH_WORKFLOW_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            "$publish_tag"
