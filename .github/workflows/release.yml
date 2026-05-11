@@ -169,5 +169,6 @@ jobs:
             exit 1
           fi
           git tag "$publish_tag"
+          git config --unset-all http.https://github.com/.extraheader || true
           git push "https://x-access-token:${PUBLISH_WORKFLOW_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             "$publish_tag"
