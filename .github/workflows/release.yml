@@ -77,6 +77,7 @@ jobs:
           dart pub get
           for pubspec in packages/*/pubspec.yaml; do
             perl -0pi -e 's/^version: .+$/version: $ENV{VERSION}/m' "$pubspec"
+            perl -0pi -e 's/^(\s+(?:lib_llama_cpp_android|lib_llama_cpp_ffi|lib_llama_cpp_ios|lib_llama_cpp_linux|lib_llama_cpp_macos|lib_llama_cpp_platform_interface|lib_llama_cpp_windows): )\^?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/${1}^$ENV{VERSION}/mg' "$pubspec"
           done
           if [[ "$VERSION" == *+* ]]; then
             EXAMPLE_VERSION="$VERSION"
