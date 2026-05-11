@@ -23,6 +23,8 @@ require_path "${prebuilt_dir}/android/x86_64/liblib_llama_cpp_android.so"
 require_path "${prebuilt_dir}/ios/lib_llama_cpp_ios.xcframework"
 require_path "${prebuilt_dir}/linux/x64/liblib_llama_cpp_linux.so"
 require_path "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework"
+require_path "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework/macos-arm64_x86_64/lib_llama_cpp_macos.framework/Versions/Current/Resources/Info.plist"
+require_path "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework/macos-arm64_x86_64/lib_llama_cpp_macos.framework/Versions/Current/lib_llama_cpp_macos"
 require_path "${prebuilt_dir}/windows/x64/lib_llama_cpp_windows.dll"
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs"

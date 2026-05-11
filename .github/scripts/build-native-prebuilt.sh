@@ -153,7 +153,7 @@ write_framework_plist() {
 EOF
 }
 
-create_framework() {
+create_shallow_framework() {
   local dylib="$1"
   local framework_dir="$2"
   local executable="$3"
@@ -183,6 +183,43 @@ EOF
   codesign --force --sign - "${framework_dir}/${executable}" >/dev/null 2>&1 || true
 }
 
+create_macos_framework() {
+  local dylib="$1"
+  local framework_dir="$2"
+  local executable="$3"
+  local identifier="$4"
+  local minimum_key="$5"
+  local minimum_value="$6"
+  local version_dir="${framework_dir}/Versions/A"
+
+  rm -rf "$framework_dir"
+  mkdir -p "${version_dir}/Headers" "${version_dir}/Modules" \
+    "${version_dir}/Resources"
+  cp "$dylib" "${version_dir}/${executable}"
+  strip_macho "${version_dir}/${executable}"
+  install_name_tool -id "@rpath/${executable}.framework/Versions/A/${executable}" \
+    "${version_dir}/${executable}" || true
+  write_framework_plist "${version_dir}/Resources/Info.plist" \
+    "$executable" "$identifier" "$minimum_key" "$minimum_value"
+  cat > "${version_dir}/Modules/module.modulemap" <<EOF
+framework module ${executable} {
+  umbrella header "${executable}.h"
+  export *
+  module * { export * }
+}
+EOF
+  cat > "${version_dir}/Headers/${executable}.h" <<EOF
+#pragma once
+int lib_llama_cpp_stub_abi_version(void);
+EOF
+  ln -s A "${framework_dir}/Versions/Current"
+  ln -s Versions/Current/${executable} "${framework_dir}/${executable}"
+  ln -s Versions/Current/Headers "${framework_dir}/Headers"
+  ln -s Versions/Current/Modules "${framework_dir}/Modules"
+  ln -s Versions/Current/Resources "${framework_dir}/Resources"
+  codesign --force --sign - "${version_dir}/${executable}" >/dev/null 2>&1 || true
+}
+
 build_macos() {
   local build_dir="${build_root}/macos-universal"
   local framework_dir="${build_dir}/framework/lib_llama_cpp_macos.framework"
@@ -196,7 +233,7 @@ build_macos() {
     -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
   cmake --build "$build_dir" --target lib_llama_cpp_macos --parallel "$cmake_parallel"
 
-  create_framework \
+  create_macos_framework \
     "$(find_built_file "$build_dir" "liblib_llama_cpp_macos.dylib")" \
     "$framework_dir" \
     "lib_llama_cpp_macos" \
@@ -227,7 +264,7 @@ build_ios_slice() {
     -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
   cmake --build "$build_dir" --config Release --target lib_llama_cpp_ios --parallel "$cmake_parallel"
 
-  create_framework \
+  create_shallow_framework \
     "$(find_built_file "$build_dir" "liblib_llama_cpp_ios.dylib")" \
     "$framework_dir" \
     "lib_llama_cpp_ios" \
