@@ -15,6 +15,40 @@ The repository is intentionally split into narrow packages:
 - `third_party/llama.cpp` is a pinned git submodule.
 - `example` is the Flutter integration app.
 
+## Current App-Facing API
+
+Flutter apps should import the facade package:
+
+```dart
+import 'package:lib_llama_cpp/lib_llama_cpp.dart';
+```
+
+Flutter apps should start with `LlamaOpenAIClient` and use
+`client.responses.create(...)` or `client.chat.completions.create(...)`:
+
+```dart
+final client = LlamaOpenAIClient(
+  models: {
+    'local': const LlamaModelConfig(modelPath: '/path/to/model.gguf'),
+  },
+);
+
+final response = await client.responses.create(
+  model: 'local',
+  input: 'Write one sentence.',
+);
+```
+
+The lower-level `LibLlamaCpp.transform(...)` command stream remains available
+for lifecycle control and engine tests.
+
+Native llama.cpp model loading, generation, and token streaming are still under
+active development. Until the inference worker emits real token responses,
+OpenAI-shaped generation calls fail with `generation_failed`.
+
+See `packages/lib_llama_cpp/README.md` for constructor signatures, request and
+response payloads, platform library resolution, and current behavior details.
+
 ## Development
 
 On macOS, use the system Flutter/Dart toolchain and system packages. On NixOS,
