@@ -48,7 +48,26 @@ jobs:
 
       - name: Publish ${{ matrix.package }}
         working-directory: ${{ matrix.working-directory }}
-        run: flutter pub publish --force
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          version="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          published="$(
+            curl -fsSL "https://pub.dev/api/packages/${PACKAGE}" |
+              VERSION="$version" python3 -c 'import json, os, sys; print("yes" if any(item["version"] == os.environ["VERSION"] for item in json.load(sys.stdin).get("versions", [])) else "no")'
+          )"
+          if [[ "$published" == "yes" ]]; then
+            echo "${PACKAGE} ${version} is already published; skipping"
+            exit 0
+          fi
+          if ! flutter pub publish --force 2>&1 | tee publish.log; then
+            if grep -Eiq 'already (published|exists)|version .* already' publish.log; then
+              echo "${PACKAGE} ${version} is already published; treating as success"
+              exit 0
+            fi
+            exit 1
+          fi
 
   wait-for-foundation:
     name: Wait for foundation packages
@@ -123,7 +142,26 @@ jobs:
 
       - name: Publish ${{ matrix.package }}
         working-directory: ${{ matrix.working-directory }}
-        run: flutter pub publish --force
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          version="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          published="$(
+            curl -fsSL "https://pub.dev/api/packages/${PACKAGE}" |
+              VERSION="$version" python3 -c 'import json, os, sys; print("yes" if any(item["version"] == os.environ["VERSION"] for item in json.load(sys.stdin).get("versions", [])) else "no")'
+          )"
+          if [[ "$published" == "yes" ]]; then
+            echo "${PACKAGE} ${version} is already published; skipping"
+            exit 0
+          fi
+          if ! flutter pub publish --force 2>&1 | tee publish.log; then
+            if grep -Eiq 'already (published|exists)|version .* already' publish.log; then
+              echo "${PACKAGE} ${version} is already published; treating as success"
+              exit 0
+            fi
+            exit 1
+          fi
 
   wait-for-platforms:
     name: Wait for platform packages
@@ -185,4 +223,23 @@ jobs:
 
       - name: Publish lib_llama_cpp
         working-directory: packages/lib_llama_cpp
-        run: flutter pub publish --force
+        env:
+          PACKAGE: lib_llama_cpp
+        run: |
+          set -euo pipefail
+          version="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          published="$(
+            curl -fsSL "https://pub.dev/api/packages/${PACKAGE}" |
+              VERSION="$version" python3 -c 'import json, os, sys; print("yes" if any(item["version"] == os.environ["VERSION"] for item in json.load(sys.stdin).get("versions", [])) else "no")'
+          )"
+          if [[ "$published" == "yes" ]]; then
+            echo "${PACKAGE} ${version} is already published; skipping"
+            exit 0
+          fi
+          if ! flutter pub publish --force 2>&1 | tee publish.log; then
+            if grep -Eiq 'already (published|exists)|version .* already' publish.log; then
+              echo "${PACKAGE} ${version} is already published; treating as success"
+              exit 0
+            fi
+            exit 1
+          fi
