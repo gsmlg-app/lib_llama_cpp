@@ -1,17 +1,20 @@
 # lib_llama_cpp_example
 
-A new Flutter project.
+Example Flutter app for the app-facing `lib_llama_cpp` API.
 
-## Getting Started
+The app expects callers to provide model files. It does not download or bundle a
+GGUF model on behalf of the package.
 
-This project is a starting point for a Flutter application.
+## Real-Model Smoke
 
-A few resources to get you started if this is your first Flutter project:
+The mobile integration smoke is opt-in. Provide an app-accessible GGUF path with
+`LIB_LLAMA_CPP_TEST_MODEL`:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```sh
+flutter test \
+  --dart-define=LIB_LLAMA_CPP_TEST_MODEL=/absolute/path/to/model.gguf \
+  integration_test/mobile_smoke_test.dart -d <device-id>
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+CI runners should download and verify the model before invoking the test. The
+package runtime should only receive the final model path.

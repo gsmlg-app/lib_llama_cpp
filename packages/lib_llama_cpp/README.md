@@ -98,7 +98,7 @@ The facade exports these public types:
   `LlamaResponseStreamEvent`, `LlamaResponseOutputTextDelta`,
   `LlamaResponseFailed`
 - `LlamaChatMessage`, `LlamaChatCompletion`
-- `LibLlamaCpp`
+- `LlamaEngine`, `LibLlamaCpp`
 - `LlamaCommand`, `LlamaLoadModelCommand`, `LlamaGenerateCommand`,
   `LlamaDisposeCommand`
 - `LlamaResponse`, `LlamaReadyResponse`, `LlamaStateChangedResponse`,
@@ -122,6 +122,10 @@ emits `LlamaReadyResponse`, then dispatches each command from the input stream.
 When it receives `LlamaDisposeCommand`, it emits the disposal responses and
 stops reading additional commands.
 
+`LlamaEngine` is the injectable stream interface used by `LlamaOpenAIClient`.
+Tests can provide a fake engine that emits `LlamaTokenResponse` values without a
+real model.
+
 The optional `platform` constructor argument and `libraryRequest` parameter use
 types from `package:lib_llama_cpp_platform_interface`. Normal Flutter apps can
 omit both and rely on federated plugin registration.
@@ -130,8 +134,8 @@ omit both and rely on federated plugin registration.
 
 | Command | Fields | Current behavior |
 | --- | --- | --- |
-| `LlamaLoadModelCommand` | `modelPath`, `contextSize`, `gpuLayerCount` | Marks the isolate state as loaded with `modelPath` and emits `LlamaStateChangedResponse`. The sizing fields are accepted by the API but native model loading is not wired yet. |
-| `LlamaGenerateCommand` | `prompt`, `maxTokens` | Emits `LlamaErrorResponse(message: 'Cannot generate before a model is loaded.')` if no model has been loaded. After a load command, it currently emits `LlamaErrorResponse(message: 'Native llama.cpp generation is not wired yet.')`. |
+| `LlamaLoadModelCommand` | `modelPath`, `contextSize`, `gpuLayerCount` | Loads the app-supplied GGUF model path and emits `LlamaStateChangedResponse` when the runtime state changes. |
+| `LlamaGenerateCommand` | `prompt`, `maxTokens`, `temperature`, `topP`, `stop` | Requires a loaded model. Successful generation emits `LlamaTokenResponse` values; runtime failures emit `LlamaErrorResponse`. |
 | `LlamaDisposeCommand` | none | Resets state to `LlamaState.empty()`, emits `LlamaStateChangedResponse`, then emits `LlamaDoneResponse`. |
 
 ### Responses
@@ -140,7 +144,7 @@ omit both and rely on federated plugin registration.
 | --- | --- |
 | `LlamaReadyResponse` | `library`, the resolved `LlamaCppLibraryDescriptor` |
 | `LlamaStateChangedResponse` | `state`, the current `LlamaState` |
-| `LlamaTokenResponse` | `text` and zero-based `index` for token streaming; this response is part of the public API but is not emitted by the current generation worker |
+| `LlamaTokenResponse` | `text` and zero-based `index` for token streaming |
 | `LlamaErrorResponse` | `message` |
 | `LlamaDoneResponse` | none |
 
@@ -188,8 +192,23 @@ Current platform defaults:
 resolvers return their platform descriptor rather than rejecting unsupported
 capability requests.
 
-## Current Limits
+## Model Files and Smoke Tests
 
-Native llama.cpp model loading, generation, and token streaming are still under
-active development. Until the inference worker emits real token responses,
-OpenAI-shaped generation calls fail with `generation_failed`.
+This package does not download or install models at runtime. Apps and CI
+runners are responsible for choosing, downloading, verifying, and storing GGUF
+model files, then passing an app-accessible absolute path through
+`LlamaModelConfig.modelPath` or `LlamaLoadModelCommand.modelPath`.
+
+The example integration smoke is opt-in and runs only when a model path is
+provided:
+
+```sh
+cd example
+flutter test \
+  --dart-define=LIB_LLAMA_CPP_TEST_MODEL=/absolute/path/to/model.gguf \
+  integration_test/mobile_smoke_test.dart -d <device-id>
+```
+
+For non-Flutter Dart test entrypoints, `LIB_LLAMA_CPP_TEST_MODEL` can also be
+provided through the process environment. CI should keep model download and
+checksum verification in the runner before invoking package or example tests.

@@ -25,9 +25,5 @@ final class LibLlamaCppLinux extends LibLlamaCppPlatform {
     );
   }
 
-  static const _capabilities = {
-    LlamaCppLibraryCapability.cpu,
-    LlamaCppLibraryCapability.openBlas,
-    LlamaCppLibraryCapability.vulkan,
-  };
+  static const _capabilities = {LlamaCppLibraryCapability.cpu};
 }

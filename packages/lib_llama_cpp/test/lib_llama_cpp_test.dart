@@ -21,35 +21,26 @@ final class FakeLibLlamaCppPlatform extends LibLlamaCppPlatform
 }
 
 void main() {
-  test(
-    'resolves the native library before streaming command responses',
-    () async {
-      final platform = FakeLibLlamaCppPlatform();
-      final client = LibLlamaCpp(platform: platform);
+  test('resolves the native library before loading a model', () async {
+    final platform = FakeLibLlamaCppPlatform();
+    final client = LibLlamaCpp(platform: platform);
 
-      final responses = await client
-          .transform(
-            Stream<LlamaCommand>.fromIterable([
-              const LlamaLoadModelCommand(modelPath: '/models/tiny.gguf'),
-              const LlamaDisposeCommand(),
-            ]),
-          )
-          .toList();
+    final responses = await client
+        .transform(
+          Stream<LlamaCommand>.value(
+            const LlamaLoadModelCommand(modelPath: '/models/tiny.gguf'),
+          ),
+        )
+        .toList();
 
-      expect(platform.resolveCount, 1);
-      expect(responses.first, isA<LlamaReadyResponse>());
-      expect(
-        responses.whereType<LlamaStateChangedResponse>().map(
-          (event) => event.state,
-        ),
-        [
-          const LlamaState(modelPath: '/models/tiny.gguf', isModelLoaded: true),
-          const LlamaState.empty(),
-        ],
-      );
-      expect(responses.last, const LlamaDoneResponse());
-    },
-  );
+    expect(platform.resolveCount, 1);
+    expect(responses.first, isA<LlamaReadyResponse>());
+    expect(responses.last, isA<LlamaErrorResponse>());
+    expect(
+      (responses.last as LlamaErrorResponse).message,
+      contains('Failed to open llama.cpp library'),
+    );
+  });
 
   test('generation before loading a model emits an error response', () async {
     final client = LibLlamaCpp(platform: FakeLibLlamaCppPlatform());

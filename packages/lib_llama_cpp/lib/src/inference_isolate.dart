@@ -6,6 +6,7 @@ import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interfac
 import 'llama_command.dart';
 import 'llama_response.dart';
 import 'llama_state.dart';
+import 'native_runtime.dart';
 
 final class InferenceIsolate {
   InferenceIsolate._({
@@ -138,6 +139,16 @@ final class _ShutdownMessage {
 
 void _runInferenceWorker(_StartMessage start) {
   var state = start.initialState;
+  NativeLlamaRuntime? runtime;
+  String? startupError;
+  try {
+    runtime = NativeLlamaRuntime(library: start.library);
+  } on NativeLlamaException catch (error) {
+    startupError = error.message;
+  } on Object catch (error) {
+    startupError = 'Failed to initialize llama.cpp runtime: $error';
+  }
+
   final receivePort = ReceivePort();
   start.replyPort.send(receivePort.sendPort);
 
@@ -153,6 +164,7 @@ void _runInferenceWorker(_StartMessage start) {
 
   receivePort.listen((message) {
     if (message is _ShutdownMessage) {
+      runtime?.close();
       receivePort.close();
       return;
     }
@@ -164,13 +176,23 @@ void _runInferenceWorker(_StartMessage start) {
     final command = message.command;
     switch (command) {
       case LlamaLoadModelCommand():
-        state = state.copyWith(
-          modelPath: command.modelPath,
-          isModelLoaded: true,
-        );
-        send(message.requestId, LlamaStateChangedResponse(state: state));
+        if (startupError != null || runtime == null) {
+          send(message.requestId, LlamaErrorResponse(message: startupError!));
+        } else {
+          try {
+            state = runtime.loadModel(command);
+            send(message.requestId, LlamaStateChangedResponse(state: state));
+          } on NativeLlamaException catch (error) {
+            send(message.requestId, LlamaErrorResponse(message: error.message));
+          } on Object catch (error) {
+            send(
+              message.requestId,
+              LlamaErrorResponse(message: 'Failed to load model: $error'),
+            );
+          }
+        }
       case LlamaGenerateCommand():
-        if (!state.isModelLoaded) {
+        if (!state.isModelLoaded || runtime == null) {
           send(
             message.requestId,
             const LlamaErrorResponse(
@@ -178,14 +200,21 @@ void _runInferenceWorker(_StartMessage start) {
             ),
           );
         } else {
-          send(
-            message.requestId,
-            const LlamaErrorResponse(
-              message: 'Native llama.cpp generation is not wired yet.',
-            ),
-          );
+          try {
+            for (final response in runtime.generate(command)) {
+              send(message.requestId, response);
+            }
+          } on NativeLlamaException catch (error) {
+            send(message.requestId, LlamaErrorResponse(message: error.message));
+          } on Object catch (error) {
+            send(
+              message.requestId,
+              LlamaErrorResponse(message: 'Generation failed: $error'),
+            );
+          }
         }
       case LlamaDisposeCommand():
+        runtime?.disposeModel();
         state = const LlamaState.empty();
         send(message.requestId, LlamaStateChangedResponse(state: state));
         send(message.requestId, const LlamaDoneResponse());

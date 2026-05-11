@@ -176,6 +176,7 @@ jobs:
     timeout-minutes: 75
     env:
       ANDROID_ABI: x86_64
+      LIB_LLAMA_CPP_TEST_MODEL: /data/local/tmp/lib_llama_cpp_e2e/model.gguf
 
     steps:
       - name: Checkout
@@ -236,7 +237,7 @@ jobs:
           fi
           echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
 
-      - name: Run Android real model E2E
+      - name: Run Android plugin-backed real model E2E
         timeout-minutes: 35
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -252,7 +253,7 @@ jobs:
           disable-animations: true
           script: |
             bash .github/scripts/android-real-model-smoke.sh
-            cd example && flutter test integration_test/mobile_smoke_test.dart -d "${ANDROID_EMULATOR_ID:-emulator-5554}"
+            bash -lc 'cd example && flutter test --dart-define=LIB_LLAMA_CPP_TEST_MODEL="$LIB_LLAMA_CPP_TEST_MODEL" --dart-define=LIB_LLAMA_CPP_TEST_PROMPT="$SMOKE_PROMPT" --dart-define=LIB_LLAMA_CPP_TEST_TOKENS="$SMOKE_TOKENS" integration_test/mobile_smoke_test.dart -d "${ANDROID_EMULATOR_ID:-emulator-5554}"'
 
   ios-real-model-smoke:
     name: Real model smoke (ios)
@@ -311,10 +312,17 @@ jobs:
         shell: bash
         run: bash .github/scripts/ios-real-model-smoke.sh
 
-      - name: Run iOS Flutter integration smoke
+      - name: Run iOS plugin-backed integration smoke
         timeout-minutes: 15
         shell: bash
-        run: cd example && flutter test integration_test/mobile_smoke_test.dart -d "$IOS_SIMULATOR_ID"
+        run: |
+          cd example
+          flutter test \
+            --dart-define=LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+            --dart-define=LIB_LLAMA_CPP_TEST_PROMPT="$SMOKE_PROMPT" \
+            --dart-define=LIB_LLAMA_CPP_TEST_TOKENS="$SMOKE_TOKENS" \
+            integration_test/mobile_smoke_test.dart \
+            -d "$IOS_SIMULATOR_ID"
 
   flutter-platform-builds:
     name: Flutter platform build (${{ matrix.platform }})

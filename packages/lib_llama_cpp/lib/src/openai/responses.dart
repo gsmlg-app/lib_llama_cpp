@@ -100,12 +100,12 @@ final class LlamaResponseFailed extends LlamaResponseStreamEvent {
 final class LlamaResponsesResource {
   const LlamaResponsesResource({
     required LlamaModelResolver resolveModel,
-    required LibLlamaCpp engine,
+    required LlamaEngine engine,
   }) : _resolveModel = resolveModel,
        _engine = engine;
 
   final LlamaModelResolver _resolveModel;
-  final LibLlamaCpp _engine;
+  final LlamaEngine _engine;
 
   Future<LlamaResponseObject> create({
     required String model,
@@ -136,7 +136,13 @@ final class LlamaResponsesResource {
         contextSize: config.contextSize,
         gpuLayerCount: config.gpuLayerCount,
       ),
-      LlamaGenerateCommand(prompt: prompt, maxTokens: maxOutputTokens),
+      LlamaGenerateCommand(
+        prompt: prompt,
+        maxTokens: maxOutputTokens,
+        temperature: temperature,
+        topP: topP,
+        stop: stop,
+      ),
       const LlamaDisposeCommand(),
     ]);
 
@@ -221,7 +227,13 @@ final class LlamaResponsesResource {
           contextSize: config.contextSize,
           gpuLayerCount: config.gpuLayerCount,
         ),
-        LlamaGenerateCommand(prompt: prompt, maxTokens: maxOutputTokens),
+        LlamaGenerateCommand(
+          prompt: prompt,
+          maxTokens: maxOutputTokens,
+          temperature: temperature,
+          topP: topP,
+          stop: stop,
+        ),
         const LlamaDisposeCommand(),
       ]);
 

@@ -7,7 +7,7 @@ import 'responses.dart';
 final class LlamaOpenAIClient {
   LlamaOpenAIClient({
     required Map<String, LlamaModelConfig> models,
-    LibLlamaCpp engine = const LibLlamaCpp(),
+    LlamaEngine engine = const LibLlamaCpp(),
   }) : _models = Map.unmodifiable(models) {
     responses = LlamaResponsesResource(
       resolveModel: _resolveModel,

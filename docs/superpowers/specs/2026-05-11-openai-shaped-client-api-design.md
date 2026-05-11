@@ -227,21 +227,17 @@ The OpenAI-shaped client should call the existing command stream API internally.
 The command stream remains useful for low-level lifecycle tests and advanced
 callers.
 
-## Current Native Generation Constraint
+## Plugin-Backed Generation Target
 
-The current generation worker emits:
+The OpenAI-shaped facade should be tested around request mapping, response
+shape, errors, event ordering, and successful token output. Unit tests can use a
+fake `LlamaEngine` to emit `LlamaTokenResponse` values, while opt-in smoke tests
+use a real app-supplied GGUF path to exercise plugin-backed inference.
 
-```text
-Native llama.cpp generation is not wired yet.
-```
-
-The OpenAI-shaped facade can be implemented and tested around request mapping,
-response shape, errors, and event ordering, but successful text generation will
-remain blocked until native generation emits `LlamaTokenResponse` values.
-
-Until then, `responses.create(...)` should map lower-level
-`LlamaErrorResponse` to a failed `LlamaOpenAIException`, and
-`responses.stream(...)` should emit `response.failed`.
+`responses.create(...)` should join token responses into `outputText`.
+`responses.stream(...)` should emit token deltas, text done, and completed
+events. Runtime failures should still map lower-level `LlamaErrorResponse`
+values to `generation_failed`.
 
 ## Testing Strategy
 
@@ -250,11 +246,14 @@ Add focused tests under `packages/lib_llama_cpp/test/`:
 - model registry resolves `model` strings to local paths
 - unknown model fails before native library resolution
 - `responses.create` maps string input to load/generate/dispose commands
+- `responses.create` maps fake token output to completed OpenAI-shaped output
 - `responses.create` maps lower-level generation errors to OpenAI-shaped errors
-- `responses.stream` emits created then failed while generation is unwired
+- `responses.stream` emits created, token deltas, text done, and completed
 - chat completions adapter maps messages to Responses input
 - unsupported fields fail with `unsupported_parameter`
 - existing `LibLlamaCpp.transform(...)` tests continue to pass
+- mobile smoke runs only when `LIB_LLAMA_CPP_TEST_MODEL` is supplied by
+  dart-define or the test environment
 
 Run scoped verification:
 

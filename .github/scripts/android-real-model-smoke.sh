@@ -2,7 +2,8 @@
 set -euo pipefail
 
 device_id="${ANDROID_EMULATOR_ID:-emulator-5554}"
-remote_dir="/data/local/tmp/lib_llama_cpp_e2e"
+remote_model_path="${LIB_LLAMA_CPP_TEST_MODEL:-/data/local/tmp/lib_llama_cpp_e2e/model.gguf}"
+remote_dir="$(dirname "$remote_model_path")"
 tokens="${SMOKE_TOKENS:-4}"
 
 : "${MODEL_PATH:?MODEL_PATH must point to the verified GGUF model}"
@@ -39,18 +40,18 @@ wait_for_service activity
 
 adb -s "$device_id" shell "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
 adb -s "$device_id" push "$llama_bin" "$remote_dir/$llama_tool"
-adb -s "$device_id" push "$MODEL_PATH" "$remote_dir/model.gguf"
+adb -s "$device_id" push "$MODEL_PATH" "$remote_model_path"
 adb -s "$device_id" shell "chmod 755 '$remote_dir/$llama_tool'"
 
 remote_prompt="$(printf '%q' "$SMOKE_PROMPT")"
 if [[ "$llama_tool" == "llama-cli" ]]; then
   adb -s "$device_id" shell \
-    "cd '$remote_dir' && ./llama-cli -m model.gguf -p $remote_prompt -n $tokens --temp 0 --single-turn" \
+    "cd '$remote_dir' && ./llama-cli -m '$remote_model_path' -p $remote_prompt -n $tokens --temp 0 --single-turn" \
     2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
   grep -Eq 'Generation:' "$RUNNER_TEMP/android-llama-output.txt"
 else
   adb -s "$device_id" shell \
-    "cd '$remote_dir' && ./llama-simple -m model.gguf -p $remote_prompt" \
+    "cd '$remote_dir' && ./llama-simple -m '$remote_model_path' -p $remote_prompt" \
     2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
   test -s "$RUNNER_TEMP/android-llama-output.txt"
 fi

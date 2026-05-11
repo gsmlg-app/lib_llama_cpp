@@ -25,8 +25,5 @@ final class LibLlamaCppIos extends LibLlamaCppPlatform {
     );
   }
 
-  static const _capabilities = {
-    LlamaCppLibraryCapability.cpu,
-    LlamaCppLibraryCapability.metal,
-  };
+  static const _capabilities = {LlamaCppLibraryCapability.cpu};
 }

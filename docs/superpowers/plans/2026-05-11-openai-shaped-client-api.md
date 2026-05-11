@@ -215,36 +215,33 @@ Expected: pass. The test uses an unknown model, so `create` should throw
 - Modify: `packages/lib_llama_cpp/lib/src/openai/responses.dart`
 - Modify: `packages/lib_llama_cpp/test/openai_client_test.dart`
 
-- [ ] **Step 1: Add tests for command mapping and unwired generation errors**
+- [ ] **Step 1: Add tests for command mapping and token output**
 
 Append to `packages/lib_llama_cpp/test/openai_client_test.dart`:
 
 ```dart
   group('responses.create', () {
-    test('returns a failed generation exception while native generation is unwired', () async {
+    test('maps streamed tokens into a completed response', () async {
+      final engine = ScriptedLlamaEngine([
+        const LlamaTokenResponse(text: 'Hello', index: 0),
+        const LlamaTokenResponse(text: ' world', index: 1),
+        const LlamaDoneResponse(),
+      ]);
       final client = LlamaOpenAIClient(
         models: {
           'local': const LlamaModelConfig(modelPath: '/models/local.gguf'),
         },
-        engine: const LibLlamaCpp(),
+        engine: engine,
       );
 
-      await expectLater(
-        client.responses.create(
-          model: 'local',
-          input: 'Write one sentence.',
-          maxOutputTokens: 16,
-        ),
-        throwsA(
-          isA<LlamaOpenAIException>()
-              .having((error) => error.code, 'code', 'generation_failed')
-              .having(
-                (error) => error.message,
-                'message',
-                contains('Native llama.cpp generation is not wired yet.'),
-              ),
-        ),
+      final response = await client.responses.create(
+        model: 'local',
+        input: 'Write one sentence.',
+        maxOutputTokens: 16,
       );
+
+      expect(response.status, 'completed');
+      expect(response.outputText, 'Hello world');
     });
   });
 ```
@@ -460,8 +457,8 @@ Run:
 flutter test packages/lib_llama_cpp/test/openai_client_test.dart
 ```
 
-Expected: pass. The successful generation path is not expected yet because the
-current engine returns `Native llama.cpp generation is not wired yet.`
+Expected: pass. Successful generation is covered with a fake `LlamaEngine` that
+emits `LlamaTokenResponse` values.
 
 ## Task 3: Implement `client.responses.stream(...)`
 
@@ -474,11 +471,17 @@ current engine returns `Native llama.cpp generation is not wired yet.`
 Append to `packages/lib_llama_cpp/test/openai_client_test.dart`:
 
 ```dart
-    test('stream emits created then failed while native generation is unwired', () async {
+    test('stream emits token deltas and a completed event', () async {
+      final engine = ScriptedLlamaEngine([
+        const LlamaTokenResponse(text: 'Hi', index: 0),
+        const LlamaTokenResponse(text: ' there', index: 1),
+        const LlamaDoneResponse(),
+      ]);
       final client = LlamaOpenAIClient(
         models: {
           'local': const LlamaModelConfig(modelPath: '/models/local.gguf'),
         },
+        engine: engine,
       );
 
       final events = await client.responses
@@ -486,10 +489,13 @@ Append to `packages/lib_llama_cpp/test/openai_client_test.dart`:
           .toList();
 
       expect(events.first.type, 'response.created');
-      expect(events.last.type, 'response.failed');
       expect(
-        (events.last as LlamaResponseFailed).error.message,
-        contains('Native llama.cpp generation is not wired yet.'),
+        events.whereType<LlamaResponseOutputTextDelta>().map((event) => event.delta),
+        ['Hi', ' there'],
+      );
+      expect(
+        events.whereType<LlamaResponseCompleted>().single.response.outputText,
+        'Hi there',
       );
     });
 ```
@@ -877,14 +883,14 @@ Use `LibLlamaCpp.transform(...)` directly when you need command-level lifecycle
 control or focused tests around model loading, generation, and disposal.
 ```
 
-- [ ] **Step 4: State the native generation limit**
+- [ ] **Step 4: State model ownership and smoke-test contract**
 
-Keep this exact warning in the README:
+Keep this model ownership note in the README:
 
 ```markdown
-Native llama.cpp model loading, generation, and token streaming are still under
-active development. Until the inference worker emits real token responses,
-OpenAI-shaped generation calls fail with `generation_failed`.
+Model files are always supplied by the host app or CI runner. The package
+accepts app-accessible GGUF paths for plugin-backed loading and generation, but
+does not download, cache, or verify models at runtime.
 ```
 
 - [ ] **Step 5: Update workspace README**

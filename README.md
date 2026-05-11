@@ -42,9 +42,9 @@ final response = await client.responses.create(
 The lower-level `LibLlamaCpp.transform(...)` command stream remains available
 for lifecycle control and engine tests.
 
-Native llama.cpp model loading, generation, and token streaming are still under
-active development. Until the inference worker emits real token responses,
-OpenAI-shaped generation calls fail with `generation_failed`.
+Model files are always supplied by the host app or CI runner. The package
+accepts app-accessible GGUF paths for plugin-backed loading and generation, but
+does not download, cache, or verify models at runtime.
 
 See `packages/lib_llama_cpp/README.md` for constructor signatures, request and
 response payloads, platform library resolution, and current behavior details.
@@ -61,6 +61,18 @@ melos bootstrap
 melos run analyze
 melos run test
 ```
+
+Opt-in real-model smoke tests require a pre-existing GGUF file:
+
+```sh
+cd example
+flutter test \
+  --dart-define=LIB_LLAMA_CPP_TEST_MODEL=/absolute/path/to/model.gguf \
+  integration_test/mobile_smoke_test.dart -d <device-id>
+```
+
+CI workflows that run this smoke download and verify the model in the runner
+before passing the path to Flutter with `--dart-define`.
 
 Regenerate FFI bindings after changing the pinned llama.cpp header:
 

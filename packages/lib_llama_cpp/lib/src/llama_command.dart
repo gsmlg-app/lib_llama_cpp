@@ -36,25 +36,44 @@ final class LlamaLoadModelCommand extends LlamaCommand {
 }
 
 final class LlamaGenerateCommand extends LlamaCommand {
-  const LlamaGenerateCommand({required this.prompt, this.maxTokens});
+  const LlamaGenerateCommand({
+    required this.prompt,
+    this.maxTokens,
+    this.temperature,
+    this.topP,
+    this.stop = const [],
+  });
 
   final String prompt;
   final int? maxTokens;
+  final double? temperature;
+  final double? topP;
+  final List<String> stop;
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         other is LlamaGenerateCommand &&
             other.prompt == prompt &&
-            other.maxTokens == maxTokens;
+            other.maxTokens == maxTokens &&
+            other.temperature == temperature &&
+            other.topP == topP &&
+            _listEquals(other.stop, stop);
   }
 
   @override
-  int get hashCode => Object.hash(prompt, maxTokens);
+  int get hashCode =>
+      Object.hash(prompt, maxTokens, temperature, topP, Object.hashAll(stop));
 
   @override
   String toString() {
-    return 'LlamaGenerateCommand(prompt: $prompt, maxTokens: $maxTokens)';
+    return 'LlamaGenerateCommand('
+        'prompt: $prompt, '
+        'maxTokens: $maxTokens, '
+        'temperature: $temperature, '
+        'topP: $topP, '
+        'stop: $stop'
+        ')';
   }
 }
 
@@ -71,4 +90,20 @@ final class LlamaDisposeCommand extends LlamaCommand {
 
   @override
   String toString() => 'LlamaDisposeCommand()';
+}
+
+bool _listEquals<T>(List<T> first, List<T> second) {
+  if (identical(first, second)) {
+    return true;
+  }
+  if (first.length != second.length) {
+    return false;
+  }
+
+  for (var i = 0; i < first.length; i += 1) {
+    if (first[i] != second[i]) {
+      return false;
+    }
+  }
+  return true;
 }
