@@ -20,6 +20,6 @@ void main() {
       descriptor.path,
       'lib_llama_cpp_macos.framework/lib_llama_cpp_macos',
     );
-    expect(descriptor.capabilities, contains(LlamaCppLibraryCapability.metal));
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 }

@@ -17,9 +17,6 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
     expect(descriptor.lookupName, 'liblib_llama_cpp_linux.so');
-    expect(
-      descriptor.capabilities,
-      contains(LlamaCppLibraryCapability.openBlas),
-    );
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 }

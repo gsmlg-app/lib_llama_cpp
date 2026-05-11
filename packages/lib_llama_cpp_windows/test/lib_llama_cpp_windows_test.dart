@@ -17,6 +17,6 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
     expect(descriptor.lookupName, 'lib_llama_cpp_windows.dll');
-    expect(descriptor.capabilities, contains(LlamaCppLibraryCapability.vulkan));
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 }

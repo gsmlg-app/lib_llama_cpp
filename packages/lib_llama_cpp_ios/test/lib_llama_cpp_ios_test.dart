@@ -17,6 +17,6 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.path);
     expect(descriptor.path, 'lib_llama_cpp_ios.framework/lib_llama_cpp_ios');
-    expect(descriptor.capabilities, contains(LlamaCppLibraryCapability.metal));
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 }
