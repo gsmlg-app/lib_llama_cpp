@@ -38,6 +38,76 @@ void main() {
       errors.single.message,
       'Native llama.cpp generation is not wired yet.',
     );
+
+    final client = LlamaOpenAIClient(
+      models: {
+        'mobile-smoke': const LlamaModelConfig(
+          modelPath: '/models/mobile-smoke.gguf',
+        ),
+      },
+    );
+
+    await expectLater(
+      client.responses
+          .create(
+            model: 'mobile-smoke',
+            input: 'Say hello in one short sentence.',
+            maxOutputTokens: 8,
+          )
+          .timeout(const Duration(seconds: 10)),
+      throwsA(
+        isA<LlamaOpenAIException>()
+            .having((error) => error.code, 'code', 'generation_failed')
+            .having(
+              (error) => error.message,
+              'message',
+              'Native llama.cpp generation is not wired yet.',
+            ),
+      ),
+    );
+
+    final events = await client.responses
+        .stream(
+          model: 'mobile-smoke',
+          input: const [
+            LlamaResponseInputItem(
+              role: 'user',
+              content: 'Say hello in one short sentence.',
+            ),
+          ],
+          maxOutputTokens: 8,
+        )
+        .timeout(const Duration(seconds: 10))
+        .toList();
+
+    expect(events.first.type, 'response.created');
+    expect(events.last, isA<LlamaResponseFailed>());
+    expect(
+      (events.last as LlamaResponseFailed).error.message,
+      'Native llama.cpp generation is not wired yet.',
+    );
+
+    await expectLater(
+      client.chat.completions
+          .create(
+            model: 'mobile-smoke',
+            messages: [
+              const LlamaChatMessage(
+                role: 'user',
+                content: 'Say hello in one short sentence.',
+              ),
+            ],
+            maxTokens: 8,
+          )
+          .timeout(const Duration(seconds: 10)),
+      throwsA(
+        isA<LlamaOpenAIException>().having(
+          (error) => error.code,
+          'code',
+          'generation_failed',
+        ),
+      ),
+    );
   });
 }
 

@@ -6,7 +6,7 @@ void main() {
     await tester.pumpWidget(const InferenceDemoApp());
 
     expect(find.text('lib_llama_cpp'), findsOneWidget);
-    expect(find.text('Run isolate stream'), findsOneWidget);
+    expect(find.text('Run OpenAI stream'), findsOneWidget);
     expect(find.text('No events yet'), findsOneWidget);
   });
 }

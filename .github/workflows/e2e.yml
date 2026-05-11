@@ -197,6 +197,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
+
       - name: Enable Linux KVM for Android emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -212,6 +219,9 @@ jobs:
       - name: Build Android llama.cpp CLI
         shell: bash
         run: bash .github/scripts/build-android-llama-cli.sh
+
+      - name: Install Dart and Flutter dependencies
+        run: dart pub get
 
       - name: Download and verify GGUF model
         shell: bash
@@ -240,7 +250,10 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
           emulator-boot-timeout: 900
           disable-animations: true
-          script: bash .github/scripts/android-real-model-smoke.sh
+          script: |
+            bash .github/scripts/android-real-model-smoke.sh
+            cd example
+            flutter test integration_test/mobile_smoke_test.dart -d "${ANDROID_EMULATOR_ID:-emulator-5554}"
 
   ios-real-model-smoke:
     name: Real model smoke (ios)
@@ -254,9 +267,19 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
+
       - name: Build iOS simulator llama.cpp CLI
         shell: bash
         run: bash .github/scripts/build-ios-sim-llama-cli.sh
+
+      - name: Install Dart and Flutter dependencies
+        run: dart pub get
 
       - name: Download and verify GGUF model
         shell: bash
@@ -287,7 +310,10 @@ jobs:
       - name: Run iOS real model E2E
         timeout-minutes: 10
         shell: bash
-        run: bash .github/scripts/ios-real-model-smoke.sh
+        run: |
+          bash .github/scripts/ios-real-model-smoke.sh
+          cd example
+          flutter test integration_test/mobile_smoke_test.dart -d "$IOS_SIMULATOR_ID"
 
   flutter-platform-builds:
     name: Flutter platform build (${{ matrix.platform }})

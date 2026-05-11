@@ -28,7 +28,11 @@ final class InferenceDemoScreen extends StatefulWidget {
 }
 
 final class _InferenceDemoScreenState extends State<InferenceDemoScreen> {
-  final _client = const LibLlamaCpp();
+  final _client = LlamaOpenAIClient(
+    models: {
+      'demo': const LlamaModelConfig(modelPath: '/models/tinyllama.gguf'),
+    },
+  );
   final _events = <String>[];
   var _isRunning = false;
 
@@ -42,18 +46,16 @@ final class _InferenceDemoScreenState extends State<InferenceDemoScreen> {
       _isRunning = true;
     });
 
-    final commands = Stream<LlamaCommand>.fromIterable([
-      const LlamaLoadModelCommand(modelPath: '/models/tinyllama.gguf'),
-      const LlamaGenerateCommand(prompt: 'Write one sentence.', maxTokens: 16),
-      const LlamaDisposeCommand(),
-    ]);
-
     try {
-      await for (final response in _client.transform(commands)) {
+      await for (final event in _client.responses.stream(
+        model: 'demo',
+        input: 'Write one sentence.',
+        maxOutputTokens: 16,
+      )) {
         if (!mounted) {
           return;
         }
-        setState(() => _events.add(response.toString()));
+        setState(() => _events.add(_describeResponseEvent(event)));
       }
     } catch (error) {
       if (mounted) {
@@ -64,6 +66,14 @@ final class _InferenceDemoScreenState extends State<InferenceDemoScreen> {
         setState(() => _isRunning = false);
       }
     }
+  }
+
+  String _describeResponseEvent(LlamaResponseStreamEvent event) {
+    return switch (event) {
+      LlamaResponseOutputTextDelta(:final delta) => '${event.type}: $delta',
+      LlamaResponseFailed(:final error) => '${event.type}: ${error.message}',
+      _ => event.type,
+    };
   }
 
   @override
@@ -84,7 +94,7 @@ final class _InferenceDemoScreenState extends State<InferenceDemoScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.play_arrow),
-                label: Text(_isRunning ? 'Running' : 'Run isolate stream'),
+                label: Text(_isRunning ? 'Running' : 'Run OpenAI stream'),
               ),
               const SizedBox(height: 16),
               Expanded(
