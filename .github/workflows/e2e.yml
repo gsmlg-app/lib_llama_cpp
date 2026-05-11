@@ -272,7 +272,7 @@ jobs:
         with:
           flutter-version: '3.41.7'
           channel: stable
-          cache: true
+          cache: false
 
       - name: Build iOS simulator llama.cpp CLI
         shell: bash
