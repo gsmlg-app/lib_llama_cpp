@@ -1,7 +1,7 @@
 name: lib_llama_cpp_example
 description: Example app for the lib_llama_cpp Flutter plugin.
 publish_to: none
-version: 0.2.0+1
+version: 0.3.0+1
 
 environment:
   sdk: ^3.11.5
