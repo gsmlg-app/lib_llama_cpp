@@ -354,6 +354,6 @@ jobs:
         run: |
           gh workflow run publish.yml \
             --repo "${GITHUB_REPOSITORY}" \
-            --ref "${{ inputs.git_ref }}" \
+            --ref "v${VERSION}" \
             -f version="${VERSION}" \
             -f git_ref="v${VERSION}"
