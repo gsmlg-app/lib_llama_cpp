@@ -28,6 +28,8 @@ Pod::Spec.new do |s|
       rsync -a --exclude .git "#{repo_root}/third_party/llama.cpp/" llama_cpp_sources/llama.cpp/
       perl -0pi -e 's/#include "unicode.h"/#include "..\\/unicode.h"/' \
         llama_cpp_sources/llama.cpp/common/jinja/value.cpp
+      perl -0pi -e 's/\\bDEBUG\\b/MTMD_AUDIO_DEBUG/g' \
+        llama_cpp_sources/llama.cpp/tools/mtmd/mtmd-audio.cpp
       mkdir -p llama_cpp_sources/lib_llama_cpp_ffi
       rsync -a "#{repo_root}/packages/lib_llama_cpp_ffi/include" llama_cpp_sources/lib_llama_cpp_ffi/
       rsync -a "#{repo_root}/packages/lib_llama_cpp_ffi/src" llama_cpp_sources/lib_llama_cpp_ffi/
