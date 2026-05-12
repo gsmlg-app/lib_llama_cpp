@@ -60,6 +60,9 @@ Pod::Spec.new do |s|
       'llama_cpp_sources/llama.cpp/ggml/src/ggml-cpu/*.{c,cpp}',
     ]
     s.exclude_files = [
+      'llama_cpp_sources/llama.cpp/common/arg.cpp',
+      'llama_cpp_sources/llama.cpp/common/download.cpp',
+      'llama_cpp_sources/llama.cpp/common/hf-cache.cpp',
       'llama_cpp_sources/llama.cpp/tools/mtmd/deprecation-warning.cpp',
       'llama_cpp_sources/llama.cpp/tools/mtmd/mtmd-cli.cpp',
     ]
