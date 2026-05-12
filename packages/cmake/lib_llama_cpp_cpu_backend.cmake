@@ -56,6 +56,9 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
   set(CMAKE_SKIP_INSTALL_RULES ON)
   add_subdirectory("${_llama_cpp_dir}" "${CMAKE_CURRENT_BINARY_DIR}/llama_cpp" EXCLUDE_FROM_ALL)
   if(EXISTS "${_llama_cpp_dir}/tools/mtmd/CMakeLists.txt" AND NOT TARGET mtmd)
+    if(NOT DEFINED LLAMA_INSTALL_VERSION OR "${LLAMA_INSTALL_VERSION}" STREQUAL "")
+      set(LLAMA_INSTALL_VERSION "0.0.0")
+    endif()
     add_subdirectory(
       "${_llama_cpp_dir}/tools/mtmd"
       "${CMAKE_CURRENT_BINARY_DIR}/llama_cpp/tools/mtmd"
