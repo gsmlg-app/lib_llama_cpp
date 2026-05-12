@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 set(PROJECT_NAME "lib_llama_cpp_macos")
-project(${PROJECT_NAME} LANGUAGES CXX)
+project(${PROJECT_NAME} LANGUAGES C CXX OBJC ASM)
 
 set(LIB_LLAMA_CPP_CMAKE_HELPER "")
 set(_lib_llama_cpp_search_dir "${CMAKE_CURRENT_SOURCE_DIR}")
