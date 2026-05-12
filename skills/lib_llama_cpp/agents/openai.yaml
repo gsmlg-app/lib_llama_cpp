@@ -1,4 +1,4 @@
 interface:
   display_name: "lib_llama_cpp"
-  short_description: "Use the lib_llama_cpp Flutter plugin"
-  default_prompt: "Use $lib-llama-cpp to integrate llama.cpp inference in a Flutter app."
+  short_description: "Work on the lib_llama_cpp Flutter plugin"
+  default_prompt: "Use $lib-llama-cpp to work on the lib_llama_cpp Flutter plugin."

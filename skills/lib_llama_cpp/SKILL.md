@@ -1,17 +1,19 @@
 ---
 name: lib-llama-cpp
-description: Use when integrating, demonstrating, testing, or explaining the lib_llama_cpp Flutter plugin package in this repository. Covers the app-facing Dart API, command/response stream contract, model loading and disposal flow, platform library resolution, and current implementation limits for llama.cpp inference.
+description: Use when integrating, modifying, testing, or explaining the lib_llama_cpp Flutter plugin workspace in this repository. Covers the app-facing Dart API, OpenAI-style local client, command/response stream contract, native llama.cpp runtime, model loading and disposal flow, platform library resolution, GPU backend support for Metal/CUDA/Vulkan, and repo-specific verification workflow.
 ---
 
 # lib_llama_cpp
 
 ## Overview
 
-Use this skill when a task asks how to consume the `lib_llama_cpp` package from a Flutter app or how to explain its public API. Prefer the app-facing `package:lib_llama_cpp/lib_llama_cpp.dart` facade unless the task explicitly asks for platform internals or low-level FFI bindings.
+Use this skill when a task touches the `lib_llama_cpp` federated Flutter plugin workspace. Prefer the app-facing `package:lib_llama_cpp/lib_llama_cpp.dart` facade unless the task explicitly asks for platform internals, native build metadata, or low-level FFI bindings.
+
+Before reading source in this repo, read `graphify-out/GRAPH_REPORT.md`. If code edits touch a function, class, or method, run GitNexus impact analysis for that symbol before editing and run GitNexus change detection before committing.
 
 ## Usage Pattern
 
-Drive inference as a command stream and consume responses as a response stream:
+For direct lifecycle control, drive inference as a command stream and consume responses as a response stream:
 
 ```dart
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
@@ -51,17 +53,26 @@ await for (final response in client.transform(commands)) {
 The required lifecycle is:
 
 1. Send `LlamaLoadModelCommand` with an app-accessible GGUF path.
-2. Send one or more `LlamaGenerateCommand` values after the model is loaded.
+2. Send one or more `LlamaGenerateCommand` or `LlamaGenerateMessagesCommand` values after the model is loaded.
 3. Send `LlamaDisposeCommand` to release state and end the stream.
+
+For OpenAI-shaped app code, use `LlamaOpenAIClient` with `LlamaModelConfig` instead of manually constructing lifecycle commands.
 
 ## Public API
 
 - `LibLlamaCpp().transform(commands, initialState, libraryRequest)` resolves the platform native library, starts the inference isolate, emits `LlamaReadyResponse`, then dispatches each command.
-- `LlamaLoadModelCommand` carries `modelPath`, optional `contextSize`, and optional `gpuLayerCount`.
-- `LlamaGenerateCommand` carries `prompt` and optional `maxTokens`.
+- `LlamaOpenAIClient` exposes Responses-style and Chat Completions-style local facades over the same engine.
+- `LlamaModelConfig` carries `modelPath`, optional `contextSize`, `gpuLayerCount`, `mmprojPath`, `mmprojUseGpu`, and image token bounds.
+- `LlamaLoadModelCommand` carries `modelPath`, optional `contextSize`, optional `gpuLayerCount`, and optional multimodal projector options.
+- `LlamaGenerateCommand` carries `prompt`, optional `maxTokens`, `temperature`, `topP`, and `stop`.
+- `LlamaGenerateMessagesCommand` applies the model chat template and supports typed multimodal content and tool definitions.
 - `LlamaDisposeCommand` resets state and should be the final command in normal app flows.
-- `LlamaState` currently tracks `modelPath` and `isModelLoaded`.
-- `LlamaResponse` variants are `LlamaReadyResponse`, `LlamaStateChangedResponse`, `LlamaTokenResponse`, `LlamaErrorResponse`, and `LlamaDoneResponse`.
+- `LlamaState` tracks `modelPath`, `isModelLoaded`, and model capabilities.
+- `LlamaResponse` variants include ready/state/token/error/done responses plus tool-call responses.
+
+## Native Runtime
+
+The Dart runtime path is implemented. `NativeLlamaRuntime` initializes llama.cpp, loads GGUF models with `llama_model_load_from_file`, applies `gpuLayerCount` to `llama_model_params.n_gpu_layers`, creates a context, tokenizes, decodes, samples, and streams token responses. Do not describe generation as scaffolded or stubbed in this branch.
 
 ## Library Resolution
 
@@ -79,25 +90,27 @@ final responses = client.transform(
 
 Platform defaults are resolved by the federated packages:
 
-- Android: lookup name `liblib_llama_cpp_android.so`, capabilities `cpu`, `vulkan`.
+- Android: lookup name `liblib_llama_cpp_android.so`, capabilities `cpu`.
 - iOS: framework path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios`, capabilities `cpu`, `metal`.
 - macOS: framework path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos`, capabilities `cpu`, `metal`.
-- Linux: lookup name `liblib_llama_cpp_linux.so`, capabilities `cpu`, `openBlas`, `vulkan`.
-- Windows: lookup name `lib_llama_cpp_windows.dll`, capabilities `cpu`, `vulkan`.
+- Linux: lookup name `liblib_llama_cpp_linux.so`, capabilities `cpu`.
+- Windows: lookup name `lib_llama_cpp_windows.dll`, capabilities `cpu`.
 
-## Current Limits
+Bundled libraries reject unsupported `requiredCapabilities`. When `preferredPath` is set, the descriptor reports `cpu` plus the requested capabilities so apps can route to caller-provided GPU builds.
 
-Check current implementation before promising real token streaming from the Dart facade. At this repo state, `InferenceIsolate` models the actor boundary and lifecycle, but native generation is still scaffolded: generation after loading a model emits `LlamaErrorResponse(message: 'Native llama.cpp generation is not wired yet.')`.
+## GPU Backend Builds
 
-Use the GitHub E2E workflow scripts when validating real llama.cpp binary inference outside the Dart facade:
+Native source/prebuilt builds use `packages/cmake/lib_llama_cpp_cpu_backend.cmake`:
 
-- `.github/scripts/android-real-model-smoke.sh`
-- `.github/scripts/ios-real-model-smoke.sh`
-- `.github/workflows/e2e.yml`
+- Apple builds enable Metal by default and embed the Metal source library.
+- Linux and Windows builds can opt into CUDA with `LIB_LLAMA_CPP_ENABLE_CUDA=ON` when CUDA Toolkit is available.
+- Linux, Windows, and Android builds can opt into Vulkan with `LIB_LLAMA_CPP_ENABLE_VULKAN=ON` when the Vulkan SDK and `glslc` are available.
+- Use `LIB_LLAMA_CPP_CMAKE_ARGS` for extra CMake arguments in native prebuilt scripts.
+- Do not hand-edit generated FFI bindings; update headers or `ffigen.yaml` and regenerate when bindings are actually missing.
 
 ## Testing Guidance
 
-For unit tests, inject a fake platform instead of loading a real dynamic library:
+For unit tests, inject a fake platform instead of loading a real dynamic library. Platform resolver tests live under each federated package. OpenAI/client command mapping tests live in `packages/lib_llama_cpp/test`.
 
 ```dart
 final class FakePlatform extends LibLlamaCppPlatform
@@ -123,6 +136,15 @@ Prefer assertions on response order:
 - load emits `LlamaStateChangedResponse(isModelLoaded: true)`
 - generation before load emits `LlamaErrorResponse`
 - dispose emits `LlamaStateChangedResponse(LlamaState.empty())` then `LlamaDoneResponse`
+
+Use scoped verification:
+
+- Run `dart analyze .` or `flutter analyze` from the touched package.
+- Run package-local tests from the package directory.
+- Run `ruby -c` for changed podspecs.
+- Run `bash -n` for changed shell scripts and extracted podspec prepare commands when applicable.
+- Run native CMake configure/build checks when `cmake` and the required SDKs are installed; otherwise report the missing tool explicitly.
+- Run `graphify update .` after code changes.
 
 ## App Integration Notes
 
