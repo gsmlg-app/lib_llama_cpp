@@ -19,6 +19,10 @@ on:
 env:
   MODEL_URL: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct.Q4_0.gguf?download=true
   MODEL_SHA256: f68203bfb98b1b1e8c64fac75fab10c4e36acac081609573b4df0fcc19c90dd9
+  GEMMA4_E2B_MODEL_URL: https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/main/google-gemma-4-E2B-it-Q4_K_M.gguf
+  GEMMA4_E2B_MODEL_SHA256: e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64
+  GEMMA4_E2B_MMPROJ_URL: https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/main/mmproj-BF16.gguf
+  GEMMA4_E2B_MMPROJ_SHA256: e8b6533e68c0e2b18c57e1cb570ded27a0d70f3421745125bdb210bf5cd4f1c6
   SMOKE_PROMPT: Say hello in one short sentence.
   SMOKE_TOKENS: '4'
 
@@ -168,6 +172,58 @@ jobs:
             Write-Error "Model output did not contain llama.cpp generation timing."
             exit 1
           }
+
+  gemma4-e2b-api-e2e:
+    name: Gemma 4 E2B API E2E (linux)
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
+
+      - name: Install Dart dependencies
+        run: dart pub get
+
+      - name: Build Linux native library
+        shell: bash
+        run: |
+          bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
+          library_path="$RUNNER_TEMP/prebuilt/linux/x64/liblib_llama_cpp_linux.so"
+          test -f "$library_path"
+          echo "LIB_LLAMA_CPP_TEST_LIBRARY=$library_path" >> "$GITHUB_ENV"
+
+      - name: Download and verify Gemma 4 E2B model and projector
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/models"
+          model_path="$RUNNER_TEMP/models/google-gemma-4-E2B-it-Q4_K_M.gguf"
+          mmproj_path="$RUNNER_TEMP/models/mmproj-BF16.gguf"
+          curl -L --fail --retry 3 --retry-delay 10 "$GEMMA4_E2B_MODEL_URL" -o "$model_path"
+          curl -L --fail --retry 3 --retry-delay 10 "$GEMMA4_E2B_MMPROJ_URL" -o "$mmproj_path"
+          echo "$GEMMA4_E2B_MODEL_SHA256  $model_path" | sha256sum -c -
+          echo "$GEMMA4_E2B_MMPROJ_SHA256  $mmproj_path" | sha256sum -c -
+          echo "LIB_LLAMA_CPP_TEST_MODEL=$model_path" >> "$GITHUB_ENV"
+          echo "LIB_LLAMA_CPP_TEST_MMPROJ=$mmproj_path" >> "$GITHUB_ENV"
+
+      - name: Run Gemma 4 E2B multimodal and tool E2E
+        timeout-minutes: 45
+        run: dart test packages/lib_llama_cpp/test/real_model_e2e_test.dart -r expanded
 
   android-real-model-smoke:
     name: Real model smoke (android)

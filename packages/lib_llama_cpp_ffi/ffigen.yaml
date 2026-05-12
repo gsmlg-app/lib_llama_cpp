@@ -1,34 +1,56 @@
 name: LlamaCppBindings
 description: Generated bindings for llama.cpp.
 output: lib/src/generated/llama_cpp_bindings.g.dart
+preamble: |
+  // ignore_for_file: unused_element, unused_field
 headers:
   entry-points:
-    - ../../third_party/llama.cpp/include/llama.h
+    - include/lib_llama_cpp_bindings.h
+  include-directives:
+    - '**/lib_llama_cpp_bindings.h'
+    - '**/lib_llama_cpp_wrapper.h'
+    - '**/llama.h'
+    - '**/ggml*.h'
+    - '**/mtmd*.h'
 compiler-opts:
+  - -Iinclude
   - -I../../third_party/llama.cpp/include
   - -I../../third_party/llama.cpp/ggml/include
+  - -I../../third_party/llama.cpp/common
+  - -I../../third_party/llama.cpp/tools/mtmd
+  - -I../../third_party/llama.cpp/vendor
 functions:
   include:
     - llama_.*
+    - mtmd_.*
+    - lib_llama_cpp_.*
 structs:
   include:
     - llama_.*
+    - mtmd_.*
+    - lib_llama_cpp_.*
     - ggml_.*
     - gguf_.*
 enums:
   include:
     - llama_.*
+    - mtmd_.*
+    - lib_llama_cpp_.*
     - ggml_.*
     - gguf_.*
 typedefs:
   include:
     - llama_.*
+    - mtmd_.*
+    - lib_llama_cpp_.*
     - ggml_.*
     - gguf_.*
 globals:
   include:
     - LLAMA_.*
     - llama_.*
+    - MTMD_.*
+    - mtmd_.*
 silence-enum-warning: true
 comments:
   style: any

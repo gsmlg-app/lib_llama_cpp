@@ -69,6 +69,73 @@ final completion = await client.chat.completions.create(
 print(completion.choices.first.message.content);
 ```
 
+## Multimodal Input
+
+Image and audio inputs use llama.cpp `mtmd` and require a matching multimodal
+projector file:
+
+```dart
+final client = LlamaOpenAIClient(
+  models: {
+    'vision': const LlamaModelConfig(
+      modelPath: '/path/to/model.gguf',
+      mmprojPath: '/path/to/mmproj.gguf',
+    ),
+  },
+);
+
+final response = await client.responses.create(
+  model: 'vision',
+  input: [
+    const LlamaResponseInputItem(
+      role: 'user',
+      content: [
+        LlamaTextPart('Describe this image.'),
+        LlamaImageFilePart(path: '/path/to/image.png'),
+      ],
+    ),
+  ],
+);
+```
+
+Byte parts accept encoded media bytes, such as PNG/JPEG/WAV/MP3/FLAC file
+bytes. Raw pixels and raw audio samples are not part of the v1 Dart API. Remote
+media URLs and first-class video decoding are not supported; apps can represent
+video by extracting frames and sending multiple image parts.
+
+## Tool Calling
+
+Tool calling is model-generated only. The package streams structured tool-call
+events and returns `requires_action`; apps execute tools externally and send a
+follow-up request with tool result messages.
+
+```dart
+final events = client.responses.stream(
+  model: 'local',
+  input: 'Use search when needed.',
+  tools: const [
+    LlamaTool(
+      name: 'search',
+      description: 'Search local app data.',
+      parameters: {
+        'type': 'object',
+        'properties': {
+          'query': {'type': 'string'},
+        },
+        'required': ['query'],
+      },
+    ),
+  ],
+);
+
+await for (final event in events) {
+  if (event case LlamaResponseToolCallDone(:final toolCall)) {
+    // Execute the tool in the app, then send a follow-up request with a
+    // LlamaChatMessage(role: 'tool', content: result, toolCallId: toolCall.id).
+  }
+}
+```
+
 ## Advanced Lifecycle API
 
 Use `LibLlamaCpp.transform(...)` directly when you need command-level lifecycle
@@ -134,8 +201,9 @@ omit both and rely on federated plugin registration.
 
 | Command | Fields | Current behavior |
 | --- | --- | --- |
-| `LlamaLoadModelCommand` | `modelPath`, `contextSize`, `gpuLayerCount` | Loads the app-supplied GGUF model path and emits `LlamaStateChangedResponse` when the runtime state changes. |
+| `LlamaLoadModelCommand` | `modelPath`, `contextSize`, `gpuLayerCount`, `mmprojPath`, `mmprojUseGpu`, `imageMinTokens`, `imageMaxTokens` | Loads the app-supplied GGUF model path and optional multimodal projector, then emits `LlamaStateChangedResponse` when the runtime state changes. |
 | `LlamaGenerateCommand` | `prompt`, `maxTokens`, `temperature`, `topP`, `stop` | Requires a loaded model. Successful generation emits `LlamaTokenResponse` values; runtime failures emit `LlamaErrorResponse`. |
+| `LlamaGenerateMessagesCommand` | `messages`, `tools`, `toolChoice`, `parallelToolCalls`, sampling fields | Applies the model chat template, evaluates typed media parts when present, and emits text or `LlamaToolCallResponse` values. |
 | `LlamaDisposeCommand` | none | Resets state to `LlamaState.empty()`, emits `LlamaStateChangedResponse`, then emits `LlamaDoneResponse`. |
 
 ### Responses
@@ -145,6 +213,7 @@ omit both and rely on federated plugin registration.
 | `LlamaReadyResponse` | `library`, the resolved `LlamaCppLibraryDescriptor` |
 | `LlamaStateChangedResponse` | `state`, the current `LlamaState` |
 | `LlamaTokenResponse` | `text` and zero-based `index` for token streaming |
+| `LlamaToolCallResponse` | structured tool call data emitted by message generation |
 | `LlamaErrorResponse` | `message` |
 | `LlamaDoneResponse` | none |
 
@@ -153,11 +222,16 @@ omit both and rely on federated plugin registration.
 `LlamaState` tracks the app-facing inference lifecycle:
 
 ```dart
-const LlamaState({String? modelPath, bool isModelLoaded = false});
+const LlamaState({
+  String? modelPath,
+  bool isModelLoaded = false,
+  LlamaModelCapabilities capabilities = const LlamaModelCapabilities(),
+});
 const LlamaState.empty();
 ```
 
-It also provides `copyWith({String? modelPath, bool? isModelLoaded})`.
+It also provides `copyWith({String? modelPath, bool? isModelLoaded,
+LlamaModelCapabilities? capabilities})`.
 
 ## Library Resolution
 
@@ -200,15 +274,18 @@ model files, then passing an app-accessible absolute path through
 `LlamaModelConfig.modelPath` or `LlamaLoadModelCommand.modelPath`.
 
 The example integration smoke is opt-in and runs only when a model path is
-provided:
+provided. Passing an `mmproj` path enables the multimodal and tool-use cases:
 
 ```sh
 cd example
 flutter test \
   --dart-define=LIB_LLAMA_CPP_TEST_MODEL=/absolute/path/to/model.gguf \
+  --dart-define=LIB_LLAMA_CPP_TEST_MMPROJ=/absolute/path/to/mmproj.gguf \
   integration_test/mobile_smoke_test.dart -d <device-id>
 ```
 
 For non-Flutter Dart test entrypoints, `LIB_LLAMA_CPP_TEST_MODEL` can also be
-provided through the process environment. CI should keep model download and
-checksum verification in the runner before invoking package or example tests.
+provided through the process environment, along with
+`LIB_LLAMA_CPP_TEST_LIBRARY` and `LIB_LLAMA_CPP_TEST_MMPROJ` for native e2e
+tests. CI should keep model download and checksum verification in the runner
+before invoking package or example tests.

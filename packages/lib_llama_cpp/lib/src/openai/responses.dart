@@ -1,6 +1,8 @@
 import '../lib_llama_cpp.dart';
 import '../llama_command.dart';
+import '../llama_content.dart';
 import '../llama_response.dart';
+import '../llama_tool.dart';
 import 'errors.dart';
 import 'model_config.dart';
 
@@ -17,6 +19,7 @@ final class LlamaResponseObject {
     this.error,
     this.metadata = const {},
     this.usage,
+    this.toolCalls = const [],
   });
 
   final String id;
@@ -28,12 +31,14 @@ final class LlamaResponseObject {
   final LlamaOpenAIException? error;
   final Map<String, String> metadata;
   final LlamaResponseUsage? usage;
+  final List<LlamaToolCall> toolCalls;
 }
 
 final class LlamaResponseOutputItem {
-  const LlamaResponseOutputItem({required this.text});
+  const LlamaResponseOutputItem({required this.text, this.toolCall});
 
   final String text;
+  final LlamaToolCall? toolCall;
 }
 
 final class LlamaResponseUsage {
@@ -49,10 +54,19 @@ final class LlamaResponseUsage {
 }
 
 final class LlamaResponseInputItem {
-  const LlamaResponseInputItem({required this.role, required this.content});
+  const LlamaResponseInputItem({
+    required this.role,
+    required this.content,
+    this.toolCalls = const [],
+    this.toolCallId,
+    this.name,
+  });
 
   final String role;
-  final String content;
+  final Object content;
+  final List<LlamaToolCall> toolCalls;
+  final String? toolCallId;
+  final String? name;
 }
 
 sealed class LlamaResponseStreamEvent {
@@ -97,6 +111,23 @@ final class LlamaResponseFailed extends LlamaResponseStreamEvent {
   final LlamaOpenAIException error;
 }
 
+final class LlamaResponseToolCallDone extends LlamaResponseStreamEvent {
+  const LlamaResponseToolCallDone({required this.toolCall})
+    : super(type: 'response.output_item.done');
+
+  final LlamaToolCall toolCall;
+}
+
+final class LlamaResponseRequiresAction extends LlamaResponseStreamEvent {
+  const LlamaResponseRequiresAction({
+    required this.response,
+    required this.toolCalls,
+  }) : super(type: 'response.requires_action');
+
+  final LlamaResponseObject response;
+  final List<LlamaToolCall> toolCalls;
+}
+
 final class LlamaResponsesResource {
   const LlamaResponsesResource({
     required LlamaModelResolver resolveModel,
@@ -117,6 +148,9 @@ final class LlamaResponsesResource {
     List<String> stop = const [],
     Map<String, String> metadata = const {},
     bool store = false,
+    List<LlamaTool> tools = const [],
+    LlamaToolChoice toolChoice = LlamaToolChoice.auto,
+    bool parallelToolCalls = false,
   }) async {
     if (store) {
       throw const LlamaOpenAIException(
@@ -127,29 +161,32 @@ final class LlamaResponsesResource {
     }
 
     final config = _resolveModel(model);
-    final prompt = _promptFromInput(input, instructions: instructions);
+    final messages = _messagesFromInput(input, instructions: instructions);
+    _validateCapabilities(config: config, messages: messages);
     final output = StringBuffer();
+    final toolCalls = <LlamaToolCall>[];
 
-    final commands = Stream<LlamaCommand>.fromIterable([
-      LlamaLoadModelCommand(
-        modelPath: config.modelPath,
-        contextSize: config.contextSize,
-        gpuLayerCount: config.gpuLayerCount,
-      ),
-      LlamaGenerateCommand(
-        prompt: prompt,
-        maxTokens: maxOutputTokens,
+    final commands = Stream<LlamaCommand>.fromIterable(
+      _commandsForRequest(
+        config: config,
+        messages: messages,
+        maxOutputTokens: maxOutputTokens,
         temperature: temperature,
         topP: topP,
         stop: stop,
+        tools: tools,
+        toolChoice: toolChoice,
+        parallelToolCalls: parallelToolCalls,
+        forceMessages: tools.isNotEmpty || _requiresMessageGeneration(messages),
       ),
-      const LlamaDisposeCommand(),
-    ]);
+    );
 
     await for (final response in _engine.transform(commands)) {
       switch (response) {
         case LlamaTokenResponse(:final text):
           output.write(text);
+        case LlamaToolCallResponse(:final toolCall):
+          toolCalls.add(toolCall);
         case LlamaErrorResponse(:final message):
           throw LlamaOpenAIException(
             code: 'generation_failed',
@@ -170,10 +207,15 @@ final class LlamaResponsesResource {
       id: 'resp_${now.microsecondsSinceEpoch}',
       createdAt: now,
       model: model,
-      status: 'completed',
-      output: [LlamaResponseOutputItem(text: outputText)],
+      status: toolCalls.isEmpty ? 'completed' : 'requires_action',
+      output: [
+        if (outputText.isNotEmpty) LlamaResponseOutputItem(text: outputText),
+        for (final toolCall in toolCalls)
+          LlamaResponseOutputItem(text: '', toolCall: toolCall),
+      ],
       outputText: outputText,
       metadata: metadata,
+      toolCalls: toolCalls,
       usage: const LlamaResponseUsage(
         inputTokens: 0,
         outputTokens: 0,
@@ -192,6 +234,9 @@ final class LlamaResponsesResource {
     List<String> stop = const [],
     Map<String, String> metadata = const {},
     bool store = false,
+    List<LlamaTool> tools = const [],
+    LlamaToolChoice toolChoice = LlamaToolChoice.auto,
+    bool parallelToolCalls = false,
   }) async* {
     final createdAt = DateTime.now().toUtc();
     final responseId = 'resp_${createdAt.microsecondsSinceEpoch}';
@@ -209,6 +254,7 @@ final class LlamaResponsesResource {
     );
 
     final output = StringBuffer();
+    final toolCalls = <LlamaToolCall>[];
 
     try {
       if (store) {
@@ -220,28 +266,32 @@ final class LlamaResponsesResource {
       }
 
       final config = _resolveModel(model);
-      final prompt = _promptFromInput(input, instructions: instructions);
-      final commands = Stream<LlamaCommand>.fromIterable([
-        LlamaLoadModelCommand(
-          modelPath: config.modelPath,
-          contextSize: config.contextSize,
-          gpuLayerCount: config.gpuLayerCount,
-        ),
-        LlamaGenerateCommand(
-          prompt: prompt,
-          maxTokens: maxOutputTokens,
+      final messages = _messagesFromInput(input, instructions: instructions);
+      _validateCapabilities(config: config, messages: messages);
+      final commands = Stream<LlamaCommand>.fromIterable(
+        _commandsForRequest(
+          config: config,
+          messages: messages,
+          maxOutputTokens: maxOutputTokens,
           temperature: temperature,
           topP: topP,
           stop: stop,
+          tools: tools,
+          toolChoice: toolChoice,
+          parallelToolCalls: parallelToolCalls,
+          forceMessages:
+              tools.isNotEmpty || _requiresMessageGeneration(messages),
         ),
-        const LlamaDisposeCommand(),
-      ]);
+      );
 
       await for (final response in _engine.transform(commands)) {
         switch (response) {
           case LlamaTokenResponse(:final text, :final index):
             output.write(text);
             yield LlamaResponseOutputTextDelta(delta: text, index: index);
+          case LlamaToolCallResponse(:final toolCall):
+            toolCalls.add(toolCall);
+            yield LlamaResponseToolCallDone(toolCall: toolCall);
           case LlamaErrorResponse(:final message):
             yield LlamaResponseFailed(
               error: LlamaOpenAIException(
@@ -263,6 +313,28 @@ final class LlamaResponsesResource {
     }
 
     final outputText = output.toString();
+    if (toolCalls.isNotEmpty) {
+      yield LlamaResponseRequiresAction(
+        toolCalls: toolCalls,
+        response: LlamaResponseObject(
+          id: responseId,
+          createdAt: createdAt,
+          model: model,
+          status: 'requires_action',
+          output: [
+            if (outputText.isNotEmpty)
+              LlamaResponseOutputItem(text: outputText),
+            for (final toolCall in toolCalls)
+              LlamaResponseOutputItem(text: '', toolCall: toolCall),
+          ],
+          outputText: outputText,
+          metadata: metadata,
+          toolCalls: toolCalls,
+        ),
+      );
+      return;
+    }
+
     yield LlamaResponseOutputTextDone(text: outputText);
     yield LlamaResponseCompleted(
       response: LlamaResponseObject(
@@ -282,11 +354,19 @@ final class LlamaResponsesResource {
     );
   }
 
-  String _promptFromInput(Object input, {String? instructions}) {
+  List<LlamaMessage> _messagesFromInput(Object input, {String? instructions}) {
     final body = switch (input) {
-      final String text => text,
-      final List<LlamaResponseInputItem> items =>
-        items.map((item) => '${item.role}: ${item.content}').join('\n'),
+      final String text => [LlamaMessage(role: 'user', content: text)],
+      final List<LlamaResponseInputItem> items => [
+        for (final item in items)
+          LlamaMessage(
+            role: item.role,
+            content: item.content,
+            toolCalls: item.toolCalls,
+            toolCallId: item.toolCallId,
+            name: item.name,
+          ),
+      ],
       _ => throw const LlamaOpenAIException(
         code: 'unsupported_parameter',
         message:
@@ -299,6 +379,88 @@ final class LlamaResponsesResource {
       return body;
     }
 
-    return '$instructions\n\n$body';
+    return [LlamaMessage(role: 'system', content: instructions), ...body];
+  }
+
+  Iterable<LlamaCommand> _commandsForRequest({
+    required LlamaModelConfig config,
+    required List<LlamaMessage> messages,
+    required int? maxOutputTokens,
+    required double? temperature,
+    required double? topP,
+    required List<String> stop,
+    required List<LlamaTool> tools,
+    required LlamaToolChoice toolChoice,
+    required bool parallelToolCalls,
+    required bool forceMessages,
+  }) sync* {
+    yield LlamaLoadModelCommand(
+      modelPath: config.modelPath,
+      contextSize: config.contextSize,
+      gpuLayerCount: config.gpuLayerCount,
+      mmprojPath: config.mmprojPath,
+      mmprojUseGpu: config.mmprojUseGpu,
+      imageMinTokens: config.imageMinTokens,
+      imageMaxTokens: config.imageMaxTokens,
+    );
+
+    if (forceMessages) {
+      yield LlamaGenerateMessagesCommand(
+        messages: messages,
+        maxTokens: maxOutputTokens,
+        temperature: temperature,
+        topP: topP,
+        stop: stop,
+        tools: tools,
+        toolChoice: toolChoice,
+        parallelToolCalls: parallelToolCalls,
+      );
+    } else {
+      yield LlamaGenerateCommand(
+        prompt: _promptFromMessages(messages),
+        maxTokens: maxOutputTokens,
+        temperature: temperature,
+        topP: topP,
+        stop: stop,
+      );
+    }
+
+    yield const LlamaDisposeCommand();
+  }
+
+  String _promptFromMessages(List<LlamaMessage> messages) {
+    if (messages.length == 1 && messages.single.role == 'user') {
+      return llamaContentToPlainText(messages.single.content);
+    }
+    return messages
+        .map(
+          (message) =>
+              '${message.role}: ${llamaContentToPlainText(message.content)}',
+        )
+        .join('\n');
+  }
+
+  void _validateCapabilities({
+    required LlamaModelConfig config,
+    required List<LlamaMessage> messages,
+  }) {
+    if (messages.any((message) => message.hasMedia) &&
+        config.mmprojPath == null) {
+      throw const LlamaOpenAIException(
+        code: 'unsupported_model_capability',
+        message: 'Image and audio inputs require LlamaModelConfig.mmprojPath.',
+        param: 'input',
+      );
+    }
+  }
+
+  bool _requiresMessageGeneration(List<LlamaMessage> messages) {
+    return messages.any(
+      (message) =>
+          message.hasMedia ||
+          message.toolCalls.isNotEmpty ||
+          message.toolCallId != null ||
+          message.name != null,
+    );
   }
 }

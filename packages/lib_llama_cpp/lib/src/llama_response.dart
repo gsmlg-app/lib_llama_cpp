@@ -1,6 +1,7 @@
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 
 import 'llama_state.dart';
+import 'llama_tool.dart';
 
 sealed class LlamaResponse {
   const LlamaResponse();
@@ -61,6 +62,24 @@ final class LlamaTokenResponse extends LlamaResponse {
 
   @override
   String toString() => 'LlamaTokenResponse(text: $text, index: $index)';
+}
+
+final class LlamaToolCallResponse extends LlamaResponse {
+  const LlamaToolCallResponse({required this.toolCall});
+
+  final LlamaToolCall toolCall;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is LlamaToolCallResponse && other.toolCall == toolCall;
+  }
+
+  @override
+  int get hashCode => toolCall.hashCode;
+
+  @override
+  String toString() => 'LlamaToolCallResponse(toolCall: $toolCall)';
 }
 
 final class LlamaErrorResponse extends LlamaResponse {

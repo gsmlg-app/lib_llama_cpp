@@ -213,6 +213,28 @@ void _runInferenceWorker(_StartMessage start) {
             );
           }
         }
+      case LlamaGenerateMessagesCommand():
+        if (!state.isModelLoaded || runtime == null) {
+          send(
+            message.requestId,
+            const LlamaErrorResponse(
+              message: 'Cannot generate before a model is loaded.',
+            ),
+          );
+        } else {
+          try {
+            for (final response in runtime.generateMessages(command)) {
+              send(message.requestId, response);
+            }
+          } on NativeLlamaException catch (error) {
+            send(message.requestId, LlamaErrorResponse(message: error.message));
+          } on Object catch (error) {
+            send(
+              message.requestId,
+              LlamaErrorResponse(message: 'Generation failed: $error'),
+            );
+          }
+        }
       case LlamaDisposeCommand():
         runtime?.disposeModel();
         state = const LlamaState.empty();

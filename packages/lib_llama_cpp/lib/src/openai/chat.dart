@@ -1,3 +1,5 @@
+import '../llama_command.dart';
+import '../llama_tool.dart';
 import 'responses.dart';
 
 final class LlamaChatResource {
@@ -21,14 +23,29 @@ final class LlamaChatCompletionsResource {
     double? temperature,
     double? topP,
     List<String> stop = const [],
+    List<LlamaTool> tools = const [],
+    LlamaToolChoice toolChoice = LlamaToolChoice.auto,
+    bool parallelToolCalls = false,
   }) async {
     final response = await _responses.create(
       model: model,
-      input: _promptFromMessages(messages),
+      input: [
+        for (final message in messages)
+          LlamaResponseInputItem(
+            role: message.role,
+            content: message.content,
+            toolCalls: message.toolCalls,
+            toolCallId: message.toolCallId,
+            name: message.name,
+          ),
+      ],
       maxOutputTokens: maxTokens,
       temperature: temperature,
       topP: topP,
       stop: stop,
+      tools: tools,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
     );
 
     return LlamaChatCompletion(
@@ -41,25 +58,39 @@ final class LlamaChatCompletionsResource {
           message: LlamaChatMessage(
             role: 'assistant',
             content: response.outputText,
+            toolCalls: response.toolCalls,
           ),
-          finishReason: 'stop',
+          finishReason: response.toolCalls.isEmpty ? 'stop' : 'tool_calls',
         ),
       ],
     );
   }
-
-  String _promptFromMessages(List<LlamaChatMessage> messages) {
-    return messages
-        .map((message) => '${message.role}: ${message.content}')
-        .join('\n');
-  }
 }
 
 final class LlamaChatMessage {
-  const LlamaChatMessage({required this.role, required this.content});
+  const LlamaChatMessage({
+    required this.role,
+    required this.content,
+    this.toolCalls = const [],
+    this.toolCallId,
+    this.name,
+  });
 
   final String role;
-  final String content;
+  final Object content;
+  final List<LlamaToolCall> toolCalls;
+  final String? toolCallId;
+  final String? name;
+
+  LlamaMessage toLlamaMessage() {
+    return LlamaMessage(
+      role: role,
+      content: content,
+      toolCalls: toolCalls,
+      toolCallId: toolCallId,
+      name: name,
+    );
+  }
 }
 
 final class LlamaChatCompletion {

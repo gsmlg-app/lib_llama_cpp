@@ -3,7 +3,7 @@ prebuilt_framework = File.expand_path('Frameworks/lib_llama_cpp_macos.xcframewor
 
 Pod::Spec.new do |s|
   s.name             = 'lib_llama_cpp_macos'
-  s.version          = '0.1.0'
+  s.version          = '0.4.0'
   s.summary          = 'macOS native build for lib_llama_cpp.'
   s.description      = 'Builds and bundles the macOS llama.cpp FFI library.'
   s.homepage         = 'https://github.com/gsmlg-app/lib_llama_cpp'
@@ -26,15 +26,42 @@ Pod::Spec.new do |s|
       rm -rf llama_cpp_sources
       mkdir -p llama_cpp_sources
       rsync -a --exclude .git "#{repo_root}/third_party/llama.cpp/" llama_cpp_sources/llama.cpp/
+      mkdir -p llama_cpp_sources/lib_llama_cpp_ffi
+      rsync -a "#{repo_root}/packages/lib_llama_cpp_ffi/include" llama_cpp_sources/lib_llama_cpp_ffi/
+      rsync -a "#{repo_root}/packages/lib_llama_cpp_ffi/src" llama_cpp_sources/lib_llama_cpp_ffi/
+      printf '%s\n' '#include "build-info.h"' '' \
+        'int LLAMA_BUILD_NUMBER = 0;' \
+        'char const * LLAMA_COMMIT = "lib_llama_cpp";' \
+        'char const * LLAMA_COMPILER = "cocoapods";' \
+        'char const * LLAMA_BUILD_TARGET = "apple";' '' \
+        'int llama_build_number(void) { return LLAMA_BUILD_NUMBER; }' \
+        'const char * llama_commit(void) { return LLAMA_COMMIT; }' \
+        'const char * llama_compiler(void) { return LLAMA_COMPILER; }' \
+        'const char * llama_build_target(void) { return LLAMA_BUILD_TARGET; }' \
+        'const char * llama_build_info(void) { return "b0-lib_llama_cpp"; }' \
+        'void llama_print_build_info(void) {}' \
+        > llama_cpp_sources/llama.cpp/common/build-info.cpp
     CMD
     s.source_files     = [
       'Classes/**/*',
+      'llama_cpp_sources/lib_llama_cpp_ffi/src/*.cc',
       'llama_cpp_sources/llama.cpp/src/*.cpp',
       'llama_cpp_sources/llama.cpp/src/models/*.cpp',
+      'llama_cpp_sources/llama.cpp/common/*.cpp',
+      'llama_cpp_sources/llama.cpp/common/jinja/*.cpp',
+      'llama_cpp_sources/llama.cpp/tools/mtmd/*.cpp',
+      'llama_cpp_sources/llama.cpp/tools/mtmd/models/*.cpp',
       'llama_cpp_sources/llama.cpp/ggml/src/*.{c,cpp}',
       'llama_cpp_sources/llama.cpp/ggml/src/ggml-cpu/*.{c,cpp}',
     ]
-    s.preserve_paths = 'llama_cpp_sources/llama.cpp/**/*.{h,hpp}'
+    s.exclude_files = [
+      'llama_cpp_sources/llama.cpp/tools/mtmd/deprecation-warning.cpp',
+      'llama_cpp_sources/llama.cpp/tools/mtmd/mtmd-cli.cpp',
+    ]
+    s.preserve_paths = [
+      'llama_cpp_sources/llama.cpp/**/*.{h,hpp}',
+      'llama_cpp_sources/lib_llama_cpp_ffi/include/**/*.h',
+    ]
     s.pod_target_xcconfig = {
       'DEFINES_MODULE' => 'YES',
       'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) DART_SHARED_LIB=1 LLAMA_BUILD=1 LLAMA_SHARED=1 GGML_USE_CPU=1 GGML_CPU_GENERIC=1 GGML_SCHED_MAX_COPIES=4 GGML_VERSION=\"2bacb1e\" GGML_COMMIT=\"2bacb1e\" _XOPEN_SOURCE=600 _DARWIN_C_SOURCE=1',
@@ -43,6 +70,10 @@ Pod::Spec.new do |s|
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/include',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/src',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/src/models',
+        '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/common',
+        '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/tools/mtmd',
+        '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/vendor',
+        '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/lib_llama_cpp_ffi/include',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/ggml/include',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/ggml/src',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/ggml/src/ggml-cpu',

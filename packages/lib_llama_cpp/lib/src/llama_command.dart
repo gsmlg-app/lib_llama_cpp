@@ -1,3 +1,6 @@
+import 'llama_content.dart';
+import 'llama_tool.dart';
+
 sealed class LlamaCommand {
   const LlamaCommand();
 }
@@ -7,11 +10,19 @@ final class LlamaLoadModelCommand extends LlamaCommand {
     required this.modelPath,
     this.contextSize,
     this.gpuLayerCount,
+    this.mmprojPath,
+    this.mmprojUseGpu = false,
+    this.imageMinTokens,
+    this.imageMaxTokens,
   });
 
   final String modelPath;
   final int? contextSize;
   final int? gpuLayerCount;
+  final String? mmprojPath;
+  final bool mmprojUseGpu;
+  final int? imageMinTokens;
+  final int? imageMaxTokens;
 
   @override
   bool operator ==(Object other) {
@@ -19,18 +30,34 @@ final class LlamaLoadModelCommand extends LlamaCommand {
         other is LlamaLoadModelCommand &&
             other.modelPath == modelPath &&
             other.contextSize == contextSize &&
-            other.gpuLayerCount == gpuLayerCount;
+            other.gpuLayerCount == gpuLayerCount &&
+            other.mmprojPath == mmprojPath &&
+            other.mmprojUseGpu == mmprojUseGpu &&
+            other.imageMinTokens == imageMinTokens &&
+            other.imageMaxTokens == imageMaxTokens;
   }
 
   @override
-  int get hashCode => Object.hash(modelPath, contextSize, gpuLayerCount);
+  int get hashCode => Object.hash(
+    modelPath,
+    contextSize,
+    gpuLayerCount,
+    mmprojPath,
+    mmprojUseGpu,
+    imageMinTokens,
+    imageMaxTokens,
+  );
 
   @override
   String toString() {
     return 'LlamaLoadModelCommand('
         'modelPath: $modelPath, '
         'contextSize: $contextSize, '
-        'gpuLayerCount: $gpuLayerCount'
+        'gpuLayerCount: $gpuLayerCount, '
+        'mmprojPath: $mmprojPath, '
+        'mmprojUseGpu: $mmprojUseGpu, '
+        'imageMinTokens: $imageMinTokens, '
+        'imageMaxTokens: $imageMaxTokens'
         ')';
   }
 }
@@ -75,6 +102,48 @@ final class LlamaGenerateCommand extends LlamaCommand {
         'stop: $stop'
         ')';
   }
+}
+
+final class LlamaMessage {
+  const LlamaMessage({
+    required this.role,
+    required this.content,
+    this.toolCalls = const [],
+    this.toolCallId,
+    this.name,
+  });
+
+  final String role;
+  final Object content;
+  final List<LlamaToolCall> toolCalls;
+  final String? toolCallId;
+  final String? name;
+
+  bool get hasMedia => llamaContentHasMedia(content);
+}
+
+final class LlamaGenerateMessagesCommand extends LlamaCommand {
+  const LlamaGenerateMessagesCommand({
+    required this.messages,
+    this.maxTokens,
+    this.temperature,
+    this.topP,
+    this.stop = const [],
+    this.tools = const [],
+    this.toolChoice = LlamaToolChoice.auto,
+    this.parallelToolCalls = false,
+  });
+
+  final List<LlamaMessage> messages;
+  final int? maxTokens;
+  final double? temperature;
+  final double? topP;
+  final List<String> stop;
+  final List<LlamaTool> tools;
+  final LlamaToolChoice toolChoice;
+  final bool parallelToolCalls;
+
+  bool get hasMedia => messages.any((message) => message.hasMedia);
 }
 
 final class LlamaDisposeCommand extends LlamaCommand {

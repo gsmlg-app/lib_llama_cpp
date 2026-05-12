@@ -8,16 +8,23 @@ import 'package:lib_llama_cpp_ffi/lib_llama_cpp_ffi.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 
 import 'llama_command.dart';
+import 'llama_content.dart';
 import 'llama_response.dart';
 import 'llama_state.dart';
+import 'llama_tool.dart';
 
 final class NativeLlamaRuntime {
   NativeLlamaRuntime({required LlamaCppLibraryDescriptor library})
-    : _bindings = LlamaCppBindings(_openDynamicLibrary(library)) {
+    : this._fromDynamicLibrary(_openDynamicLibrary(library));
+
+  NativeLlamaRuntime._fromDynamicLibrary(DynamicLibrary library)
+    : _bindings = LlamaCppBindings(library),
+      _wrapper = _LibLlamaCppWrapper(library) {
     _bindings.llama_backend_init();
   }
 
   final LlamaCppBindings _bindings;
+  final _LibLlamaCppWrapper _wrapper;
   _LoadedModel? _loaded;
 
   LlamaState loadModel(LlamaLoadModelCommand command) {
@@ -33,6 +40,7 @@ final class NativeLlamaRuntime {
     final path = command.modelPath.toNativeUtf8();
     Pointer<llama_model> model = nullptr;
     Pointer<llama_context> context = nullptr;
+    Pointer<Void> mediaContext = nullptr;
 
     try {
       final modelParams = _bindings.llama_model_default_params();
@@ -68,15 +76,53 @@ final class NativeLlamaRuntime {
         );
       }
 
+      final chatTemplate = _modelChatTemplate(model);
+      var supportsImage = false;
+      var supportsAudio = false;
+      if (command.mmprojPath != null) {
+        final mmprojFile = File(command.mmprojPath!);
+        if (!mmprojFile.existsSync()) {
+          throw NativeLlamaException(
+            'Multimodal projector file does not exist: ${command.mmprojPath}',
+          );
+        }
+        mediaContext = _wrapper.mediaInit(
+          mmprojPath: command.mmprojPath!,
+          model: model,
+          useGpu: command.mmprojUseGpu,
+          imageMinTokens: command.imageMinTokens,
+          imageMaxTokens: command.imageMaxTokens,
+        );
+        supportsImage = _wrapper.mediaSupportsVision(mediaContext);
+        supportsAudio = _wrapper.mediaSupportsAudio(mediaContext);
+      }
+
       _loaded = _LoadedModel(
         modelPath: command.modelPath,
         model: model,
         context: context,
         vocab: vocab,
+        mmprojPath: command.mmprojPath,
+        mediaContext: mediaContext,
+        supportsImage: supportsImage,
+        supportsAudio: supportsAudio,
       );
 
-      return LlamaState(modelPath: command.modelPath, isModelLoaded: true);
+      return LlamaState(
+        modelPath: command.modelPath,
+        isModelLoaded: true,
+        capabilities: LlamaModelCapabilities(
+          text: true,
+          chatTemplate: chatTemplate != null,
+          image: supportsImage,
+          audio: supportsAudio,
+          tools: chatTemplate != null,
+        ),
+      );
     } catch (_) {
+      if (mediaContext != nullptr) {
+        _wrapper.mediaFree(mediaContext);
+      }
       if (context != nullptr) {
         _bindings.llama_free(context);
       }
@@ -115,8 +161,108 @@ final class NativeLlamaRuntime {
     }
 
     _decodeTokens(loaded.context, promptTokens);
+    yield* _sampleFromEvaluatedPrompt(
+      loaded: loaded,
+      command: command,
+      initialTokenCount: promptTokens.length,
+    );
+  }
 
-    final sampler = _createSampler(command);
+  Iterable<LlamaResponse> generateMessages(
+    LlamaGenerateMessagesCommand command,
+  ) sync* {
+    final loaded = _loaded;
+    if (loaded == null) {
+      throw const NativeLlamaException(
+        'Cannot generate before a model is loaded.',
+      );
+    }
+    if (command.hasMedia && loaded.mmprojPath == null) {
+      throw const NativeLlamaException(
+        'Image and audio inputs require a multimodal projector.',
+      );
+    }
+
+    final mediaInputs = <_MediaInput>[];
+    final templateResult = _wrapper.applyChatTemplate(
+      model: loaded.model,
+      request: _chatTemplateRequest(command, mediaInputs),
+    );
+    final samplingCommand = LlamaGenerateCommand(
+      prompt: templateResult.prompt,
+      maxTokens: command.maxTokens,
+      temperature: command.temperature,
+      topP: command.topP,
+      stop: [...templateResult.additionalStops, ...command.stop],
+    );
+
+    final initialTokenCount = _evaluateMessagePrompt(
+      loaded: loaded,
+      prompt: templateResult.prompt,
+      mediaInputs: mediaInputs,
+    );
+
+    if (command.tools.isEmpty) {
+      yield* _sampleFromEvaluatedPrompt(
+        loaded: loaded,
+        command: samplingCommand,
+        initialTokenCount: initialTokenCount,
+      );
+      return;
+    }
+
+    final generated = StringBuffer();
+    for (final response in _sampleFromEvaluatedPrompt(
+      loaded: loaded,
+      command: samplingCommand,
+      initialTokenCount: initialTokenCount,
+      grammar: templateResult.grammar,
+      grammarLazy: templateResult.grammarLazy,
+    )) {
+      if (response is LlamaTokenResponse) {
+        generated.write(response.text);
+      }
+    }
+
+    final parsed = _wrapper.parseChatOutput(
+      text: generated.toString(),
+      format: templateResult.format,
+      generationPrompt: templateResult.generationPrompt,
+      parser: templateResult.parser,
+    );
+    final parsedToolCalls = _toolCallsFromParsedMessage(parsed);
+    if (parsedToolCalls.isEmpty) {
+      final text = _contentFromParsedMessage(parsed);
+      if (text.isNotEmpty) {
+        yield LlamaTokenResponse(text: text, index: 0);
+      }
+      return;
+    }
+
+    for (final toolCall in parsedToolCalls) {
+      yield LlamaToolCallResponse(toolCall: toolCall);
+    }
+  }
+
+  Iterable<LlamaResponse> _sampleFromEvaluatedPrompt({
+    required _LoadedModel loaded,
+    required LlamaGenerateCommand command,
+    required int initialTokenCount,
+    String? grammar,
+    bool grammarLazy = false,
+  }) sync* {
+    final maxTokens = command.maxTokens ?? 128;
+    if (maxTokens <= 0) {
+      return;
+    }
+
+    final contextSize = _bindings.llama_n_ctx(loaded.context);
+    final sampler = _createSampler(
+      loaded.vocab,
+      command,
+      grammar: grammar,
+      grammarLazy: grammarLazy,
+    );
     final stopMatcher = _StopMatcher(command.stop);
     var generated = 0;
 
@@ -145,7 +291,7 @@ final class NativeLlamaRuntime {
         if (generated >= maxTokens) {
           break;
         }
-        if (promptTokens.length + generated >= contextSize) {
+        if (initialTokenCount + generated >= contextSize) {
           throw NativeLlamaException(
             'Generation exceeded context size $contextSize.',
           );
@@ -161,6 +307,226 @@ final class NativeLlamaRuntime {
     } finally {
       _bindings.llama_sampler_free(sampler);
     }
+  }
+
+  int _evaluateMessagePrompt({
+    required _LoadedModel loaded,
+    required String prompt,
+    required List<_MediaInput> mediaInputs,
+  }) {
+    if (mediaInputs.isEmpty) {
+      final promptTokens = _tokenize(loaded.vocab, prompt);
+      if (promptTokens.isEmpty) {
+        throw const NativeLlamaException('Prompt produced no tokens.');
+      }
+
+      final contextSize = _bindings.llama_n_ctx(loaded.context);
+      if (promptTokens.length >= contextSize) {
+        throw NativeLlamaException(
+          'Prompt token count ${promptTokens.length} exceeds context size $contextSize.',
+        );
+      }
+
+      _decodeTokens(loaded.context, promptTokens);
+      return promptTokens.length;
+    }
+
+    if (loaded.mediaContext == nullptr) {
+      throw const NativeLlamaException(
+        'Image and audio inputs require a multimodal projector.',
+      );
+    }
+    if (mediaInputs.any((input) => input.isImage) && !loaded.supportsImage) {
+      throw const NativeLlamaException(
+        'The loaded multimodal projector does not support image input.',
+      );
+    }
+    if (mediaInputs.any((input) => input.isAudio) && !loaded.supportsAudio) {
+      throw const NativeLlamaException(
+        'The loaded multimodal projector does not support audio input.',
+      );
+    }
+
+    final blobs = <Pointer<Void>>[];
+    try {
+      for (final input in mediaInputs) {
+        blobs.add(_wrapper.mediaBlob(loaded.mediaContext, input));
+      }
+      return _wrapper.mediaEvalPrompt(
+        mediaContext: loaded.mediaContext,
+        llamaContext: loaded.context,
+        prompt: prompt,
+        blobs: blobs,
+        nBatch: _bindings.llama_n_batch(loaded.context),
+      );
+    } finally {
+      for (final blob in blobs) {
+        _wrapper.mediaBlobFree(blob);
+      }
+    }
+  }
+
+  Map<String, Object?> _chatTemplateRequest(
+    LlamaGenerateMessagesCommand command,
+    List<_MediaInput> mediaInputs,
+  ) {
+    return {
+      'messages': [
+        for (final message in command.messages)
+          _messageToJson(message, mediaInputs),
+      ],
+      if (command.tools.isNotEmpty)
+        'tools': [for (final tool in command.tools) _toolToJson(tool)],
+      'tool_choice': _toolChoiceToJson(command.toolChoice),
+      'parallel_tool_calls': command.parallelToolCalls,
+      'add_generation_prompt': true,
+      'use_jinja': true,
+    };
+  }
+
+  Map<String, Object?> _messageToJson(
+    LlamaMessage message,
+    List<_MediaInput> mediaInputs,
+  ) {
+    final json = <String, Object?>{
+      'role': message.role,
+      'content': _contentToJson(message.content, mediaInputs),
+    };
+
+    if (message.toolCalls.isNotEmpty) {
+      json['tool_calls'] = [
+        for (final toolCall in message.toolCalls)
+          {
+            'id': toolCall.id,
+            'type': 'function',
+            'function': {
+              'name': toolCall.name,
+              'arguments': toolCall.arguments,
+            },
+          },
+      ];
+    }
+    if (message.toolCallId != null) {
+      json['tool_call_id'] = message.toolCallId;
+    }
+    if (message.name != null) {
+      json['name'] = message.name;
+    }
+
+    return json;
+  }
+
+  Object _contentToJson(Object content, List<_MediaInput> mediaInputs) {
+    if (content is String) {
+      return content;
+    }
+    if (content is List<LlamaContentPart>) {
+      return [
+        for (final part in content) _contentPartToJson(part, mediaInputs),
+      ];
+    }
+    throw ArgumentError.value(
+      content,
+      'content',
+      'Unsupported message content',
+    );
+  }
+
+  Map<String, String> _contentPartToJson(
+    LlamaContentPart part,
+    List<_MediaInput> mediaInputs,
+  ) {
+    if (part is LlamaTextPart) {
+      return {'type': 'text', 'text': part.text};
+    }
+    if (part.isMedia) {
+      final index = mediaInputs.length;
+      mediaInputs.add(_MediaInput(index: index, part: part));
+      return {'type': 'media_marker', 'text': _MediaInput.mediaMarker};
+    }
+    throw ArgumentError.value(part, 'part', 'Unsupported content part');
+  }
+
+  Map<String, Object?> _toolToJson(LlamaTool tool) {
+    return {
+      'type': 'function',
+      'function': {
+        'name': tool.name,
+        if (tool.description.isNotEmpty) 'description': tool.description,
+        'parameters': tool.parameters,
+      },
+    };
+  }
+
+  Object _toolChoiceToJson(LlamaToolChoice toolChoice) {
+    if (toolChoice.mode == 'tool' && toolChoice.name != null) {
+      return {
+        'type': 'function',
+        'function': {'name': toolChoice.name},
+      };
+    }
+    return toolChoice.mode;
+  }
+
+  List<LlamaToolCall> _toolCallsFromParsedMessage(Map<String, Object?> parsed) {
+    final message = parsed['message'];
+    if (message is! Map) {
+      return const [];
+    }
+    final rawToolCalls = message['tool_calls'];
+    if (rawToolCalls is! List) {
+      return const [];
+    }
+
+    final calls = <LlamaToolCall>[];
+    for (var index = 0; index < rawToolCalls.length; index += 1) {
+      final rawCall = rawToolCalls[index];
+      if (rawCall is! Map) {
+        continue;
+      }
+      final function = rawCall['function'];
+      if (function is! Map) {
+        continue;
+      }
+      final name = function['name'];
+      if (name is! String || name.isEmpty) {
+        continue;
+      }
+      final rawArguments = function['arguments'];
+      final arguments = rawArguments is String
+          ? rawArguments
+          : jsonEncode(rawArguments ?? const <String, Object?>{});
+      calls.add(
+        LlamaToolCall(
+          id: rawCall['id'] is String ? rawCall['id'] as String : 'call_$index',
+          index: index,
+          name: name,
+          arguments: arguments,
+        ),
+      );
+    }
+    return calls;
+  }
+
+  String _contentFromParsedMessage(Map<String, Object?> parsed) {
+    final message = parsed['message'];
+    if (message is! Map) {
+      return '';
+    }
+    final content = message['content'];
+    if (content is String) {
+      return content;
+    }
+    if (content is List) {
+      final buffer = StringBuffer();
+      for (final part in content) {
+        if (part is Map && part['type'] == 'text' && part['text'] is String) {
+          buffer.write(part['text']);
+        }
+      }
+      return buffer.toString();
+    }
+    return '';
   }
 
   void disposeModel() {
@@ -241,7 +607,12 @@ final class NativeLlamaRuntime {
     }
   }
 
-  Pointer<llama_sampler> _createSampler(LlamaGenerateCommand command) {
+  Pointer<llama_sampler> _createSampler(
+    Pointer<llama_vocab> vocab,
+    LlamaGenerateCommand command, {
+    String? grammar,
+    bool grammarLazy = false,
+  }) {
     final sampler = _bindings.llama_sampler_chain_init(
       _bindings.llama_sampler_chain_default_params(),
     );
@@ -255,6 +626,24 @@ final class NativeLlamaRuntime {
         throw NativeLlamaException('Failed to create llama.cpp $name sampler.');
       }
       _bindings.llama_sampler_chain_add(sampler, child);
+    }
+
+    if (grammar != null && grammar.isNotEmpty && !grammarLazy) {
+      final grammarPointer = grammar.toNativeUtf8();
+      final rootPointer = 'root'.toNativeUtf8();
+      try {
+        add(
+          _bindings.llama_sampler_init_grammar(
+            vocab,
+            grammarPointer.cast<Char>(),
+            rootPointer.cast<Char>(),
+          ),
+          'grammar',
+        );
+      } finally {
+        calloc.free(rootPointer);
+        calloc.free(grammarPointer);
+      }
     }
 
     final temperature = command.temperature;
@@ -319,12 +708,23 @@ final class NativeLlamaRuntime {
     }
   }
 
+  String? _modelChatTemplate(Pointer<llama_model> model) {
+    final template = _bindings.llama_model_chat_template(model, nullptr);
+    if (template == nullptr) {
+      return null;
+    }
+    return template.cast<Utf8>().toDartString();
+  }
+
   void _disposeLoaded() {
     final loaded = _loaded;
     if (loaded == null) {
       return;
     }
 
+    if (loaded.mediaContext != nullptr) {
+      _wrapper.mediaFree(loaded.mediaContext);
+    }
     _bindings.llama_free(loaded.context);
     _bindings.llama_model_free(loaded.model);
     _loaded = null;
@@ -361,12 +761,20 @@ final class _LoadedModel {
     required this.model,
     required this.context,
     required this.vocab,
+    required this.mmprojPath,
+    required this.mediaContext,
+    required this.supportsImage,
+    required this.supportsAudio,
   });
 
   final String modelPath;
   final Pointer<llama_model> model;
   final Pointer<llama_context> context;
   final Pointer<llama_vocab> vocab;
+  final String? mmprojPath;
+  final Pointer<Void> mediaContext;
+  final bool supportsImage;
+  final bool supportsAudio;
 }
 
 final class _StopMatcher {
@@ -439,3 +847,604 @@ final class _StopMatcher {
     return result;
   }
 }
+
+final class _ChatTemplateResult {
+  const _ChatTemplateResult({
+    required this.prompt,
+    required this.grammar,
+    required this.grammarLazy,
+    required this.format,
+    required this.generationPrompt,
+    required this.parser,
+    required this.additionalStops,
+  });
+
+  factory _ChatTemplateResult.fromJson(Map<String, Object?> json) {
+    return _ChatTemplateResult(
+      prompt: json['prompt'] as String? ?? '',
+      grammar: json['grammar'] as String? ?? '',
+      grammarLazy: json['grammar_lazy'] as bool? ?? false,
+      format: json['format'] as String? ?? 'content-only',
+      generationPrompt: json['generation_prompt'] as String? ?? '',
+      parser: json['parser'] as String? ?? '',
+      additionalStops: (json['additional_stops'] as List? ?? const [])
+          .whereType<String>()
+          .toList(),
+    );
+  }
+
+  final String prompt;
+  final String grammar;
+  final bool grammarLazy;
+  final String format;
+  final String generationPrompt;
+  final String parser;
+  final List<String> additionalStops;
+}
+
+final class _MediaInput {
+  const _MediaInput({required this.index, required this.part});
+
+  static const mediaMarker = '<__media__>';
+
+  final int index;
+  final LlamaContentPart part;
+
+  String get id => 'media_$index';
+
+  bool get isImage {
+    final value = part;
+    return value is LlamaImageFilePart || value is LlamaImageBytesPart;
+  }
+
+  bool get isAudio {
+    final value = part;
+    return value is LlamaAudioFilePart || value is LlamaAudioBytesPart;
+  }
+}
+
+final class _LibLlamaCppWrapper {
+  _LibLlamaCppWrapper(this._library);
+
+  final DynamicLibrary _library;
+
+  _ChatTemplateResult applyChatTemplate({
+    required Pointer<llama_model> model,
+    required Map<String, Object?> request,
+  }) {
+    return _withWrapper('chat template formatting', () {
+      final error = calloc<Pointer<Char>>();
+      Pointer<Void> handle = nullptr;
+      try {
+        handle = _chatTemplatesInit(
+          model,
+          nullptr.cast<Char>(),
+          nullptr.cast<Char>(),
+          nullptr.cast<Char>(),
+          error,
+        );
+        if (handle == nullptr) {
+          throw NativeLlamaException(
+            _errorMessage(error, 'Failed to initialize chat templates.'),
+          );
+        }
+
+        final requestPointer = jsonEncode(request).toNativeUtf8();
+        try {
+          final result = _chatTemplatesApplyJson(
+            handle,
+            requestPointer.cast<Char>(),
+            error,
+          );
+          if (result == nullptr) {
+            throw NativeLlamaException(
+              _errorMessage(error, 'Failed to apply chat template.'),
+            );
+          }
+          final decoded = jsonDecode(_takeString(result));
+          if (decoded is! Map<String, Object?>) {
+            throw const NativeLlamaException(
+              'Chat template wrapper returned invalid JSON.',
+            );
+          }
+          return _ChatTemplateResult.fromJson(decoded);
+        } finally {
+          calloc.free(requestPointer);
+        }
+      } finally {
+        if (handle != nullptr) {
+          _chatTemplatesFree(handle);
+        }
+        _freeError(error);
+        calloc.free(error);
+      }
+    });
+  }
+
+  Map<String, Object?> parseChatOutput({
+    required String text,
+    required String format,
+    required String generationPrompt,
+    required String parser,
+  }) {
+    return _withWrapper('chat output parsing', () {
+      final request = {
+        'text': text,
+        'format': format,
+        'generation_prompt': generationPrompt,
+        'parser': parser,
+        'parse_tool_calls': true,
+        'is_partial': false,
+      };
+      final requestPointer = jsonEncode(request).toNativeUtf8();
+      final error = calloc<Pointer<Char>>();
+      try {
+        final result = _chatParseJson(requestPointer.cast<Char>(), error);
+        if (result == nullptr) {
+          throw NativeLlamaException(
+            _errorMessage(error, 'Failed to parse chat output.'),
+          );
+        }
+        final decoded = jsonDecode(_takeString(result));
+        if (decoded is! Map<String, Object?>) {
+          throw const NativeLlamaException(
+            'Chat parser wrapper returned invalid JSON.',
+          );
+        }
+        return decoded;
+      } finally {
+        _freeError(error);
+        calloc.free(error);
+        calloc.free(requestPointer);
+      }
+    });
+  }
+
+  Pointer<Void> mediaInit({
+    required String mmprojPath,
+    required Pointer<llama_model> model,
+    required bool useGpu,
+    required int? imageMinTokens,
+    required int? imageMaxTokens,
+  }) {
+    return _withWrapper('multimodal projector loading', () {
+      final pathPointer = mmprojPath.toNativeUtf8();
+      final options = <String, Object?>{
+        'use_gpu': useGpu,
+        'media_marker': _MediaInput.mediaMarker,
+        'warmup': false,
+      };
+      if (imageMinTokens != null) {
+        options['image_min_tokens'] = imageMinTokens;
+      }
+      if (imageMaxTokens != null) {
+        options['image_max_tokens'] = imageMaxTokens;
+      }
+      final optionsPointer = jsonEncode(options).toNativeUtf8();
+      final error = calloc<Pointer<Char>>();
+      try {
+        final result = _mediaInit(
+          pathPointer.cast<Char>(),
+          model,
+          optionsPointer.cast<Char>(),
+          error,
+        );
+        if (result == nullptr) {
+          throw NativeLlamaException(
+            _errorMessage(error, 'Failed to load multimodal projector.'),
+          );
+        }
+        return result;
+      } finally {
+        _freeError(error);
+        calloc.free(error);
+        calloc.free(optionsPointer);
+        calloc.free(pathPointer);
+      }
+    });
+  }
+
+  void mediaFree(Pointer<Void> mediaContext) {
+    if (mediaContext == nullptr) {
+      return;
+    }
+    _withWrapper('multimodal cleanup', () {
+      _mediaFree(mediaContext);
+    });
+  }
+
+  bool mediaSupportsVision(Pointer<Void> mediaContext) {
+    return _withWrapper('multimodal capability detection', () {
+      return _mediaSupportsVision(mediaContext);
+    });
+  }
+
+  bool mediaSupportsAudio(Pointer<Void> mediaContext) {
+    return _withWrapper('multimodal capability detection', () {
+      return _mediaSupportsAudio(mediaContext);
+    });
+  }
+
+  Pointer<Void> mediaBlob(Pointer<Void> mediaContext, _MediaInput input) {
+    final part = input.part;
+    if (part is LlamaImageFilePart) {
+      return _mediaBlobFromFile(mediaContext, part.path, input.id);
+    }
+    if (part is LlamaAudioFilePart) {
+      return _mediaBlobFromFile(mediaContext, part.path, input.id);
+    }
+    if (part is LlamaImageBytesPart) {
+      return _mediaBlobFromBytes(mediaContext, part.bytes, input.id);
+    }
+    if (part is LlamaAudioBytesPart) {
+      return _mediaBlobFromBytes(mediaContext, part.bytes, input.id);
+    }
+    throw ArgumentError.value(part, 'part', 'Unsupported media part');
+  }
+
+  void mediaBlobFree(Pointer<Void> blob) {
+    if (blob == nullptr) {
+      return;
+    }
+    _withWrapper('media cleanup', () {
+      _mediaBlobFree(blob);
+    });
+  }
+
+  int mediaEvalPrompt({
+    required Pointer<Void> mediaContext,
+    required Pointer<llama_context> llamaContext,
+    required String prompt,
+    required List<Pointer<Void>> blobs,
+    required int nBatch,
+  }) {
+    return _withWrapper('multimodal prompt evaluation', () {
+      final promptPointer = prompt.toNativeUtf8();
+      final blobArray = calloc<Pointer<Void>>(blobs.length);
+      final newPast = calloc<Int32>();
+      final error = calloc<Pointer<Char>>();
+      try {
+        for (var i = 0; i < blobs.length; i += 1) {
+          blobArray[i] = blobs[i];
+        }
+        final result = _mediaEvalPrompt(
+          mediaContext,
+          llamaContext,
+          promptPointer.cast<Char>(),
+          blobArray,
+          blobs.length,
+          0,
+          0,
+          nBatch,
+          true,
+          true,
+          true,
+          newPast,
+          error,
+        );
+        if (result != 0) {
+          throw NativeLlamaException(
+            _errorMessage(
+              error,
+              'Failed to evaluate multimodal prompt: mtmd returned $result.',
+            ),
+          );
+        }
+        return newPast.value;
+      } finally {
+        _freeError(error);
+        calloc.free(error);
+        calloc.free(newPast);
+        calloc.free(blobArray);
+        calloc.free(promptPointer);
+      }
+    });
+  }
+
+  Pointer<Void> _mediaBlobFromFile(
+    Pointer<Void> mediaContext,
+    String path,
+    String id,
+  ) {
+    return _withWrapper('media file decoding', () {
+      final pathPointer = path.toNativeUtf8();
+      final idPointer = id.toNativeUtf8();
+      final error = calloc<Pointer<Char>>();
+      try {
+        final result = _mediaBlobFromFileNative(
+          mediaContext,
+          pathPointer.cast<Char>(),
+          idPointer.cast<Char>(),
+          error,
+        );
+        if (result == nullptr) {
+          throw NativeLlamaException(
+            _errorMessage(error, 'Failed to decode media file.'),
+          );
+        }
+        return result;
+      } finally {
+        _freeError(error);
+        calloc.free(error);
+        calloc.free(idPointer);
+        calloc.free(pathPointer);
+      }
+    });
+  }
+
+  Pointer<Void> _mediaBlobFromBytes(
+    Pointer<Void> mediaContext,
+    List<int> bytes,
+    String id,
+  ) {
+    return _withWrapper('media byte decoding', () {
+      final bytesPointer = calloc<Uint8>(bytes.length);
+      final idPointer = id.toNativeUtf8();
+      final error = calloc<Pointer<Char>>();
+      try {
+        for (var i = 0; i < bytes.length; i += 1) {
+          bytesPointer[i] = bytes[i];
+        }
+        final result = _mediaBlobFromEncodedBytes(
+          mediaContext,
+          bytesPointer,
+          bytes.length,
+          idPointer.cast<Char>(),
+          error,
+        );
+        if (result == nullptr) {
+          throw NativeLlamaException(
+            _errorMessage(error, 'Failed to decode encoded media bytes.'),
+          );
+        }
+        return result;
+      } finally {
+        _freeError(error);
+        calloc.free(error);
+        calloc.free(idPointer);
+        calloc.free(bytesPointer);
+      }
+    });
+  }
+
+  T _withWrapper<T>(String feature, T Function() body) {
+    try {
+      return body();
+    } on ArgumentError catch (error) {
+      throw NativeLlamaException(
+        'The loaded llama.cpp library does not include lib_llama_cpp native '
+        'wrapper support for $feature: $error',
+      );
+    }
+  }
+
+  String _takeString(Pointer<Char> pointer) {
+    try {
+      return pointer.cast<Utf8>().toDartString();
+    } finally {
+      _stringFree(pointer);
+    }
+  }
+
+  String _errorMessage(Pointer<Pointer<Char>> errorPointer, String fallback) {
+    final pointer = errorPointer.value;
+    if (pointer == nullptr) {
+      return fallback;
+    }
+
+    try {
+      final raw = pointer.cast<Utf8>().toDartString();
+      final decoded = jsonDecode(raw);
+      if (decoded is Map && decoded['message'] is String) {
+        return decoded['message'] as String;
+      }
+      return raw;
+    } finally {
+      _stringFree(pointer);
+      errorPointer.value = nullptr;
+    }
+  }
+
+  void _freeError(Pointer<Pointer<Char>> errorPointer) {
+    if (errorPointer.value != nullptr) {
+      _stringFree(errorPointer.value);
+      errorPointer.value = nullptr;
+    }
+  }
+
+  late final _StringFreeDart _stringFree = _library
+      .lookupFunction<_StringFreeNative, _StringFreeDart>(
+        'lib_llama_cpp_string_free',
+      );
+
+  late final _ChatTemplatesInitDart _chatTemplatesInit = _library
+      .lookupFunction<_ChatTemplatesInitNative, _ChatTemplatesInitDart>(
+        'lib_llama_cpp_chat_templates_init',
+      );
+
+  late final _ChatTemplatesFreeDart _chatTemplatesFree = _library
+      .lookupFunction<_ChatTemplatesFreeNative, _ChatTemplatesFreeDart>(
+        'lib_llama_cpp_chat_templates_free',
+      );
+
+  late final _ChatTemplatesApplyJsonDart _chatTemplatesApplyJson = _library
+      .lookupFunction<
+        _ChatTemplatesApplyJsonNative,
+        _ChatTemplatesApplyJsonDart
+      >('lib_llama_cpp_chat_templates_apply_json');
+
+  late final _ChatParseJsonDart _chatParseJson = _library
+      .lookupFunction<_ChatParseJsonNative, _ChatParseJsonDart>(
+        'lib_llama_cpp_chat_parse_json',
+      );
+
+  late final _MediaInitDart _mediaInit = _library
+      .lookupFunction<_MediaInitNative, _MediaInitDart>(
+        'lib_llama_cpp_media_init',
+      );
+
+  late final _MediaFreeDart _mediaFree = _library
+      .lookupFunction<_MediaFreeNative, _MediaFreeDart>(
+        'lib_llama_cpp_media_free',
+      );
+
+  late final _MediaSupportsDart _mediaSupportsVision = _library
+      .lookupFunction<_MediaSupportsNative, _MediaSupportsDart>(
+        'lib_llama_cpp_media_supports_vision',
+      );
+
+  late final _MediaSupportsDart _mediaSupportsAudio = _library
+      .lookupFunction<_MediaSupportsNative, _MediaSupportsDart>(
+        'lib_llama_cpp_media_supports_audio',
+      );
+
+  late final _MediaBlobFromFileDart _mediaBlobFromFileNative = _library
+      .lookupFunction<_MediaBlobFromFileNative, _MediaBlobFromFileDart>(
+        'lib_llama_cpp_media_blob_from_file',
+      );
+
+  late final _MediaBlobFromBytesDart _mediaBlobFromEncodedBytes = _library
+      .lookupFunction<_MediaBlobFromBytesNative, _MediaBlobFromBytesDart>(
+        'lib_llama_cpp_media_blob_from_encoded_bytes',
+      );
+
+  late final _MediaBlobFreeDart _mediaBlobFree = _library
+      .lookupFunction<_MediaBlobFreeNative, _MediaBlobFreeDart>(
+        'lib_llama_cpp_media_blob_free',
+      );
+
+  late final _MediaEvalPromptDart _mediaEvalPrompt = _library
+      .lookupFunction<_MediaEvalPromptNative, _MediaEvalPromptDart>(
+        'lib_llama_cpp_media_eval_prompt',
+      );
+}
+
+typedef _StringFreeNative = Void Function(Pointer<Char>);
+typedef _StringFreeDart = void Function(Pointer<Char>);
+
+typedef _ChatTemplatesInitNative =
+    Pointer<Void> Function(
+      Pointer<llama_model>,
+      Pointer<Char>,
+      Pointer<Char>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+typedef _ChatTemplatesInitDart =
+    Pointer<Void> Function(
+      Pointer<llama_model>,
+      Pointer<Char>,
+      Pointer<Char>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+
+typedef _ChatTemplatesFreeNative = Void Function(Pointer<Void>);
+typedef _ChatTemplatesFreeDart = void Function(Pointer<Void>);
+
+typedef _ChatTemplatesApplyJsonNative =
+    Pointer<Char> Function(
+      Pointer<Void>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+typedef _ChatTemplatesApplyJsonDart =
+    Pointer<Char> Function(
+      Pointer<Void>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+
+typedef _ChatParseJsonNative =
+    Pointer<Char> Function(Pointer<Char>, Pointer<Pointer<Char>>);
+typedef _ChatParseJsonDart =
+    Pointer<Char> Function(Pointer<Char>, Pointer<Pointer<Char>>);
+
+typedef _MediaInitNative =
+    Pointer<Void> Function(
+      Pointer<Char>,
+      Pointer<llama_model>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+typedef _MediaInitDart =
+    Pointer<Void> Function(
+      Pointer<Char>,
+      Pointer<llama_model>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+
+typedef _MediaFreeNative = Void Function(Pointer<Void>);
+typedef _MediaFreeDart = void Function(Pointer<Void>);
+
+typedef _MediaSupportsNative = Bool Function(Pointer<Void>);
+typedef _MediaSupportsDart = bool Function(Pointer<Void>);
+
+typedef _MediaBlobFromFileNative =
+    Pointer<Void> Function(
+      Pointer<Void>,
+      Pointer<Char>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+typedef _MediaBlobFromFileDart =
+    Pointer<Void> Function(
+      Pointer<Void>,
+      Pointer<Char>,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+
+typedef _MediaBlobFromBytesNative =
+    Pointer<Void> Function(
+      Pointer<Void>,
+      Pointer<Uint8>,
+      Size,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+typedef _MediaBlobFromBytesDart =
+    Pointer<Void> Function(
+      Pointer<Void>,
+      Pointer<Uint8>,
+      int,
+      Pointer<Char>,
+      Pointer<Pointer<Char>>,
+    );
+
+typedef _MediaBlobFreeNative = Void Function(Pointer<Void>);
+typedef _MediaBlobFreeDart = void Function(Pointer<Void>);
+
+typedef _MediaEvalPromptNative =
+    Int32 Function(
+      Pointer<Void>,
+      Pointer<llama_context>,
+      Pointer<Char>,
+      Pointer<Pointer<Void>>,
+      Size,
+      Int32,
+      Int32,
+      Int32,
+      Bool,
+      Bool,
+      Bool,
+      Pointer<Int32>,
+      Pointer<Pointer<Char>>,
+    );
+typedef _MediaEvalPromptDart =
+    int Function(
+      Pointer<Void>,
+      Pointer<llama_context>,
+      Pointer<Char>,
+      Pointer<Pointer<Void>>,
+      int,
+      int,
+      int,
+      int,
+      bool,
+      bool,
+      bool,
+      Pointer<Int32>,
+      Pointer<Pointer<Char>>,
+    );

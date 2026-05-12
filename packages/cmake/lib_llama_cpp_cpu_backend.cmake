@@ -6,12 +6,14 @@ function(lib_llama_cpp_configure_cpu_backend_options)
   set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build llama.cpp static libraries for the Flutter FFI wrapper." FORCE)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-  set(LLAMA_BUILD_COMMON OFF CACHE BOOL "Disable llama.cpp common utilities." FORCE)
+  set(LLAMA_BUILD_COMMON ON CACHE BOOL "Build llama.cpp common chat/template utilities." FORCE)
   set(LLAMA_BUILD_TESTS OFF CACHE BOOL "Disable llama.cpp tests." FORCE)
   set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "Disable llama.cpp tools." FORCE)
   set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "Disable llama.cpp examples." FORCE)
   set(LLAMA_BUILD_SERVER OFF CACHE BOOL "Disable llama.cpp server." FORCE)
+  set(LLAMA_BUILD_WEBUI OFF CACHE BOOL "Disable llama.cpp server web UI." FORCE)
   set(LLAMA_OPENSSL OFF CACHE BOOL "Disable llama.cpp OpenSSL support." FORCE)
+  set(LLAMA_LLGUIDANCE OFF CACHE BOOL "Disable llguidance dependency." FORCE)
 
   set(GGML_NATIVE OFF CACHE BOOL "Disable host-specific CPU tuning." FORCE)
   set(GGML_CPU ON CACHE BOOL "Enable ggml CPU backend." FORCE)
@@ -53,9 +55,15 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
   set(_lib_llama_cpp_skip_install_rules "${CMAKE_SKIP_INSTALL_RULES}")
   set(CMAKE_SKIP_INSTALL_RULES ON)
   add_subdirectory("${_llama_cpp_dir}" "${CMAKE_CURRENT_BINARY_DIR}/llama_cpp" EXCLUDE_FROM_ALL)
+  if(EXISTS "${_llama_cpp_dir}/tools/mtmd/CMakeLists.txt" AND NOT TARGET mtmd)
+    add_subdirectory(
+      "${_llama_cpp_dir}/tools/mtmd"
+      "${CMAKE_CURRENT_BINARY_DIR}/llama_cpp/tools/mtmd"
+      EXCLUDE_FROM_ALL)
+  endif()
   set(CMAKE_SKIP_INSTALL_RULES "${_lib_llama_cpp_skip_install_rules}")
 
-  set(_lib_llama_cpp_static_targets llama ggml ggml-base ggml-cpu)
+  set(_lib_llama_cpp_static_targets llama llama-common llama-common-base mtmd ggml ggml-base ggml-cpu)
   if(DEFINED GGML_AVAILABLE_BACKENDS)
     list(APPEND _lib_llama_cpp_static_targets ${GGML_AVAILABLE_BACKENDS})
   endif()
@@ -68,18 +76,35 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
 
   target_compile_definitions(llama PRIVATE LLAMA_BUILD LLAMA_SHARED)
 
-  add_library(${target_name} SHARED "${wrapper_source}")
+  set(_lib_llama_cpp_ffi_dir "${_repo_root}/packages/lib_llama_cpp_ffi")
+  set(_lib_llama_cpp_wrapper_source "${_lib_llama_cpp_ffi_dir}/src/lib_llama_cpp_wrapper.cc")
+
+  add_library(${target_name} SHARED "${wrapper_source}" "${_lib_llama_cpp_wrapper_source}")
   target_compile_features(${target_name} PUBLIC cxx_std_17)
   target_compile_definitions(${target_name} PUBLIC DART_SHARED_LIB)
+  target_include_directories(${target_name}
+    PRIVATE
+      "${_lib_llama_cpp_ffi_dir}/include"
+      "${_llama_cpp_dir}/include"
+      "${_llama_cpp_dir}/ggml/include"
+      "${_llama_cpp_dir}/common"
+      "${_llama_cpp_dir}/tools/mtmd"
+      "${_llama_cpp_dir}/vendor")
 
   if(MSVC)
-    target_link_libraries(${target_name} PRIVATE llama)
+    target_link_libraries(${target_name} PRIVATE llama-common mtmd llama)
     target_link_options(${target_name} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:llama>")
+    target_link_options(${target_name} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:mtmd>")
     set_target_properties(${target_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
   elseif(APPLE)
-    target_link_libraries(${target_name} PRIVATE llama)
+    target_link_libraries(${target_name} PRIVATE llama-common mtmd llama)
     target_link_options(${target_name} PRIVATE "-Wl,-force_load,$<TARGET_FILE:llama>")
+    target_link_options(${target_name} PRIVATE "-Wl,-force_load,$<TARGET_FILE:mtmd>")
   else()
-    target_link_libraries(${target_name} PRIVATE "-Wl,--whole-archive" llama "-Wl,--no-whole-archive")
+    target_link_libraries(
+      ${target_name}
+      PRIVATE
+        llama-common
+        "-Wl,--whole-archive" llama mtmd "-Wl,--no-whole-archive")
   endif()
 endfunction()
