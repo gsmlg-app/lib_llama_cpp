@@ -19,4 +19,38 @@ void main() {
     expect(descriptor.lookupName, 'liblib_llama_cpp_linux.so');
     expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
+
+  test('bundled Linux library rejects unsupported required backends', () async {
+    await expectLater(
+      LibLlamaCppLinux().resolveLibrary(
+        request: const LlamaCppLibraryRequest(
+          requiredCapabilities: {LlamaCppLibraryCapability.cuda},
+        ),
+      ),
+      throwsA(isA<UnsupportedError>()),
+    );
+  });
+
+  test('preferred Linux path can declare CUDA and Vulkan support', () async {
+    final descriptor = await LibLlamaCppLinux().resolveLibrary(
+      request: const LlamaCppLibraryRequest(
+        preferredPath: '/tmp/libllama_gpu.so',
+        requiredCapabilities: {
+          LlamaCppLibraryCapability.cuda,
+          LlamaCppLibraryCapability.vulkan,
+        },
+      ),
+    );
+
+    expect(descriptor.resolution, LlamaCppLibraryResolution.path);
+    expect(descriptor.path, '/tmp/libllama_gpu.so');
+    expect(
+      descriptor.capabilities,
+      equals({
+        LlamaCppLibraryCapability.cpu,
+        LlamaCppLibraryCapability.cuda,
+        LlamaCppLibraryCapability.vulkan,
+      }),
+    );
+  });
 }

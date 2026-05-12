@@ -19,11 +19,29 @@ $buildDir = Join-Path $buildRoot "windows-x64"
 $destination = Join-Path $OutputDir "windows/x64"
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
 
+$cmakeBackendArgs = @()
+foreach ($name in @(
+  "LIB_LLAMA_CPP_ENABLE_METAL",
+  "LIB_LLAMA_CPP_ENABLE_CUDA",
+  "LIB_LLAMA_CPP_ENABLE_VULKAN"
+)) {
+  $value = [Environment]::GetEnvironmentVariable($name)
+  if ($value) {
+    $cmakeBackendArgs += "-D${name}=$value"
+  }
+}
+if ($env:LIB_LLAMA_CPP_CMAKE_ARGS) {
+  $extraCmakeArgs = $env:LIB_LLAMA_CPP_CMAKE_ARGS -split "\s+" |
+    Where-Object { $_ }
+  $cmakeBackendArgs += $extraCmakeArgs
+}
+
 cmake `
   -S (Join-Path $repoRoot "packages/lib_llama_cpp_windows/src") `
   -B $buildDir `
   -A x64 `
-  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_BUILD_TYPE=Release `
+  @cmakeBackendArgs
 
 cmake --build $buildDir --config Release --target lib_llama_cpp_windows --parallel 2
 

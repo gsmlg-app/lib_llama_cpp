@@ -35,4 +35,5 @@ if(LIB_LLAMA_CPP_CMAKE_HELPER STREQUAL "")
 endif()
 
 include("${LIB_LLAMA_CPP_CMAKE_HELPER}")
+lib_llama_cpp_prepare_backend_languages()
 lib_llama_cpp_add_cpu_backend(${PROJECT_NAME} "lib_llama_cpp_stub.cc")

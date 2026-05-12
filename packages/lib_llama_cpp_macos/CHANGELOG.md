@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Added Metal capability reporting for the bundled macOS framework.
+
 ## 0.4.0
 
 - Linked native builds with llama.cpp common chat utilities and `mtmd`

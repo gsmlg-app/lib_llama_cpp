@@ -20,6 +20,20 @@ void main() {
       descriptor.path,
       'lib_llama_cpp_macos.framework/lib_llama_cpp_macos',
     );
-    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+    expect(
+      descriptor.capabilities,
+      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.metal}),
+    );
+  });
+
+  test('bundled macOS library rejects unsupported required backends', () async {
+    await expectLater(
+      LibLlamaCppMacos().resolveLibrary(
+        request: const LlamaCppLibraryRequest(
+          requiredCapabilities: {LlamaCppLibraryCapability.cuda},
+        ),
+      ),
+      throwsA(isA<UnsupportedError>()),
+    );
   });
 }

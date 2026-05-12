@@ -23,13 +23,34 @@ void main() {
     },
   );
 
+  test(
+    'bundled Android library rejects unsupported required backends',
+    () async {
+      await expectLater(
+        LibLlamaCppAndroid().resolveLibrary(
+          request: const LlamaCppLibraryRequest(
+            requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
+          ),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    },
+  );
+
   test('preferred path overrides the bundled Android lookup name', () async {
     final descriptor = await LibLlamaCppAndroid().resolveLibrary(
-      request: const LlamaCppLibraryRequest(preferredPath: '/tmp/libllama.so'),
+      request: const LlamaCppLibraryRequest(
+        preferredPath: '/tmp/libllama.so',
+        requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
+      ),
     );
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.path);
     expect(descriptor.path, '/tmp/libllama.so');
     expect(descriptor.lookupName, isNull);
+    expect(
+      descriptor.capabilities,
+      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}),
+    );
   });
 }

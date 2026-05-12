@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Added unsupported-capability errors for bundled CPU-only Android libraries and
+  custom-path capability reporting for caller-provided Vulkan builds.
+
 ## 0.4.0
 
 - Linked native builds with llama.cpp common chat utilities and `mtmd`

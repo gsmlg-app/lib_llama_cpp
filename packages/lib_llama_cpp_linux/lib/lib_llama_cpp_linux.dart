@@ -14,10 +14,11 @@ final class LibLlamaCppLinux extends LibLlamaCppPlatform {
       return LlamaCppLibraryDescriptor(
         resolution: LlamaCppLibraryResolution.path,
         path: preferredPath,
-        capabilities: _capabilities,
+        capabilities: _capabilitiesForPreferredPath(request),
       );
     }
 
+    _validateRequiredCapabilities(request, _capabilities);
     return const LlamaCppLibraryDescriptor(
       resolution: LlamaCppLibraryResolution.lookupName,
       lookupName: 'liblib_llama_cpp_linux.so',
@@ -26,4 +27,28 @@ final class LibLlamaCppLinux extends LibLlamaCppPlatform {
   }
 
   static const _capabilities = {LlamaCppLibraryCapability.cpu};
+}
+
+Set<LlamaCppLibraryCapability> _capabilitiesForPreferredPath(
+  LlamaCppLibraryRequest request,
+) {
+  return {LlamaCppLibraryCapability.cpu, ...request.requiredCapabilities};
+}
+
+void _validateRequiredCapabilities(
+  LlamaCppLibraryRequest request,
+  Set<LlamaCppLibraryCapability> capabilities,
+) {
+  final unsupported = request.requiredCapabilities
+      .where((capability) => !capabilities.contains(capability))
+      .map((capability) => capability.name)
+      .toList();
+  if (unsupported.isEmpty) {
+    return;
+  }
+
+  throw UnsupportedError(
+    'Bundled Linux llama.cpp library does not support: '
+    '${unsupported.join(', ')}',
+  );
 }

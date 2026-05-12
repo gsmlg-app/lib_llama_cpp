@@ -3,6 +3,29 @@ include_guard(GLOBAL)
 set(LIB_LLAMA_CPP_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 function(lib_llama_cpp_configure_cpu_backend_options)
+  if(APPLE)
+    set(_lib_llama_cpp_enable_metal_default ON)
+  else()
+    set(_lib_llama_cpp_enable_metal_default OFF)
+  endif()
+
+  option(
+    LIB_LLAMA_CPP_ENABLE_METAL
+    "Enable the llama.cpp Metal backend for Apple builds."
+    ${_lib_llama_cpp_enable_metal_default})
+  option(
+    LIB_LLAMA_CPP_ENABLE_CUDA
+    "Enable the llama.cpp CUDA backend. Requires a CUDA Toolkit."
+    OFF)
+  option(
+    LIB_LLAMA_CPP_ENABLE_VULKAN
+    "Enable the llama.cpp Vulkan backend. Requires Vulkan SDK tools including glslc."
+    OFF)
+
+  if(LIB_LLAMA_CPP_ENABLE_METAL AND NOT APPLE)
+    message(FATAL_ERROR "LIB_LLAMA_CPP_ENABLE_METAL is only supported on Apple platforms.")
+  endif()
+
   set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build llama.cpp static libraries for the Flutter FFI wrapper." FORCE)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -23,12 +46,12 @@ function(lib_llama_cpp_configure_cpu_backend_options)
   set(GGML_ACCELERATE OFF CACHE BOOL "Disable Apple Accelerate backend." FORCE)
   set(GGML_BLAS OFF CACHE BOOL "Disable BLAS backend." FORCE)
   set(GGML_LLAMAFILE OFF CACHE BOOL "Disable llamafile kernels." FORCE)
-  set(GGML_CUDA OFF CACHE BOOL "Disable CUDA backend." FORCE)
+  set(GGML_CUDA ${LIB_LLAMA_CPP_ENABLE_CUDA} CACHE BOOL "Enable CUDA backend." FORCE)
   set(GGML_HIP OFF CACHE BOOL "Disable HIP backend." FORCE)
   set(GGML_MUSA OFF CACHE BOOL "Disable MUSA backend." FORCE)
-  set(GGML_VULKAN OFF CACHE BOOL "Disable Vulkan backend." FORCE)
-  set(GGML_METAL OFF CACHE BOOL "Disable Metal backend." FORCE)
-  set(GGML_METAL_EMBED_LIBRARY OFF CACHE BOOL "Disable embedded Metal library." FORCE)
+  set(GGML_VULKAN ${LIB_LLAMA_CPP_ENABLE_VULKAN} CACHE BOOL "Enable Vulkan backend." FORCE)
+  set(GGML_METAL ${LIB_LLAMA_CPP_ENABLE_METAL} CACHE BOOL "Enable Metal backend." FORCE)
+  set(GGML_METAL_EMBED_LIBRARY ${LIB_LLAMA_CPP_ENABLE_METAL} CACHE BOOL "Embed Metal source library." FORCE)
   set(GGML_OPENCL OFF CACHE BOOL "Disable OpenCL backend." FORCE)
   set(GGML_RPC OFF CACHE BOOL "Disable RPC backend." FORCE)
   set(GGML_SYCL OFF CACHE BOOL "Disable SYCL backend." FORCE)
@@ -39,7 +62,18 @@ function(lib_llama_cpp_configure_cpu_backend_options)
   set(GGML_ZENDNN OFF CACHE BOOL "Disable ZenDNN backend." FORCE)
   set(GGML_CANN OFF CACHE BOOL "Disable CANN backend." FORCE)
   set(GGML_HEXAGON OFF CACHE BOOL "Disable Hexagon backend." FORCE)
+
+  message(STATUS
+    "lib_llama_cpp backends: CPU=ON "
+    "Metal=${GGML_METAL} CUDA=${GGML_CUDA} Vulkan=${GGML_VULKAN}")
 endfunction()
+
+macro(lib_llama_cpp_prepare_backend_languages)
+  lib_llama_cpp_configure_cpu_backend_options()
+  if(LIB_LLAMA_CPP_ENABLE_METAL)
+    enable_language(OBJC ASM)
+  endif()
+endmacro()
 
 function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
   get_filename_component(_repo_root "${LIB_LLAMA_CPP_CMAKE_DIR}/../.." ABSOLUTE)

@@ -256,15 +256,22 @@ Current platform defaults:
 | Platform | Resolution | Capabilities |
 | --- | --- | --- |
 | Android | lookup name `liblib_llama_cpp_android.so` | `cpu` |
-| iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu` |
+| iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu`, `metal` |
 | Linux | lookup name `liblib_llama_cpp_linux.so` | `cpu` |
-| macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu` |
+| macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu`, `metal` |
 | Windows | lookup name `lib_llama_cpp_windows.dll` | `cpu` |
 
-`preferredPath` is honored by the current platform resolvers. The
-`requiredCapabilities` set is carried in the request API, but the current
-resolvers return their platform descriptor rather than rejecting unsupported
-capability requests.
+`preferredPath` is honored by the current platform resolvers. When a custom path
+is supplied, the descriptor reports `cpu` plus the requested capabilities so
+apps can route to caller-provided CUDA or Vulkan builds. Bundled libraries reject
+unsupported `requiredCapabilities` instead of silently returning a CPU-only
+descriptor.
+
+Native source and prebuilt builds use the shared CMake helper. Apple builds
+enable Metal by default. Linux and Windows builds can opt into CUDA or Vulkan
+with `LIB_LLAMA_CPP_ENABLE_CUDA=ON` or `LIB_LLAMA_CPP_ENABLE_VULKAN=ON`; Android
+can opt into Vulkan with `LIB_LLAMA_CPP_ENABLE_VULKAN=ON`. GPU offload still
+uses llama.cpp's normal `gpuLayerCount` load parameter.
 
 ## Model Files and Smoke Tests
 

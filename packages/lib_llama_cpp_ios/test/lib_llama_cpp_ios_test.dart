@@ -17,6 +17,20 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.path);
     expect(descriptor.path, 'lib_llama_cpp_ios.framework/lib_llama_cpp_ios');
-    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+    expect(
+      descriptor.capabilities,
+      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.metal}),
+    );
+  });
+
+  test('bundled iOS library rejects unsupported required backends', () async {
+    await expectLater(
+      LibLlamaCppIos().resolveLibrary(
+        request: const LlamaCppLibraryRequest(
+          requiredCapabilities: {LlamaCppLibraryCapability.cuda},
+        ),
+      ),
+      throwsA(isA<UnsupportedError>()),
+    );
   });
 }

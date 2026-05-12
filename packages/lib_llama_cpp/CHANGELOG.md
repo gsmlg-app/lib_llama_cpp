@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Added Metal capability reporting for bundled Apple libraries and explicit
+  unsupported-capability errors for bundled CPU-only libraries.
+- Added CMake build options for Metal, CUDA, and Vulkan native backend builds.
+
 ## 0.4.0
 
 - Added chat-template-aware `LlamaGenerateMessagesCommand` for multipart

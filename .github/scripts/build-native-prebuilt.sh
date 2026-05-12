@@ -5,8 +5,9 @@ usage() {
   cat >&2 <<'EOF'
 Usage: build-native-prebuilt.sh <linux|android|macos|ios> <output-dir>
 
-Builds CPU-only native lib_llama_cpp binaries from the checked-out
-third_party/llama.cpp source tree into a release artifact layout.
+Builds native lib_llama_cpp binaries from the checked-out third_party/llama.cpp
+source tree into a release artifact layout. Set LIB_LLAMA_CPP_ENABLE_CUDA=ON,
+LIB_LLAMA_CPP_ENABLE_VULKAN=ON, or LIB_LLAMA_CPP_CMAKE_ARGS for GPU variants.
 EOF
 }
 
@@ -22,6 +23,24 @@ build_root="${LIB_LLAMA_CPP_PREBUILD_BUILD_DIR:-${repo_root}/build/prebuilt}"
 
 cmake_parallel="${LIB_LLAMA_CPP_CMAKE_PARALLEL:-2}"
 cmake_generator="${LIB_LLAMA_CPP_CMAKE_GENERATOR:-Ninja}"
+cmake_backend_args=()
+
+append_cmake_bool_arg() {
+  local name="$1"
+  local value="${!name:-}"
+  if [[ -n "$value" ]]; then
+    cmake_backend_args+=("-D${name}=${value}")
+  fi
+}
+
+append_cmake_bool_arg LIB_LLAMA_CPP_ENABLE_METAL
+append_cmake_bool_arg LIB_LLAMA_CPP_ENABLE_CUDA
+append_cmake_bool_arg LIB_LLAMA_CPP_ENABLE_VULKAN
+
+if [[ -n "${LIB_LLAMA_CPP_CMAKE_ARGS:-}" ]]; then
+  read -r -a _lib_llama_cpp_extra_cmake_args <<< "$LIB_LLAMA_CPP_CMAKE_ARGS"
+  cmake_backend_args+=("${_lib_llama_cpp_extra_cmake_args[@]}")
+fi
 
 mkdir -p "$out_dir" "$build_root"
 
@@ -60,7 +79,8 @@ build_linux() {
   cmake -S "${repo_root}/packages/lib_llama_cpp_linux/src" \
     -B "$build_dir" \
     -G "$cmake_generator" \
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=Release \
+    "${cmake_backend_args[@]}"
   cmake --build "$build_dir" --target lib_llama_cpp_linux --parallel "$cmake_parallel"
 
   mkdir -p "$dst"
@@ -108,7 +128,8 @@ build_android() {
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_TOOLCHAIN_FILE="${ndk_dir}/build/cmake/android.toolchain.cmake" \
       -DANDROID_ABI="$abi" \
-      -DANDROID_PLATFORM=android-24
+      -DANDROID_PLATFORM=android-24 \
+      "${cmake_backend_args[@]}"
     cmake --build "$build_dir" --target lib_llama_cpp_android --parallel "$cmake_parallel"
 
     mkdir -p "$dst"
@@ -230,7 +251,8 @@ build_macos() {
     -G "$cmake_generator" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
-    -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+    -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+    "${cmake_backend_args[@]}"
   cmake --build "$build_dir" --target lib_llama_cpp_macos --parallel "$cmake_parallel"
 
   create_macos_framework \
@@ -261,7 +283,8 @@ build_ios_slice() {
     -DCMAKE_OSX_SYSROOT="$sdk" \
     -DCMAKE_OSX_ARCHITECTURES="$archs" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
-    -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+    -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+    "${cmake_backend_args[@]}"
   cmake --build "$build_dir" --config Release --target lib_llama_cpp_ios --parallel "$cmake_parallel"
 
   create_shallow_framework \
