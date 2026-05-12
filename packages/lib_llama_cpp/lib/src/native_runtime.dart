@@ -211,13 +211,17 @@ final class NativeLlamaRuntime {
       return;
     }
 
+    final grammar = _samplingGrammarFor(templateResult);
     final generated = StringBuffer();
     for (final response in _sampleFromEvaluatedPrompt(
       loaded: loaded,
       command: samplingCommand,
       initialTokenCount: initialTokenCount,
-      grammar: templateResult.grammar,
-      grammarLazy: templateResult.grammarLazy,
+      grammar: grammar,
+      grammarLazy: grammar != null && templateResult.grammarLazy,
+      grammarTriggers: grammar == null
+          ? const []
+          : templateResult.grammarTriggers,
     )) {
       if (response is LlamaTokenResponse) {
         generated.write(response.text);
@@ -244,12 +248,28 @@ final class NativeLlamaRuntime {
     }
   }
 
+  String? _samplingGrammarFor(_ChatTemplateResult templateResult) {
+    if (templateResult.grammar.isEmpty) {
+      return null;
+    }
+
+    // llama.cpp's current non-lazy Gemma4 tool grammar can throw through the
+    // FFI boundary when the model samples a turn marker. Keep parsing enabled,
+    // but avoid installing that sampler path.
+    if (templateResult.format == 'peg-gemma4' && !templateResult.grammarLazy) {
+      return null;
+    }
+
+    return templateResult.grammar;
+  }
+
   Iterable<LlamaResponse> _sampleFromEvaluatedPrompt({
     required _LoadedModel loaded,
     required LlamaGenerateCommand command,
     required int initialTokenCount,
     String? grammar,
     bool grammarLazy = false,
+    List<_GrammarTrigger> grammarTriggers = const [],
   }) sync* {
     final maxTokens = command.maxTokens ?? 128;
     if (maxTokens <= 0) {
@@ -262,6 +282,7 @@ final class NativeLlamaRuntime {
       command,
       grammar: grammar,
       grammarLazy: grammarLazy,
+      grammarTriggers: grammarTriggers,
     );
     final stopMatcher = _StopMatcher(command.stop);
     var generated = 0;
@@ -612,6 +633,7 @@ final class NativeLlamaRuntime {
     LlamaGenerateCommand command, {
     String? grammar,
     bool grammarLazy = false,
+    List<_GrammarTrigger> grammarTriggers = const [],
   }) {
     final sampler = _bindings.llama_sampler_chain_init(
       _bindings.llama_sampler_chain_default_params(),
@@ -628,7 +650,12 @@ final class NativeLlamaRuntime {
       _bindings.llama_sampler_chain_add(sampler, child);
     }
 
-    if (grammar != null && grammar.isNotEmpty && !grammarLazy) {
+    if (grammar != null && grammar.isNotEmpty && grammarLazy) {
+      add(
+        _createLazyGrammarSampler(vocab, grammar, grammarTriggers),
+        'lazy grammar',
+      );
+    } else if (grammar != null && grammar.isNotEmpty) {
       final grammarPointer = grammar.toNativeUtf8();
       final rootPointer = 'root'.toNativeUtf8();
       try {
@@ -667,6 +694,109 @@ final class NativeLlamaRuntime {
     }
 
     return sampler;
+  }
+
+  Pointer<llama_sampler> _createLazyGrammarSampler(
+    Pointer<llama_vocab> vocab,
+    String grammar,
+    List<_GrammarTrigger> triggers,
+  ) {
+    final grammarPointer = grammar.toNativeUtf8();
+    final rootPointer = 'root'.toNativeUtf8();
+    final stringPointers = <Pointer<Utf8>>[];
+    Pointer<Pointer<Char>> triggerStrings = nullptr;
+    Pointer<llama_token> triggerTokens = nullptr;
+
+    try {
+      final patternTriggers = triggers
+          .where(
+            (trigger) =>
+                trigger.type == 'pattern' || trigger.type == 'pattern_full',
+          )
+          .map((trigger) => trigger.value)
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      final wordTriggers = triggers
+          .where((trigger) => trigger.type == 'word')
+          .map((trigger) => trigger.value)
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      final tokenTriggers = triggers
+          .where((trigger) => trigger.type == 'token')
+          .map((trigger) => trigger.token)
+          .where((token) => token != LLAMA_TOKEN_NULL)
+          .toList(growable: false);
+
+      if (patternTriggers.isNotEmpty) {
+        triggerStrings = _allocateNativeStringArray(
+          patternTriggers,
+          stringPointers,
+        );
+        triggerTokens = _allocateNativeTokenArray(tokenTriggers);
+        return _bindings.llama_sampler_init_grammar_lazy_patterns(
+          vocab,
+          grammarPointer.cast<Char>(),
+          rootPointer.cast<Char>(),
+          triggerStrings,
+          patternTriggers.length,
+          triggerTokens,
+          tokenTriggers.length,
+        );
+      }
+
+      triggerStrings = _allocateNativeStringArray(wordTriggers, stringPointers);
+      triggerTokens = _allocateNativeTokenArray(tokenTriggers);
+      return _bindings.llama_sampler_init_grammar_lazy(
+        vocab,
+        grammarPointer.cast<Char>(),
+        rootPointer.cast<Char>(),
+        triggerStrings,
+        wordTriggers.length,
+        triggerTokens,
+        tokenTriggers.length,
+      );
+    } finally {
+      if (triggerTokens != nullptr) {
+        calloc.free(triggerTokens);
+      }
+      if (triggerStrings != nullptr) {
+        calloc.free(triggerStrings);
+      }
+      for (final pointer in stringPointers) {
+        calloc.free(pointer);
+      }
+      calloc.free(rootPointer);
+      calloc.free(grammarPointer);
+    }
+  }
+
+  Pointer<Pointer<Char>> _allocateNativeStringArray(
+    List<String> values,
+    List<Pointer<Utf8>> stringPointers,
+  ) {
+    if (values.isEmpty) {
+      return nullptr;
+    }
+
+    final pointer = calloc<Pointer<Char>>(values.length);
+    for (var i = 0; i < values.length; i += 1) {
+      final stringPointer = values[i].toNativeUtf8();
+      stringPointers.add(stringPointer);
+      pointer[i] = stringPointer.cast<Char>();
+    }
+    return pointer;
+  }
+
+  Pointer<llama_token> _allocateNativeTokenArray(List<int> tokens) {
+    if (tokens.isEmpty) {
+      return nullptr;
+    }
+
+    final pointer = calloc<llama_token>(tokens.length);
+    for (var i = 0; i < tokens.length; i += 1) {
+      pointer[i] = tokens[i];
+    }
+    return pointer;
   }
 
   String _tokenToPiece(Pointer<llama_vocab> vocab, int token) {
@@ -856,6 +986,7 @@ final class _ChatTemplateResult {
     required this.format,
     required this.generationPrompt,
     required this.parser,
+    required this.grammarTriggers,
     required this.additionalStops,
   });
 
@@ -867,6 +998,10 @@ final class _ChatTemplateResult {
       format: json['format'] as String? ?? 'content-only',
       generationPrompt: json['generation_prompt'] as String? ?? '',
       parser: json['parser'] as String? ?? '',
+      grammarTriggers: (json['grammar_triggers'] as List? ?? const [])
+          .map(_GrammarTrigger.fromJsonObject)
+          .whereType<_GrammarTrigger>()
+          .toList(),
       additionalStops: (json['additional_stops'] as List? ?? const [])
           .whereType<String>()
           .toList(),
@@ -879,7 +1014,32 @@ final class _ChatTemplateResult {
   final String format;
   final String generationPrompt;
   final String parser;
+  final List<_GrammarTrigger> grammarTriggers;
   final List<String> additionalStops;
+}
+
+final class _GrammarTrigger {
+  const _GrammarTrigger({
+    required this.type,
+    required this.value,
+    required this.token,
+  });
+
+  static _GrammarTrigger? fromJsonObject(Object? value) {
+    if (value is! Map<Object?, Object?>) {
+      return null;
+    }
+    final json = value.map((key, value) => MapEntry(key.toString(), value));
+    return _GrammarTrigger(
+      type: json['type'] as String? ?? '',
+      value: json['value'] as String? ?? '',
+      token: json['token'] as int? ?? LLAMA_TOKEN_NULL,
+    );
+  }
+
+  final String type;
+  final String value;
+  final int token;
 }
 
 final class _MediaInput {

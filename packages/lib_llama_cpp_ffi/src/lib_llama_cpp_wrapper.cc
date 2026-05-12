@@ -89,6 +89,20 @@ static common_chat_format llcpp_chat_format_from_name(const std::string & name) 
     throw std::invalid_argument("Unknown chat format: " + name);
 }
 
+static std::string llcpp_grammar_trigger_type_name(common_grammar_trigger_type type) {
+    switch (type) {
+        case COMMON_GRAMMAR_TRIGGER_TYPE_TOKEN:
+            return "token";
+        case COMMON_GRAMMAR_TRIGGER_TYPE_WORD:
+            return "word";
+        case COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN:
+            return "pattern";
+        case COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN_FULL:
+            return "pattern_full";
+    }
+    return "unknown";
+}
+
 static common_chat_tool_choice llcpp_tool_choice_from_json(const json & request) {
     if (!request.contains("tool_choice") || request.at("tool_choice").is_null()) {
         return COMMON_CHAT_TOOL_CHOICE_AUTO;
@@ -205,10 +219,18 @@ char * lib_llama_cpp_chat_templates_apply_json(
             {"supports_thinking", params.supports_thinking},
             {"thinking_start_tag", params.thinking_start_tag},
             {"thinking_end_tag", params.thinking_end_tag},
+            {"grammar_triggers", json::array()},
             {"additional_stops", params.additional_stops},
             {"preserved_tokens", params.preserved_tokens},
             {"caps", common_chat_templates_get_caps(handle->templates.get())},
         };
+        for (const auto & trigger : params.grammar_triggers) {
+            output["grammar_triggers"].push_back({
+                {"type", llcpp_grammar_trigger_type_name(trigger.type)},
+                {"value", trigger.value},
+                {"token", trigger.token},
+            });
+        }
 
         return llcpp_copy_string(output.dump());
     } catch (const std::exception & error) {
