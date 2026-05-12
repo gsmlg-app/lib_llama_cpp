@@ -42,6 +42,14 @@ if [[ -n "${LIB_LLAMA_CPP_CMAKE_ARGS:-}" ]]; then
   cmake_backend_args+=("${_lib_llama_cpp_extra_cmake_args[@]}")
 fi
 
+run_cmake() {
+  local cmake_args=("$@")
+  if (( ${#cmake_backend_args[@]} > 0 )); then
+    cmake_args+=("${cmake_backend_args[@]}")
+  fi
+  cmake "${cmake_args[@]}"
+}
+
 mkdir -p "$out_dir" "$build_root"
 
 find_built_file() {
@@ -76,11 +84,10 @@ build_linux() {
   local build_dir="${build_root}/linux-x64"
   local dst="${out_dir}/linux/x64"
 
-  cmake -S "${repo_root}/packages/lib_llama_cpp_linux/src" \
+  run_cmake -S "${repo_root}/packages/lib_llama_cpp_linux/src" \
     -B "$build_dir" \
     -G "$cmake_generator" \
-    -DCMAKE_BUILD_TYPE=Release \
-    "${cmake_backend_args[@]}"
+    -DCMAKE_BUILD_TYPE=Release
   cmake --build "$build_dir" --target lib_llama_cpp_linux --parallel "$cmake_parallel"
 
   mkdir -p "$dst"
@@ -122,14 +129,13 @@ build_android() {
     local build_dir="${build_root}/android-${abi}"
     local dst="${out_dir}/android/${abi}"
 
-    cmake -S "${repo_root}/packages/lib_llama_cpp_android/src" \
+    run_cmake -S "${repo_root}/packages/lib_llama_cpp_android/src" \
       -B "$build_dir" \
       -G "$cmake_generator" \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_TOOLCHAIN_FILE="${ndk_dir}/build/cmake/android.toolchain.cmake" \
       -DANDROID_ABI="$abi" \
-      -DANDROID_PLATFORM=android-24 \
-      "${cmake_backend_args[@]}"
+      -DANDROID_PLATFORM=android-24
     cmake --build "$build_dir" --target lib_llama_cpp_android --parallel "$cmake_parallel"
 
     mkdir -p "$dst"
@@ -246,13 +252,12 @@ build_macos() {
   local framework_dir="${build_dir}/framework/lib_llama_cpp_macos.framework"
   local dst="${out_dir}/macos"
 
-  cmake -S "${repo_root}/packages/lib_llama_cpp_macos/src" \
+  run_cmake -S "${repo_root}/packages/lib_llama_cpp_macos/src" \
     -B "$build_dir" \
     -G "$cmake_generator" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
-    -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-    "${cmake_backend_args[@]}"
+    -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
   cmake --build "$build_dir" --target lib_llama_cpp_macos --parallel "$cmake_parallel"
 
   create_macos_framework \
@@ -276,15 +281,14 @@ build_ios_slice() {
   local build_dir="$3"
   local framework_dir="$4"
 
-  cmake -S "${repo_root}/packages/lib_llama_cpp_ios/src" \
+  run_cmake -S "${repo_root}/packages/lib_llama_cpp_ios/src" \
     -B "$build_dir" \
     -G Xcode \
     -DCMAKE_SYSTEM_NAME=iOS \
     -DCMAKE_OSX_SYSROOT="$sdk" \
     -DCMAKE_OSX_ARCHITECTURES="$archs" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
-    -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-    "${cmake_backend_args[@]}"
+    -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
   cmake --build "$build_dir" --config Release --target lib_llama_cpp_ios --parallel "$cmake_parallel"
 
   create_shallow_framework \
