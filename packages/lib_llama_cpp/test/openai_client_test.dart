@@ -188,7 +188,7 @@ void main() {
       expect(response.outputText, 'Hello back');
       expect(
         engine.commands,
-        contains(const LlamaGenerateCommand(prompt: 'user: Hello')),
+        contains(const LlamaGenerateCommand(prompt: 'Hello')),
       );
     });
   });
@@ -269,9 +269,7 @@ void main() {
       expect(completion.choices.single.message.content, 'Hello from llama.cpp');
       expect(
         engine.commands,
-        contains(
-          const LlamaGenerateCommand(prompt: 'user: Hello', maxTokens: 4),
-        ),
+        contains(const LlamaGenerateCommand(prompt: 'Hello', maxTokens: 4)),
       );
     });
   });
