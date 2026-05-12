@@ -26,6 +26,8 @@ Pod::Spec.new do |s|
       rm -rf llama_cpp_sources
       mkdir -p llama_cpp_sources
       rsync -a --exclude .git "#{repo_root}/third_party/llama.cpp/" llama_cpp_sources/llama.cpp/
+      perl -0pi -e 's/#include "unicode.h"/#include "..\\/unicode.h"/' \
+        llama_cpp_sources/llama.cpp/common/jinja/value.cpp
       mkdir -p llama_cpp_sources/lib_llama_cpp_ffi
       rsync -a "#{repo_root}/packages/lib_llama_cpp_ffi/include" llama_cpp_sources/lib_llama_cpp_ffi/
       rsync -a "#{repo_root}/packages/lib_llama_cpp_ffi/src" llama_cpp_sources/lib_llama_cpp_ffi/
