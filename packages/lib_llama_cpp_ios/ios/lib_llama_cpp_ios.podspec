@@ -14,6 +14,7 @@ Pod::Spec.new do |s|
   s.platform = :ios, '13.0'
   s.libraries = 'c++'
   s.frameworks = 'Foundation', 'Metal', 'MetalKit'
+  s.requires_arc = false
 
   if File.exist?(prebuilt_framework)
     s.vendored_frameworks = 'Frameworks/lib_llama_cpp_ios.xcframework'
