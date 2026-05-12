@@ -1,0 +1,47 @@
+# Graphify output
+graphify-out/
+
+# Local/tool state
+.claude/
+.codex/
+.gitnexus/
+.dart_tool/
+**/.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.melos_tool/
+.devenv/
+.direnv/
+devenv.local.nix
+
+# Build outputs
+build/
+**/build/
+**/.gradle/
+
+# Editor/OS files
+.DS_Store
+.idea/
+*.iml
+*.log
+
+# Platform generated files
+**/android/.gradle/
+android/local.properties
+**/android/local.properties
+**/Pods/
+**/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/macos/Flutter/ephemeral/
+**/Flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# Package lockfiles are intentionally not tracked in this workspace.
+pubspec.lock
+
+# Top-level vendored dependency mirror. Package-local native sources remain visible.
+third_party/
