@@ -252,10 +252,11 @@ final class NativeLlamaRuntime {
       return null;
     }
 
-    // llama.cpp's current non-lazy Gemma4 tool grammar can throw through the
-    // FFI boundary when the model samples a turn marker. Keep parsing enabled,
-    // but avoid installing that sampler path.
-    if (templateResult.format == 'peg-gemma4' && !templateResult.grammarLazy) {
+    // llama.cpp's Gemma4 tool grammar sampler is currently not usable from
+    // this runtime: non-lazy grammar can throw through FFI, while lazy grammar
+    // can stay in trigger-wait mode and hide tool behavior. Keep the tool-aware
+    // prompt and output parser, but avoid installing either sampler path.
+    if (templateResult.format == 'peg-gemma4') {
       return null;
     }
 
