@@ -34,6 +34,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  internal-request-regressions:
+    name: Internal request regressions
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
+
+      - name: Install Dart and Flutter dependencies
+        run: dart pub get
+
+      - name: Run JSON helper and package metadata tests
+        run: |
+          dart test packages/lib_llama_cpp/test/openai_json_helpers_test.dart -r expanded
+          dart test packages/lib_llama_cpp/test/package_metadata_test.dart -r expanded
+
+      - name: Run typed multimodal/tool API smoke tests
+        run: dart test packages/lib_llama_cpp/test/multimodal_tool_api_test.dart -r expanded
+
   real-model-smoke:
     name: Real model smoke (${{ matrix.platform }})
     if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' || inputs.platform == 'macos' || inputs.platform == 'windows' }}
