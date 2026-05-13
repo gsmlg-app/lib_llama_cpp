@@ -113,6 +113,34 @@ final class LlamaMessage {
     this.name,
   });
 
+  factory LlamaMessage.fromJson(Map<String, Object?> json) {
+    final rawToolCalls = json['tool_calls'] ?? json['toolCalls'];
+    final toolCalls = <LlamaToolCall>[];
+    if (rawToolCalls is List) {
+      for (var index = 0; index < rawToolCalls.length; index += 1) {
+        final rawToolCall = rawToolCalls[index];
+        if (rawToolCall is Map) {
+          toolCalls.add(
+            LlamaToolCall.fromJson(
+              _stringKeyedMap(rawToolCall, 'tool call'),
+              index: index,
+            ),
+          );
+        }
+      }
+    }
+
+    return LlamaMessage(
+      role: _requiredString(json, 'role'),
+      content: llamaContentFromJson(json['content']),
+      toolCalls: toolCalls,
+      toolCallId:
+          _optionalString(json['tool_call_id']) ??
+          _optionalString(json['toolCallId']),
+      name: _optionalString(json['name']),
+    );
+  }
+
   final String role;
   final Object content;
   final List<LlamaToolCall> toolCalls;
@@ -120,6 +148,17 @@ final class LlamaMessage {
   final String? name;
 
   bool get hasMedia => llamaContentHasMedia(content);
+
+  Map<String, Object?> toJson() {
+    return {
+      'role': role,
+      'content': llamaContentToJson(content),
+      if (toolCalls.isNotEmpty)
+        'tool_calls': [for (final toolCall in toolCalls) toolCall.toJson()],
+      if (toolCallId != null) 'tool_call_id': toolCallId,
+      if (name != null) 'name': name,
+    };
+  }
 }
 
 final class LlamaGenerateMessagesCommand extends LlamaCommand {
@@ -175,4 +214,27 @@ bool _listEquals<T>(List<T> first, List<T> second) {
     }
   }
   return true;
+}
+
+String _requiredString(Map<String, Object?> json, String key) {
+  final value = json[key];
+  if (value is String && value.isNotEmpty) {
+    return value;
+  }
+  throw ArgumentError.value(json, 'json', 'Expected non-empty string "$key"');
+}
+
+String? _optionalString(Object? value) {
+  return value is String ? value : null;
+}
+
+Map<String, Object?> _stringKeyedMap(Object? value, String name) {
+  if (value is! Map) {
+    throw ArgumentError.value(value, name, 'Expected a JSON object');
+  }
+
+  return {
+    for (final entry in value.entries)
+      if (entry.key is String) entry.key as String: entry.value,
+  };
 }

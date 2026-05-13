@@ -62,11 +62,32 @@ final class LlamaResponseInputItem {
     this.name,
   });
 
+  factory LlamaResponseInputItem.fromJson(Map<String, Object?> json) {
+    final message = LlamaMessage.fromJson(json);
+    return LlamaResponseInputItem(
+      role: message.role,
+      content: message.content,
+      toolCalls: message.toolCalls,
+      toolCallId: message.toolCallId,
+      name: message.name,
+    );
+  }
+
   final String role;
   final Object content;
   final List<LlamaToolCall> toolCalls;
   final String? toolCallId;
   final String? name;
+
+  Map<String, Object?> toJson() {
+    return LlamaMessage(
+      role: role,
+      content: content,
+      toolCalls: toolCalls,
+      toolCallId: toolCallId,
+      name: name,
+    ).toJson();
+  }
 }
 
 sealed class LlamaResponseStreamEvent {
