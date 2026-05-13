@@ -148,7 +148,7 @@ void main() {
     expect(toolCall.arguments, contains('Paris'));
     expect(events.whereType<LlamaResponseRequiresAction>(), hasLength(1));
     expect(events.last, isA<LlamaResponseRequiresAction>());
-  }, skip: !runAdvancedCases);
+  }, skip: modelPath.isEmpty);
 
   testWidgets('handles image input', (_) async {
     expect(Platform.isAndroid || Platform.isIOS, isTrue);

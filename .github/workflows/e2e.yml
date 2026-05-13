@@ -62,13 +62,15 @@ jobs:
           dart test packages/lib_llama_cpp/test/package_metadata_test.dart -r expanded
 
       - name: Run typed multimodal/tool API smoke tests
-        run: dart test packages/lib_llama_cpp/test/multimodal_tool_api_test.dart -r expanded
+        run: |
+          dart test packages/lib_llama_cpp/test/multimodal_tool_api_test.dart -r expanded
+          dart test packages/lib_llama_cpp/test/tool_call_fallback_test.dart -r expanded
 
   real-model-smoke:
     name: Real model smoke (${{ matrix.platform }})
     if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' || inputs.platform == 'macos' || inputs.platform == 'windows' }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
@@ -79,6 +81,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
 
       - name: Install Linux llama.cpp build dependencies
         if: runner.os == 'Linux'
@@ -151,6 +160,78 @@ jobs:
             exit 1
           }
           "MODEL_PATH=$modelPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install Dart and Flutter dependencies
+        run: dart pub get
+
+      - name: Build native API library
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            LIB_LLAMA_CPP_ENABLE_METAL=OFF \
+              LIB_LLAMA_CPP_PREBUILD_BUILD_DIR="$RUNNER_TEMP/prebuilt-build-cpu" \
+              bash .github/scripts/build-native-prebuilt.sh macos "$RUNNER_TEMP/prebuilt-cpu"
+            cpu_library="$(find "$RUNNER_TEMP/prebuilt-cpu/macos/lib_llama_cpp_macos.xcframework" -type f -name lib_llama_cpp_macos | head -n 1)"
+            test -n "$cpu_library"
+            echo "LIB_LLAMA_CPP_TEST_CPU_LIBRARY=$cpu_library" >> "$GITHUB_ENV"
+
+            LIB_LLAMA_CPP_ENABLE_METAL=ON \
+              LIB_LLAMA_CPP_PREBUILD_BUILD_DIR="$RUNNER_TEMP/prebuilt-build-metal" \
+              bash .github/scripts/build-native-prebuilt.sh macos "$RUNNER_TEMP/prebuilt-metal"
+            metal_library="$(find "$RUNNER_TEMP/prebuilt-metal/macos/lib_llama_cpp_macos.xcframework" -type f -name lib_llama_cpp_macos | head -n 1)"
+            test -n "$metal_library"
+            echo "LIB_LLAMA_CPP_TEST_METAL_LIBRARY=$metal_library" >> "$GITHUB_ENV"
+          else
+            bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
+            library_path="$RUNNER_TEMP/prebuilt/linux/x64/liblib_llama_cpp_linux.so"
+            test -f "$library_path"
+            echo "LIB_LLAMA_CPP_TEST_LIBRARY=$library_path" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build native API library
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP\prebuilt"
+          $libraryPath = Join-Path $env:RUNNER_TEMP "prebuilt\windows\x64\lib_llama_cpp_windows.dll"
+          if (!(Test-Path $libraryPath)) {
+            Write-Error "Could not find $libraryPath"
+            exit 1
+          }
+          "LIB_LLAMA_CPP_TEST_LIBRARY=$libraryPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run API tool-use smoke
+        if: runner.os != 'Windows'
+        shell: bash
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            LIB_LLAMA_CPP_TEST_LIBRARY="$LIB_LLAMA_CPP_TEST_CPU_LIBRARY" \
+              LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_GPU_LAYERS=0 \
+              dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
+
+            LIB_LLAMA_CPP_TEST_LIBRARY="$LIB_LLAMA_CPP_TEST_METAL_LIBRARY" \
+              LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_GPU_LAYERS=32 \
+              dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
+          else
+            LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_GPU_LAYERS=0 \
+              dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
+          fi
+
+      - name: Run API tool-use smoke
+        if: runner.os == 'Windows'
+        shell: pwsh
+        timeout-minutes: 10
+        run: |
+          $env:LIB_LLAMA_CPP_TEST_MODEL = $env:MODEL_PATH
+          $env:LIB_LLAMA_CPP_TEST_GPU_LAYERS = "0"
+          dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
 
       - name: Run real model inference
         if: runner.os != 'Windows'

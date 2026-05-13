@@ -12,6 +12,7 @@ import 'llama_content.dart';
 import 'llama_response.dart';
 import 'llama_state.dart';
 import 'llama_tool.dart';
+import 'tool_call_fallback.dart';
 
 final class NativeLlamaRuntime {
   NativeLlamaRuntime({required LlamaCppLibraryDescriptor library})
@@ -227,14 +228,23 @@ final class NativeLlamaRuntime {
       }
     }
 
+    final generatedText = generated.toString();
     final parsed = _wrapper.parseChatOutput(
-      text: generated.toString(),
+      text: generatedText,
       format: templateResult.format,
       generationPrompt: templateResult.generationPrompt,
       parser: templateResult.parser,
     );
     final parsedToolCalls = _toolCallsFromParsedMessage(parsed);
     if (parsedToolCalls.isEmpty) {
+      final fallbackToolCall = forcedToolCallFallback(
+        command,
+        generatedText: generatedText,
+      );
+      if (fallbackToolCall != null) {
+        yield LlamaToolCallResponse(toolCall: fallbackToolCall);
+        return;
+      }
       final text = _contentFromParsedMessage(parsed);
       if (text.isNotEmpty) {
         yield LlamaTokenResponse(text: text, index: 0);

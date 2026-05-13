@@ -161,6 +161,7 @@ void main() {
             .single
             .toolCall;
         expect(toolCall.name, 'lookup_weather');
+        expect(jsonDecode(toolCall.arguments), containsPair('city', 'Paris'));
         expect(events.last, isA<LlamaResponseRequiresAction>());
       },
       timeout: const Timeout(Duration(minutes: 5)),
