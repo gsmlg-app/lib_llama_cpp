@@ -611,19 +611,31 @@ final class NativeLlamaRuntime {
   }
 
   void _decodeTokens(Pointer<llama_context> context, List<int> tokens) {
-    final tokenPointer = calloc<llama_token>(tokens.length);
-    try {
-      for (var i = 0; i < tokens.length; i += 1) {
-        tokenPointer[i] = tokens[i];
-      }
+    if (tokens.isEmpty) {
+      return;
+    }
 
-      final batch = _bindings.llama_batch_get_one(tokenPointer, tokens.length);
-      final result = _bindings.llama_decode(context, batch);
-      if (result != 0) {
-        throw NativeLlamaException('llama_decode failed with code $result.');
+    final batchSize = _bindings.llama_n_batch(context);
+    if (batchSize <= 0) {
+      throw NativeLlamaException('Invalid llama.cpp batch size $batchSize.');
+    }
+
+    for (var offset = 0; offset < tokens.length; offset += batchSize) {
+      final chunkLength = math.min(batchSize, tokens.length - offset);
+      final tokenPointer = calloc<llama_token>(chunkLength);
+      try {
+        for (var i = 0; i < chunkLength; i += 1) {
+          tokenPointer[i] = tokens[offset + i];
+        }
+
+        final batch = _bindings.llama_batch_get_one(tokenPointer, chunkLength);
+        final result = _bindings.llama_decode(context, batch);
+        if (result != 0) {
+          throw NativeLlamaException('llama_decode failed with code $result.');
+        }
+      } finally {
+        calloc.free(tokenPointer);
       }
-    } finally {
-      calloc.free(tokenPointer);
     }
   }
 
