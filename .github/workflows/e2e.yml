@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"linux","os":"ubuntu-latest"},{"platform":"macos","os":"macos-14"},{"platform":"windows","os":"windows-latest"}]' || inputs.platform == 'linux' && '[{"platform":"linux","os":"ubuntu-latest"}]' || inputs.platform == 'macos' && '[{"platform":"macos","os":"macos-14"}]' || inputs.platform == 'windows' && '[{"platform":"windows","os":"windows-latest"}]' || '[]') }}
+        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"linux","os":"ubuntu-latest"},{"platform":"macos","os":"macos-14"},{"platform":"windows","os":"windows-2022"}]' || inputs.platform == 'linux' && '[{"platform":"linux","os":"ubuntu-latest"}]' || inputs.platform == 'macos' && '[{"platform":"macos","os":"macos-14"}]' || inputs.platform == 'windows' && '[{"platform":"windows","os":"windows-2022"}]' || '[]') }}
 
     steps:
       - name: Checkout
@@ -498,7 +498,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"android","os":"ubuntu-latest","command":"flutter build apk --debug"},{"platform":"ios","os":"macos-14","command":"flutter build ios --debug --simulator --no-codesign"},{"platform":"linux","os":"ubuntu-latest","command":"flutter build linux --debug"},{"platform":"macos","os":"macos-14","command":"flutter build macos --debug"},{"platform":"windows","os":"windows-latest","command":"flutter build windows --debug"}]' || inputs.platform == 'android' && '[{"platform":"android","os":"ubuntu-latest","command":"flutter build apk --debug"}]' || inputs.platform == 'ios' && '[{"platform":"ios","os":"macos-14","command":"flutter build ios --debug --simulator --no-codesign"}]' || inputs.platform == 'linux' && '[{"platform":"linux","os":"ubuntu-latest","command":"flutter build linux --debug"}]' || inputs.platform == 'macos' && '[{"platform":"macos","os":"macos-14","command":"flutter build macos --debug"}]' || inputs.platform == 'windows' && '[{"platform":"windows","os":"windows-latest","command":"flutter build windows --debug"}]' || '[]') }}
+        include: ${{ fromJSON(inputs.platform == 'all' && '[{"platform":"android","os":"ubuntu-latest","command":"flutter build apk --debug"},{"platform":"ios","os":"macos-14","command":"flutter build ios --debug --simulator --no-codesign"},{"platform":"linux","os":"ubuntu-latest","command":"flutter build linux --debug"},{"platform":"macos","os":"macos-14","command":"flutter build macos --debug"},{"platform":"windows","os":"windows-2022","command":"flutter build windows --debug"}]' || inputs.platform == 'android' && '[{"platform":"android","os":"ubuntu-latest","command":"flutter build apk --debug"}]' || inputs.platform == 'ios' && '[{"platform":"ios","os":"macos-14","command":"flutter build ios --debug --simulator --no-codesign"}]' || inputs.platform == 'linux' && '[{"platform":"linux","os":"ubuntu-latest","command":"flutter build linux --debug"}]' || inputs.platform == 'macos' && '[{"platform":"macos","os":"macos-14","command":"flutter build macos --debug"}]' || inputs.platform == 'windows' && '[{"platform":"windows","os":"windows-2022","command":"flutter build windows --debug"}]' || '[]') }}
 
     steps:
       - name: Checkout

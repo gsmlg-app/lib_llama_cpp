@@ -129,7 +129,7 @@ jobs:
             os: macos-14
             build-command: flutter build macos --debug
           - platform: windows
-            os: windows-latest
+            os: windows-2022
             build-command: flutter build windows --debug
 
     steps:
