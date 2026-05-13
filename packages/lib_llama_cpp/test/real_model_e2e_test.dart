@@ -128,7 +128,7 @@ void main() {
     }, timeout: const Timeout(Duration(minutes: 4)));
 
     test(
-      'handles a tool request without failing',
+      'emits a forced structured tool call',
       () async {
         final events = await client.responses
             .stream(
@@ -156,21 +156,12 @@ void main() {
 
         expect(events.first, isA<LlamaResponseCreated>());
         expect(events.whereType<LlamaResponseFailed>(), isEmpty);
-        expect(
-          events.last,
-          anyOf(
-            isA<LlamaResponseCompleted>(),
-            isA<LlamaResponseRequiresAction>(),
-          ),
-        );
-
-        final toolCalls = events
+        final toolCall = events
             .whereType<LlamaResponseToolCallDone>()
-            .toList();
-        if (toolCalls.isNotEmpty) {
-          final toolCall = toolCalls.single.toolCall;
-          expect(toolCall.name, 'lookup_weather');
-        }
+            .single
+            .toolCall;
+        expect(toolCall.name, 'lookup_weather');
+        expect(events.last, isA<LlamaResponseRequiresAction>());
       },
       timeout: const Timeout(Duration(minutes: 5)),
     );
