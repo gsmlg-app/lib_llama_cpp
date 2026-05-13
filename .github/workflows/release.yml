@@ -208,6 +208,25 @@ jobs:
             perl -0pi -e 's/^version: .+$/version: $ENV{VERSION}/m' "$pubspec"
             perl -0pi -e 's/^(\s+(?:lib_llama_cpp_android|lib_llama_cpp_ffi|lib_llama_cpp_ios|lib_llama_cpp_linux|lib_llama_cpp_macos|lib_llama_cpp_platform_interface|lib_llama_cpp_windows): )\^?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/${1}^$ENV{VERSION}/mg' "$pubspec"
           done
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          for podspec in (
+              Path("packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios.podspec"),
+              Path("packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos.podspec"),
+          ):
+              text = podspec.read_text()
+              text = re.sub(
+                  r"(s\.version\s*=\s*['\"])[^'\"]+(['\"])",
+                  rf"\g<1>{version}\2",
+                  text,
+                  count=1,
+              )
+              podspec.write_text(text)
+          PY
           if [[ "$VERSION" == *+* ]]; then
             EXAMPLE_VERSION="$VERSION"
           else
@@ -329,7 +348,11 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          git add packages/*/pubspec.yaml example/pubspec.yaml
+          git add \
+            packages/*/pubspec.yaml \
+            packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios.podspec \
+            packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos.podspec \
+            example/pubspec.yaml
           if git diff --cached --quiet; then
             echo "Package versions are already set to v${VERSION}."
           else
