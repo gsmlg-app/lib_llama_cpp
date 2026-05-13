@@ -76,6 +76,17 @@ final class LlamaChatMessage {
     this.name,
   });
 
+  factory LlamaChatMessage.fromJson(Map<String, Object?> json) {
+    final message = LlamaMessage.fromJson(json);
+    return LlamaChatMessage(
+      role: message.role,
+      content: message.content,
+      toolCalls: message.toolCalls,
+      toolCallId: message.toolCallId,
+      name: message.name,
+    );
+  }
+
   final String role;
   final Object content;
   final List<LlamaToolCall> toolCalls;
@@ -90,6 +101,10 @@ final class LlamaChatMessage {
       toolCallId: toolCallId,
       name: name,
     );
+  }
+
+  Map<String, Object?> toJson() {
+    return toLlamaMessage().toJson();
   }
 }
 
