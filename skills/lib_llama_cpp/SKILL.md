@@ -28,7 +28,6 @@ final commands = Stream<LlamaCommand>.fromIterable([
   ),
   const LlamaGenerateCommand(
     prompt: 'Write one short sentence.',
-    maxTokens: 32,
   ),
   const LlamaDisposeCommand(),
 ]);
@@ -64,7 +63,7 @@ For OpenAI-shaped app code, use `LlamaOpenAIClient` with `LlamaModelConfig` inst
 - `LlamaOpenAIClient` exposes Responses-style and Chat Completions-style local facades over the same engine.
 - `LlamaModelConfig` carries `modelPath`, optional `contextSize`, `gpuLayerCount`, `mmprojPath`, `mmprojUseGpu`, and image token bounds.
 - `LlamaLoadModelCommand` carries `modelPath`, optional `contextSize`, optional `gpuLayerCount`, and optional multimodal projector options.
-- `LlamaGenerateCommand` carries `prompt`, optional `maxTokens`, `temperature`, `topP`, and `stop`.
+- `LlamaGenerateCommand` carries `prompt`, optional `maxTokens`, `temperature`, `topP`, and `stop`; omitted token limits use the remaining model context window.
 - `LlamaGenerateMessagesCommand` applies the model chat template and supports typed multimodal content and tool definitions.
 - `LlamaDisposeCommand` resets state and should be the final command in normal app flows.
 - `LlamaState` tracks `modelPath`, `isModelLoaded`, and model capabilities.

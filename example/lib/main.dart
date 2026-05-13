@@ -50,7 +50,6 @@ final class _InferenceDemoScreenState extends State<InferenceDemoScreen> {
       await for (final event in _client.responses.stream(
         model: 'demo',
         input: 'Write one sentence.',
-        maxOutputTokens: 16,
       )) {
         if (!mounted) {
           return;

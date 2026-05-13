@@ -143,8 +143,7 @@ final class NativeLlamaRuntime {
       );
     }
 
-    final maxTokens = command.maxTokens ?? 128;
-    if (maxTokens <= 0) {
+    if (command.maxTokens != null && command.maxTokens! <= 0) {
       return;
     }
 
@@ -271,12 +270,12 @@ final class NativeLlamaRuntime {
     bool grammarLazy = false,
     List<_GrammarTrigger> grammarTriggers = const [],
   }) sync* {
-    final maxTokens = command.maxTokens ?? 128;
+    final contextSize = _bindings.llama_n_ctx(loaded.context);
+    final maxTokens = command.maxTokens ?? contextSize - initialTokenCount;
     if (maxTokens <= 0) {
       return;
     }
 
-    final contextSize = _bindings.llama_n_ctx(loaded.context);
     final sampler = _createSampler(
       loaded.vocab,
       command,

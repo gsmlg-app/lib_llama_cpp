@@ -35,7 +35,6 @@ final client = LlamaOpenAIClient(
 final response = await client.responses.create(
   model: 'local',
   input: 'Write one sentence.',
-  maxOutputTokens: 16,
 );
 
 print(response.outputText);
@@ -47,7 +46,6 @@ Streaming uses typed response events with OpenAI-style event names:
 await for (final event in client.responses.stream(
   model: 'local',
   input: 'Write one sentence.',
-  maxOutputTokens: 16,
 )) {
   if (event case LlamaResponseOutputTextDelta(:final delta)) {
     print(delta);
@@ -63,7 +61,6 @@ final completion = await client.chat.completions.create(
   messages: [
     const LlamaChatMessage(role: 'user', content: 'Write one sentence.'),
   ],
-  maxTokens: 16,
 );
 
 print(completion.choices.first.message.content);
@@ -147,7 +144,7 @@ import 'package:lib_llama_cpp/lib_llama_cpp.dart';
 final client = const LibLlamaCpp();
 final commands = Stream<LlamaCommand>.fromIterable([
   const LlamaLoadModelCommand(modelPath: '/path/to/model.gguf'),
-  const LlamaGenerateCommand(prompt: 'Write one sentence.', maxTokens: 16),
+  const LlamaGenerateCommand(prompt: 'Write one sentence.'),
   const LlamaDisposeCommand(),
 ]);
 
@@ -202,7 +199,7 @@ omit both and rely on federated plugin registration.
 | Command | Fields | Current behavior |
 | --- | --- | --- |
 | `LlamaLoadModelCommand` | `modelPath`, `contextSize`, `gpuLayerCount`, `mmprojPath`, `mmprojUseGpu`, `imageMinTokens`, `imageMaxTokens` | Loads the app-supplied GGUF model path and optional multimodal projector, then emits `LlamaStateChangedResponse` when the runtime state changes. |
-| `LlamaGenerateCommand` | `prompt`, `maxTokens`, `temperature`, `topP`, `stop` | Requires a loaded model. Successful generation emits `LlamaTokenResponse` values; runtime failures emit `LlamaErrorResponse`. |
+| `LlamaGenerateCommand` | `prompt`, optional `maxTokens`, `temperature`, `topP`, `stop` | Requires a loaded model. When `maxTokens` is omitted, generation can use the remaining model context window. Successful generation emits `LlamaTokenResponse` values; runtime failures emit `LlamaErrorResponse`. |
 | `LlamaGenerateMessagesCommand` | `messages`, `tools`, `toolChoice`, `parallelToolCalls`, sampling fields | Applies the model chat template, evaluates typed media parts when present, and emits text or `LlamaToolCallResponse` values. |
 | `LlamaDisposeCommand` | none | Resets state to `LlamaState.empty()`, emits `LlamaStateChangedResponse`, then emits `LlamaDoneResponse`. |
 
