@@ -52,6 +52,25 @@ void main() {
     }, timeout: const Timeout(Duration(minutes: 4)));
 
     test(
+      'handles prompts longer than one decode batch',
+      () async {
+        final response = await client.responses.create(
+          model: _modelName,
+          input: _gemmaUserPrompt(
+            'Reply with OK after reading this list: '
+            '${List.filled(2300, 'word').join(' ')}',
+          ),
+          maxOutputTokens: 8,
+          temperature: 0,
+        );
+
+        expect(response.status, 'completed');
+        expect(response.outputText.trim(), isNotEmpty);
+      },
+      timeout: const Timeout(Duration(minutes: 5)),
+    );
+
+    test(
       'streams text deltas and completes',
       () async {
         final events = await client.responses
