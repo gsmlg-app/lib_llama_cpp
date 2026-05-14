@@ -184,10 +184,14 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Build Android prebuilt libraries
-        env:
-          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
-          LIB_LLAMA_CPP_CMAKE_ARGS: -DCMAKE_CXX_FLAGS=-I${{ runner.temp }}/vulkan-headers -DVulkan_INCLUDE_DIR=${{ runner.temp }}/vulkan-headers
-        run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
+        run: |
+          ANDROID_ABIS=armeabi-v7a \
+            LIB_LLAMA_CPP_ENABLE_VULKAN=OFF \
+            .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
+          ANDROID_ABIS="arm64-v8a x86_64" \
+            LIB_LLAMA_CPP_ENABLE_VULKAN=ON \
+            LIB_LLAMA_CPP_CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-I${RUNNER_TEMP}/vulkan-headers -DVulkan_INCLUDE_DIR=${RUNNER_TEMP}/vulkan-headers" \
+            .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
         uses: actions/upload-artifact@v4
