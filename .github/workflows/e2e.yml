@@ -94,6 +94,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools
+          if [[ -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json ]]; then
+            echo "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json" >> "$GITHUB_ENV"
+          fi
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+          vulkaninfo --summary || true
 
       - name: Build llama.cpp CLI
         if: runner.os != 'Windows'
