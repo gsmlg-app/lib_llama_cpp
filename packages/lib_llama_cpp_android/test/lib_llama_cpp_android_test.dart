@@ -19,23 +19,47 @@ void main() {
 
       expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
       expect(descriptor.lookupName, 'liblib_llama_cpp_android.so');
-      expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
-    },
-  );
-
-  test(
-    'bundled Android library rejects unsupported required backends',
-    () async {
-      await expectLater(
-        LibLlamaCppAndroid().resolveLibrary(
-          request: const LlamaCppLibraryRequest(
-            requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
-          ),
-        ),
-        throwsA(isA<UnsupportedError>()),
+      expect(
+        descriptor.capabilities,
+        equals({
+          LlamaCppLibraryCapability.cpu,
+          LlamaCppLibraryCapability.vulkan,
+        }),
       );
     },
   );
+
+  test('bundled Android library satisfies required Vulkan backend', () async {
+    final descriptor = await LibLlamaCppAndroid().resolveLibrary(
+      request: const LlamaCppLibraryRequest(
+        requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
+      ),
+    );
+
+    expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
+    expect(descriptor.lookupName, 'liblib_llama_cpp_android.so');
+    expect(
+      descriptor.capabilities,
+      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}),
+    );
+  });
+
+  test('bundled Android library rejects unsupported CUDA backend', () async {
+    await expectLater(
+      LibLlamaCppAndroid().resolveLibrary(
+        request: const LlamaCppLibraryRequest(
+          requiredCapabilities: {LlamaCppLibraryCapability.cuda},
+        ),
+      ),
+      throwsA(
+        isA<UnsupportedError>().having(
+          (error) => error.message,
+          'message',
+          contains('cuda'),
+        ),
+      ),
+    );
+  });
 
   test('preferred path overrides the bundled Android lookup name', () async {
     final descriptor = await LibLlamaCppAndroid().resolveLibrary(

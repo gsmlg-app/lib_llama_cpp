@@ -111,6 +111,19 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
     endif()
   endforeach()
 
+  set(_lib_llama_cpp_whole_archive_targets llama mtmd)
+  if(DEFINED GGML_AVAILABLE_BACKENDS)
+    list(APPEND _lib_llama_cpp_whole_archive_targets ${GGML_AVAILABLE_BACKENDS})
+  endif()
+  list(REMOVE_DUPLICATES _lib_llama_cpp_whole_archive_targets)
+
+  set(_lib_llama_cpp_existing_whole_archive_targets)
+  foreach(_target IN LISTS _lib_llama_cpp_whole_archive_targets)
+    if(TARGET ${_target})
+      list(APPEND _lib_llama_cpp_existing_whole_archive_targets ${_target})
+    endif()
+  endforeach()
+
   target_compile_definitions(llama PRIVATE LLAMA_BUILD LLAMA_SHARED)
 
   set(_lib_llama_cpp_ffi_dir "${_repo_root}/packages/lib_llama_cpp_ffi")
@@ -129,19 +142,31 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
       "${_llama_cpp_dir}/vendor")
 
   if(MSVC)
-    target_link_libraries(${target_name} PRIVATE llama-common mtmd llama)
-    target_link_options(${target_name} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:llama>")
-    target_link_options(${target_name} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:mtmd>")
+    target_link_libraries(
+      ${target_name}
+      PRIVATE
+        llama-common
+        ${_lib_llama_cpp_existing_whole_archive_targets})
+    foreach(_target IN LISTS _lib_llama_cpp_existing_whole_archive_targets)
+      target_link_options(${target_name} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:${_target}>")
+    endforeach()
     set_target_properties(${target_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
   elseif(APPLE)
-    target_link_libraries(${target_name} PRIVATE llama-common mtmd llama)
-    target_link_options(${target_name} PRIVATE "-Wl,-force_load,$<TARGET_FILE:llama>")
-    target_link_options(${target_name} PRIVATE "-Wl,-force_load,$<TARGET_FILE:mtmd>")
+    target_link_libraries(
+      ${target_name}
+      PRIVATE
+        llama-common
+        ${_lib_llama_cpp_existing_whole_archive_targets})
+    foreach(_target IN LISTS _lib_llama_cpp_existing_whole_archive_targets)
+      target_link_options(${target_name} PRIVATE "-Wl,-force_load,$<TARGET_FILE:${_target}>")
+    endforeach()
   else()
     target_link_libraries(
       ${target_name}
       PRIVATE
         llama-common
-        "-Wl,--whole-archive" llama mtmd "-Wl,--no-whole-archive")
+        "-Wl,--whole-archive"
+        ${_lib_llama_cpp_existing_whole_archive_targets}
+        "-Wl,--no-whole-archive")
   endif()
 endfunction()

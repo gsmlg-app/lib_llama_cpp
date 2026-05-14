@@ -252,7 +252,7 @@ Current platform defaults:
 
 | Platform | Resolution | Capabilities |
 | --- | --- | --- |
-| Android | lookup name `liblib_llama_cpp_android.so` | `cpu` |
+| Android | lookup name `liblib_llama_cpp_android.so` | `cpu`, `vulkan` |
 | iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu`, `metal` |
 | Linux | lookup name `liblib_llama_cpp_linux.so` | `cpu` |
 | macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu`, `metal` |
