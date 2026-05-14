@@ -15,9 +15,13 @@ The repository is intentionally split into narrow packages:
 - `third_party/llama.cpp` is a pinned git submodule.
 - `example` is the Flutter integration app.
 
-Published platform packages ship CPU-only native binaries built by the GitHub
-release workflow. Local monorepo builds fall back to compiling the pinned
-`third_party/llama.cpp` checkout when those prebuilts are not present.
+Published Apple platform packages ship CPU and Metal native binaries; other
+published platform packages currently ship CPU binaries. Local monorepo builds
+fall back to compiling the pinned `third_party/llama.cpp` checkout when those
+prebuilts are not present. The supported GPU backend direction is documented in
+[`docs/design/gpu-backend-support.md`](docs/design/gpu-backend-support.md):
+Metal for Apple platforms, Vulkan for Android/Linux/Windows, and CUDA out of
+scope for the default federated packages.
 
 ## Current App-Facing API
 

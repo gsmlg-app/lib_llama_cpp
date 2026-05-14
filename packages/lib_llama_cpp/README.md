@@ -260,15 +260,17 @@ Current platform defaults:
 
 `preferredPath` is honored by the current platform resolvers. When a custom path
 is supplied, the descriptor reports `cpu` plus the requested capabilities so
-apps can route to caller-provided CUDA or Vulkan builds. Bundled libraries reject
+apps can route to caller-provided GPU builds. Bundled libraries reject
 unsupported `requiredCapabilities` instead of silently returning a CPU-only
 descriptor.
 
 Native source and prebuilt builds use the shared CMake helper. Apple builds
-enable Metal by default. Linux and Windows builds can opt into CUDA or Vulkan
-with `LIB_LLAMA_CPP_ENABLE_CUDA=ON` or `LIB_LLAMA_CPP_ENABLE_VULKAN=ON`; Android
-can opt into Vulkan with `LIB_LLAMA_CPP_ENABLE_VULKAN=ON`. GPU offload still
-uses llama.cpp's normal `gpuLayerCount` load parameter.
+enable Metal by default. Android, Linux, and Windows use Vulkan as the supported
+GPU backend direction; monorepo development builds can opt into Vulkan with
+`LIB_LLAMA_CPP_ENABLE_VULKAN=ON` when the runner has the required SDKs. CUDA is
+outside the supported default-package backend matrix; see
+[`../../docs/design/gpu-backend-support.md`](../../docs/design/gpu-backend-support.md).
+GPU offload still uses llama.cpp's normal `gpuLayerCount` load parameter.
 
 ## Model Files and Smoke Tests
 
