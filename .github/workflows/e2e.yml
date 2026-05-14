@@ -93,7 +93,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build vulkan-tools
+          sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools
 
       - name: Build llama.cpp CLI
         if: runner.os != 'Windows'
