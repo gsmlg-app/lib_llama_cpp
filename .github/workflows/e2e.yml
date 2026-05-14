@@ -98,6 +98,7 @@ jobs:
             echo "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json" >> "$GITHUB_ENV"
           fi
           echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+          echo "GGML_VK_VISIBLE_DEVICES=0" >> "$GITHUB_ENV"
           vulkaninfo --summary || true
 
       - name: Build llama.cpp CLI
