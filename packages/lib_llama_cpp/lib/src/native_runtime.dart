@@ -12,7 +12,7 @@ import 'llama_content.dart';
 import 'llama_response.dart';
 import 'llama_state.dart';
 import 'llama_tool.dart';
-import 'tool_call_fallback.dart';
+import 'tool_aware_streaming.dart';
 
 final class NativeLlamaRuntime {
   NativeLlamaRuntime({required LlamaCppLibraryDescriptor library})
@@ -212,49 +212,26 @@ final class NativeLlamaRuntime {
     }
 
     final grammar = _samplingGrammarFor(templateResult);
-    final generated = StringBuffer();
-    for (final response in _sampleFromEvaluatedPrompt(
-      loaded: loaded,
-      command: samplingCommand,
-      initialTokenCount: initialTokenCount,
-      grammar: grammar,
-      grammarLazy: grammar != null && templateResult.grammarLazy,
-      grammarTriggers: grammar == null
-          ? const []
-          : templateResult.grammarTriggers,
-    )) {
-      if (response is LlamaTokenResponse) {
-        generated.write(response.text);
-      }
-    }
-
-    final generatedText = generated.toString();
-    final parsed = _wrapper.parseChatOutput(
-      text: generatedText,
-      format: templateResult.format,
-      generationPrompt: templateResult.generationPrompt,
-      parser: templateResult.parser,
+    yield* streamToolAwareMessageResponses(
+      sampled: _sampleFromEvaluatedPrompt(
+        loaded: loaded,
+        command: samplingCommand,
+        initialTokenCount: initialTokenCount,
+        grammar: grammar,
+        grammarLazy: grammar != null && templateResult.grammarLazy,
+        grammarTriggers: grammar == null
+            ? const []
+            : templateResult.grammarTriggers,
+      ),
+      command: command,
+      parseChatOutput: (text, {required isPartial}) => _wrapper.parseChatOutput(
+        text: text,
+        format: templateResult.format,
+        generationPrompt: templateResult.generationPrompt,
+        parser: templateResult.parser,
+        isPartial: isPartial,
+      ),
     );
-    final parsedToolCalls = _toolCallsFromParsedMessage(parsed);
-    if (parsedToolCalls.isEmpty) {
-      final fallbackToolCall = forcedToolCallFallback(
-        command,
-        generatedText: generatedText,
-      );
-      if (fallbackToolCall != null) {
-        yield LlamaToolCallResponse(toolCall: fallbackToolCall);
-        return;
-      }
-      final text = _contentFromParsedMessage(parsed);
-      if (text.isNotEmpty) {
-        yield LlamaTokenResponse(text: text, index: 0);
-      }
-      return;
-    }
-
-    for (final toolCall in parsedToolCalls) {
-      yield LlamaToolCallResponse(toolCall: toolCall);
-    }
   }
 
   String? _samplingGrammarFor(_ChatTemplateResult templateResult) {
@@ -497,67 +474,6 @@ final class NativeLlamaRuntime {
       };
     }
     return toolChoice.mode;
-  }
-
-  List<LlamaToolCall> _toolCallsFromParsedMessage(Map<String, Object?> parsed) {
-    final message = parsed['message'];
-    if (message is! Map) {
-      return const [];
-    }
-    final rawToolCalls = message['tool_calls'];
-    if (rawToolCalls is! List) {
-      return const [];
-    }
-
-    final calls = <LlamaToolCall>[];
-    for (var index = 0; index < rawToolCalls.length; index += 1) {
-      final rawCall = rawToolCalls[index];
-      if (rawCall is! Map) {
-        continue;
-      }
-      final function = rawCall['function'];
-      if (function is! Map) {
-        continue;
-      }
-      final name = function['name'];
-      if (name is! String || name.isEmpty) {
-        continue;
-      }
-      final rawArguments = function['arguments'];
-      final arguments = rawArguments is String
-          ? rawArguments
-          : jsonEncode(rawArguments ?? const <String, Object?>{});
-      calls.add(
-        LlamaToolCall(
-          id: rawCall['id'] is String ? rawCall['id'] as String : 'call_$index',
-          index: index,
-          name: name,
-          arguments: arguments,
-        ),
-      );
-    }
-    return calls;
-  }
-
-  String _contentFromParsedMessage(Map<String, Object?> parsed) {
-    final message = parsed['message'];
-    if (message is! Map) {
-      return '';
-    }
-    final content = message['content'];
-    if (content is String) {
-      return content;
-    }
-    if (content is List) {
-      final buffer = StringBuffer();
-      for (final part in content) {
-        if (part is Map && part['type'] == 'text' && part['text'] is String) {
-          buffer.write(part['text']);
-        }
-      }
-      return buffer.toString();
-    }
-    return '';
   }
 
   void disposeModel() {
@@ -1148,6 +1064,7 @@ final class _LibLlamaCppWrapper {
     required String format,
     required String generationPrompt,
     required String parser,
+    bool isPartial = false,
   }) {
     return _withWrapper('chat output parsing', () {
       final request = {
@@ -1156,7 +1073,7 @@ final class _LibLlamaCppWrapper {
         'generation_prompt': generationPrompt,
         'parser': parser,
         'parse_tool_calls': true,
-        'is_partial': false,
+        'is_partial': isPartial,
       };
       final requestPointer = jsonEncode(request).toNativeUtf8();
       final error = calloc<Pointer<Char>>();

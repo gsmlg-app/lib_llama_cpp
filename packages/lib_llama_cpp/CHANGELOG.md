@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Stream parsed plain-text deltas during tool-aware message generation while
+  preserving structured tool-call parsing.
 - Added Metal capability reporting for bundled Apple libraries and explicit
   unsupported-capability errors for bundled CPU-only libraries.
 - Added CMake build options for Metal, CUDA, and Vulkan native backend builds.
