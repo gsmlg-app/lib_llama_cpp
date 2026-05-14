@@ -1,6 +1,6 @@
 name: lib_llama_cpp_ffi
 description: Low-level Dart FFI bridge for llama.cpp.
-version: 0.5.2
+version: 0.5.3
 repository: https://github.com/gsmlg-app/lib_llama_cpp
 
 environment:

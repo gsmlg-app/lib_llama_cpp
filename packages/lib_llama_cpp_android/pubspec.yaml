@@ -1,6 +1,6 @@
 name: lib_llama_cpp_android
 description: Android native build and Dart registration for lib_llama_cpp.
-version: 0.5.2
+version: 0.5.3
 repository: https://github.com/gsmlg-app/lib_llama_cpp
 
 environment:
@@ -12,7 +12,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  lib_llama_cpp_platform_interface: ^0.5.2
+  lib_llama_cpp_platform_interface: ^0.5.3
 
 dev_dependencies:
   flutter_lints: ^6.0.0
