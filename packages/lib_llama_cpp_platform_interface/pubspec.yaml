@@ -1,6 +1,6 @@
 name: lib_llama_cpp_platform_interface
 description: Platform interface for the lib_llama_cpp federated Flutter FFI plugin.
-version: 0.5.3
+version: 0.5.4
 repository: https://github.com/gsmlg-app/lib_llama_cpp
 
 environment:
