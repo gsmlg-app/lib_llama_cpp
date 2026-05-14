@@ -157,16 +157,7 @@ jobs:
       - name: Install Android native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake glslc libvulkan-dev ninja-build spirv-headers
-
-      - name: Prepare Android Vulkan Hpp headers
-        run: |
-          mkdir -p "$RUNNER_TEMP/vulkan-headers"
-          cp -R /usr/include/vulkan "$RUNNER_TEMP/vulkan-headers/"
-          cp -R /usr/include/spirv "$RUNNER_TEMP/vulkan-headers/"
-          if [[ -d /usr/include/vk_video ]]; then
-            cp -R /usr/include/vk_video "$RUNNER_TEMP/vulkan-headers/"
-          fi
+          sudo apt-get install -y cmake ninja-build
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
@@ -184,15 +175,7 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Build Android prebuilt libraries
-        run: |
-          ANDROID_ABIS=armeabi-v7a \
-            LIB_LLAMA_CPP_ENABLE_VULKAN=OFF \
-            .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
-          ANDROID_ABIS="arm64-v8a x86_64" \
-            ANDROID_PLATFORM=android-26 \
-            LIB_LLAMA_CPP_ENABLE_VULKAN=ON \
-            LIB_LLAMA_CPP_CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-I${RUNNER_TEMP}/vulkan-headers -DVulkan_INCLUDE_DIR=${RUNNER_TEMP}/vulkan-headers" \
-            .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
+        run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
         uses: actions/upload-artifact@v4
