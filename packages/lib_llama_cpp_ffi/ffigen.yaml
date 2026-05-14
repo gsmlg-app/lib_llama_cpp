@@ -12,8 +12,10 @@ headers:
     - '**/llama.h'
     - '**/ggml*.h'
     - '**/mtmd*.h'
+    - '**/llcs.h'
 compiler-opts:
   - -Iinclude
+  - -Isrc/shim
   - -I../../third_party/llama.cpp/include
   - -I../../third_party/llama.cpp/ggml/include
   - -I../../third_party/llama.cpp/common
@@ -24,11 +26,13 @@ functions:
     - llama_.*
     - mtmd_.*
     - lib_llama_cpp_.*
+    - llcs_.*
 structs:
   include:
     - llama_.*
     - mtmd_.*
     - lib_llama_cpp_.*
+    - llcs_.*
     - ggml_.*
     - gguf_.*
 enums:
@@ -43,6 +47,7 @@ typedefs:
     - llama_.*
     - mtmd_.*
     - lib_llama_cpp_.*
+    - llcs_.*
     - ggml_.*
     - gguf_.*
 globals:

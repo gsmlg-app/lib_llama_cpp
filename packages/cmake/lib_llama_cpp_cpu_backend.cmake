@@ -128,17 +128,45 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
 
   set(_lib_llama_cpp_ffi_dir "${_repo_root}/packages/lib_llama_cpp_ffi")
   set(_lib_llama_cpp_wrapper_source "${_lib_llama_cpp_ffi_dir}/src/lib_llama_cpp_wrapper.cc")
+  set(_lib_llama_cpp_engine_source "${_lib_llama_cpp_ffi_dir}/src/shim/llcs_engine.cpp")
 
-  add_library(${target_name} SHARED "${wrapper_source}" "${_lib_llama_cpp_wrapper_source}")
+  # --- Build server_context sources (without httplib) ---
+  set(_server_dir "${_llama_cpp_dir}/tools/server")
+  if(EXISTS "${_server_dir}/server-context.cpp")
+    set(_server_sources
+      "${_server_dir}/server-context.cpp"
+      "${_server_dir}/server-common.cpp"
+      "${_server_dir}/server-task.cpp"
+      "${_server_dir}/server-queue.cpp"
+      "${_server_dir}/server-chat.cpp")
+    add_library(llcs-server STATIC ${_server_sources})
+    target_compile_features(llcs-server PUBLIC cxx_std_17)
+    target_include_directories(llcs-server
+      PUBLIC
+        "${_server_dir}"
+        "${_lib_llama_cpp_ffi_dir}/src/shim"
+      PRIVATE
+        "${_llama_cpp_dir}/include"
+        "${_llama_cpp_dir}/ggml/include"
+        "${_llama_cpp_dir}/common"
+        "${_llama_cpp_dir}/tools/mtmd"
+        "${_llama_cpp_dir}/vendor")
+    target_link_libraries(llcs-server PRIVATE llama-common llama)
+    set_target_properties(llcs-server PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  endif()
+
+  add_library(${target_name} SHARED "${wrapper_source}" "${_lib_llama_cpp_wrapper_source}" "${_lib_llama_cpp_engine_source}")
   target_compile_features(${target_name} PUBLIC cxx_std_17)
   target_compile_definitions(${target_name} PUBLIC DART_SHARED_LIB)
   target_include_directories(${target_name}
     PRIVATE
       "${_lib_llama_cpp_ffi_dir}/include"
+      "${_lib_llama_cpp_ffi_dir}/src/shim"
       "${_llama_cpp_dir}/include"
       "${_llama_cpp_dir}/ggml/include"
       "${_llama_cpp_dir}/common"
       "${_llama_cpp_dir}/tools/mtmd"
+      "${_llama_cpp_dir}/tools/server"
       "${_llama_cpp_dir}/vendor")
 
   if(MSVC)
@@ -146,6 +174,7 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
       ${target_name}
       PRIVATE
         llama-common
+        $<TARGET_NAME_IF_EXISTS:llcs-server>
         ${_lib_llama_cpp_existing_whole_archive_targets})
     foreach(_target IN LISTS _lib_llama_cpp_existing_whole_archive_targets)
       target_link_options(${target_name} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:${_target}>")
@@ -156,6 +185,7 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
       ${target_name}
       PRIVATE
         llama-common
+        $<TARGET_NAME_IF_EXISTS:llcs-server>
         ${_lib_llama_cpp_existing_whole_archive_targets})
     foreach(_target IN LISTS _lib_llama_cpp_existing_whole_archive_targets)
       target_link_options(${target_name} PRIVATE "-Wl,-force_load,$<TARGET_FILE:${_target}>")
@@ -165,6 +195,7 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
       ${target_name}
       PRIVATE
         llama-common
+        $<TARGET_NAME_IF_EXISTS:llcs-server>
         "-Wl,--whole-archive"
         ${_lib_llama_cpp_existing_whole_archive_targets}
         "-Wl,--no-whole-archive")

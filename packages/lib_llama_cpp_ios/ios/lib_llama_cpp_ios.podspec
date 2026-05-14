@@ -72,12 +72,14 @@ Pod::Spec.new do |s|
     s.source_files     = [
       'Classes/**/*',
       'llama_cpp_sources/lib_llama_cpp_ffi/src/*.cc',
+      'llama_cpp_sources/lib_llama_cpp_ffi/src/shim/*.cpp',
       'llama_cpp_sources/llama.cpp/src/*.cpp',
       'llama_cpp_sources/llama.cpp/src/models/*.cpp',
       'llama_cpp_sources/llama.cpp/common/*.cpp',
       'llama_cpp_sources/llama.cpp/common/jinja/*.cpp',
       'llama_cpp_sources/llama.cpp/tools/mtmd/*.cpp',
       'llama_cpp_sources/llama.cpp/tools/mtmd/models/*.cpp',
+      'llama_cpp_sources/llama.cpp/tools/server/*.cpp',
       'llama_cpp_sources/llama.cpp/ggml/src/*.{c,cpp}',
       'llama_cpp_sources/llama.cpp/ggml/src/ggml-cpu/*.{c,cpp}',
       'llama_cpp_sources/llama.cpp/ggml/src/ggml-metal/*.{m,cpp}',
@@ -90,6 +92,12 @@ Pod::Spec.new do |s|
       'llama_cpp_sources/llama.cpp/common/preset.cpp',
       'llama_cpp_sources/llama.cpp/tools/mtmd/deprecation-warning.cpp',
       'llama_cpp_sources/llama.cpp/tools/mtmd/mtmd-cli.cpp',
+      # Server files we don't need: httplib impl, router mode, main(), built-in tools
+      'llama_cpp_sources/llama.cpp/tools/server/server.cpp',
+      'llama_cpp_sources/llama.cpp/tools/server/server-http.cpp',
+      'llama_cpp_sources/llama.cpp/tools/server/server-models.cpp',
+      'llama_cpp_sources/llama.cpp/tools/server/server-tools.cpp',
+      'llama_cpp_sources/llama.cpp/tools/server/server-cors-proxy.h',
     ]
     s.preserve_paths = [
       'llama_cpp_sources/llama.cpp/**/*.{h,hpp}',
@@ -106,8 +114,10 @@ Pod::Spec.new do |s|
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/src/models',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/common',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/tools/mtmd',
+        '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/tools/server',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/vendor',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/lib_llama_cpp_ffi/include',
+        '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/lib_llama_cpp_ffi/src/shim',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/ggml/include',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/ggml/src',
         '$(PODS_TARGET_SRCROOT)/llama_cpp_sources/llama.cpp/ggml/src/ggml-cpu',

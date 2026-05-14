@@ -44,6 +44,30 @@ void main() {
   });
 
   test(
+    'resolves all llcs_engine symbols from native library',
+    () {
+      final lib = DynamicLibrary.open(libraryPath);
+      // Verify all 7 llcs_* symbols are present and resolvable.
+      for (final sym in [
+        'llcs_engine_create',
+        'llcs_engine_destroy',
+        'llcs_engine_caps',
+        'llcs_engine_submit',
+        'llcs_engine_poll',
+        'llcs_engine_cancel',
+        'llcs_string_free',
+      ]) {
+        expect(
+          () => lib.lookup(sym),
+          returnsNormally,
+          reason: '$sym should be resolvable in the native library',
+        );
+      }
+    },
+    skip: !hasRuntime,
+  );
+
+  test(
     'streams a forced structured tool call',
     () async {
       _expectBackendSupport(libraryPath, backendCapability);

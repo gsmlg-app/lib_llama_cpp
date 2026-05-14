@@ -1,6 +1,6 @@
 PODS:
   - FlutterMacOS (1.0.0)
-  - lib_llama_cpp_macos (0.1.0):
+  - lib_llama_cpp_macos (0.5.3):
     - FlutterMacOS
 
 DEPENDENCIES:
@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  lib_llama_cpp_macos: 0fc0aa95a92e9d3682d4273769a2eb184eb78412
+  lib_llama_cpp_macos: db9fd92885554eaa35df6dd3d5fd76e8d12617d3
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 
