@@ -157,7 +157,7 @@ jobs:
       - name: Install Android native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake glslc ninja-build
+          sudo apt-get install -y cmake glslc libvulkan-dev ninja-build
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
@@ -177,6 +177,7 @@ jobs:
       - name: Build Android prebuilt libraries
         env:
           LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+          LIB_LLAMA_CPP_CMAKE_ARGS: -DVulkan_INCLUDE_DIR=/usr/include
         run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
