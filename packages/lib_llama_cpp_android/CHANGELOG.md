@@ -1,7 +1,8 @@
 ## Unreleased
 
-- Added unsupported-capability errors for bundled CPU-only Android libraries and
-  custom-path capability reporting for caller-provided Vulkan builds.
+- Added Vulkan capability reporting for bundled Android release libraries.
+- Added unsupported-capability errors for bundled Android libraries and
+  custom-path capability reporting for caller-provided backend builds.
 
 ## 0.4.0
 

@@ -175,6 +175,8 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Build Android prebuilt libraries
+        env:
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
         run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
