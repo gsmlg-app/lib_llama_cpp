@@ -159,6 +159,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake glslc libvulkan-dev ninja-build
 
+      - name: Prepare Android Vulkan Hpp headers
+        run: |
+          mkdir -p "$RUNNER_TEMP/vulkan-headers"
+          cp -R /usr/include/vulkan "$RUNNER_TEMP/vulkan-headers/"
+
       - name: Setup Java for Android
         uses: actions/setup-java@v4
         with:
@@ -177,7 +182,7 @@ jobs:
       - name: Build Android prebuilt libraries
         env:
           LIB_LLAMA_CPP_ENABLE_VULKAN: ON
-          LIB_LLAMA_CPP_CMAKE_ARGS: -DCMAKE_CXX_FLAGS=-I/usr/include -DVulkan_INCLUDE_DIR=/usr/include
+          LIB_LLAMA_CPP_CMAKE_ARGS: -DCMAKE_CXX_FLAGS=-I${{ runner.temp }}/vulkan-headers -DVulkan_INCLUDE_DIR=${{ runner.temp }}/vulkan-headers
         run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
