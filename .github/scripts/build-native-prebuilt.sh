@@ -125,6 +125,7 @@ build_android() {
   ndk_dir="$(android_ndk_dir)"
 
   local abis="${ANDROID_ABIS:-armeabi-v7a arm64-v8a x86_64}"
+  local android_platform="${ANDROID_PLATFORM:-android-24}"
   for abi in $abis; do
     local build_dir="${build_root}/android-${abi}"
     local dst="${out_dir}/android/${abi}"
@@ -135,7 +136,7 @@ build_android() {
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_TOOLCHAIN_FILE="${ndk_dir}/build/cmake/android.toolchain.cmake" \
       -DANDROID_ABI="$abi" \
-      -DANDROID_PLATFORM=android-24
+      -DANDROID_PLATFORM="$android_platform"
     cmake --build "$build_dir" --target lib_llama_cpp_android --parallel "$cmake_parallel"
 
     mkdir -p "$dst"

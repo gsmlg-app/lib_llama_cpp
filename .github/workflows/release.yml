@@ -189,6 +189,7 @@ jobs:
             LIB_LLAMA_CPP_ENABLE_VULKAN=OFF \
             .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
           ANDROID_ABIS="arm64-v8a x86_64" \
+            ANDROID_PLATFORM=android-26 \
             LIB_LLAMA_CPP_ENABLE_VULKAN=ON \
             LIB_LLAMA_CPP_CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-I${RUNNER_TEMP}/vulkan-headers -DVulkan_INCLUDE_DIR=${RUNNER_TEMP}/vulkan-headers" \
             .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
