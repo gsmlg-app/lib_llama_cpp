@@ -157,12 +157,16 @@ jobs:
       - name: Install Android native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake glslc libvulkan-dev ninja-build
+          sudo apt-get install -y cmake glslc libvulkan-dev ninja-build spirv-headers
 
       - name: Prepare Android Vulkan Hpp headers
         run: |
           mkdir -p "$RUNNER_TEMP/vulkan-headers"
           cp -R /usr/include/vulkan "$RUNNER_TEMP/vulkan-headers/"
+          cp -R /usr/include/spirv "$RUNNER_TEMP/vulkan-headers/"
+          if [[ -d /usr/include/vk_video ]]; then
+            cp -R /usr/include/vk_video "$RUNNER_TEMP/vulkan-headers/"
+          fi
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
