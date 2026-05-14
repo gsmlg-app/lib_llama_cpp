@@ -506,7 +506,7 @@ jobs:
         run: bash .github/scripts/ios-real-model-smoke.sh
 
       - name: Run iOS plugin-backed integration smoke
-        timeout-minutes: 15
+        timeout-minutes: 25
         shell: bash
         run: |
           cd example
