@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
+import 'package:lib_llama_cpp_ffi/lib_llama_cpp_ffi.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 import 'package:test/test.dart';
 
@@ -13,6 +15,8 @@ void main() {
   final libraryPath = _env('LIB_LLAMA_CPP_TEST_LIBRARY');
   final modelPath = _env('LIB_LLAMA_CPP_TEST_MODEL');
   final gpuLayerCount = int.tryParse(_env('LIB_LLAMA_CPP_TEST_GPU_LAYERS'));
+  final backend = _env('LIB_LLAMA_CPP_TEST_BACKEND');
+  final backendCapability = _capabilityForBackend(backend);
   final hasRuntime = libraryPath.isNotEmpty && modelPath.isNotEmpty;
 
   late final LlamaOpenAIClient client;
@@ -30,13 +34,20 @@ void main() {
           gpuLayerCount: gpuLayerCount,
         ),
       },
-      engine: LibLlamaCpp(platform: _FixedLibraryPlatform(libraryPath)),
+      engine: LibLlamaCpp(
+        platform: _FixedLibraryPlatform(
+          libraryPath,
+          backendCapability: backendCapability,
+        ),
+      ),
     );
   });
 
   test(
     'streams a forced structured tool call',
     () async {
+      _expectBackendSupport(libraryPath, backendCapability);
+
       final events = await client.responses
           .stream(
             model: _modelName,
@@ -77,10 +88,42 @@ void main() {
   );
 }
 
+LlamaCppLibraryCapability? _capabilityForBackend(String backend) {
+  return switch (backend) {
+    '' || 'cpu' => null,
+    'metal' => LlamaCppLibraryCapability.metal,
+    'vulkan' => LlamaCppLibraryCapability.vulkan,
+    _ => throw ArgumentError.value(
+      backend,
+      'LIB_LLAMA_CPP_TEST_BACKEND',
+      'Expected cpu, metal, or vulkan',
+    ),
+  };
+}
+
+void _expectBackendSupport(
+  String libraryPath,
+  LlamaCppLibraryCapability? backendCapability,
+) {
+  if (backendCapability == null) {
+    return;
+  }
+
+  final bindings = LlamaCppBindings(DynamicLibrary.open(libraryPath));
+  expect(
+    bindings.llama_supports_gpu_offload(),
+    isTrue,
+    reason:
+        'The ${backendCapability.name} e2e library must expose llama.cpp GPU '
+        'offload support before the tool-use smoke runs.',
+  );
+}
+
 final class _FixedLibraryPlatform extends LibLlamaCppPlatform {
-  _FixedLibraryPlatform(this.path);
+  _FixedLibraryPlatform(this.path, {this.backendCapability});
 
   final String path;
+  final LlamaCppLibraryCapability? backendCapability;
 
   @override
   Future<LlamaCppLibraryDescriptor> resolveLibrary({
@@ -89,7 +132,7 @@ final class _FixedLibraryPlatform extends LibLlamaCppPlatform {
     return LlamaCppLibraryDescriptor(
       resolution: LlamaCppLibraryResolution.path,
       path: path,
-      capabilities: const {LlamaCppLibraryCapability.cpu},
+      capabilities: {LlamaCppLibraryCapability.cpu, ?backendCapability},
     );
   }
 }

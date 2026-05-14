@@ -93,7 +93,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build
+          sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build vulkan-tools
 
       - name: Build llama.cpp CLI
         if: runner.os != 'Windows'
@@ -184,10 +184,19 @@ jobs:
             test -n "$metal_library"
             echo "LIB_LLAMA_CPP_TEST_METAL_LIBRARY=$metal_library" >> "$GITHUB_ENV"
           else
-            bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
-            library_path="$RUNNER_TEMP/prebuilt/linux/x64/liblib_llama_cpp_linux.so"
-            test -f "$library_path"
-            echo "LIB_LLAMA_CPP_TEST_LIBRARY=$library_path" >> "$GITHUB_ENV"
+            LIB_LLAMA_CPP_ENABLE_VULKAN=OFF \
+              LIB_LLAMA_CPP_PREBUILD_BUILD_DIR="$RUNNER_TEMP/prebuilt-build-cpu" \
+              bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt-cpu"
+            cpu_library="$RUNNER_TEMP/prebuilt-cpu/linux/x64/liblib_llama_cpp_linux.so"
+            test -f "$cpu_library"
+            echo "LIB_LLAMA_CPP_TEST_CPU_LIBRARY=$cpu_library" >> "$GITHUB_ENV"
+
+            LIB_LLAMA_CPP_ENABLE_VULKAN=ON \
+              LIB_LLAMA_CPP_PREBUILD_BUILD_DIR="$RUNNER_TEMP/prebuilt-build-vulkan" \
+              bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt-vulkan"
+            vulkan_library="$RUNNER_TEMP/prebuilt-vulkan/linux/x64/liblib_llama_cpp_linux.so"
+            test -f "$vulkan_library"
+            echo "LIB_LLAMA_CPP_TEST_VULKAN_LIBRARY=$vulkan_library" >> "$GITHUB_ENV"
           fi
 
       - name: Build native API library
@@ -211,16 +220,26 @@ jobs:
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             LIB_LLAMA_CPP_TEST_LIBRARY="$LIB_LLAMA_CPP_TEST_CPU_LIBRARY" \
               LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_BACKEND=cpu \
               LIB_LLAMA_CPP_TEST_GPU_LAYERS=0 \
               dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
 
             LIB_LLAMA_CPP_TEST_LIBRARY="$LIB_LLAMA_CPP_TEST_METAL_LIBRARY" \
               LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_BACKEND=metal \
               LIB_LLAMA_CPP_TEST_GPU_LAYERS=32 \
               dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
           else
-            LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+            LIB_LLAMA_CPP_TEST_LIBRARY="$LIB_LLAMA_CPP_TEST_CPU_LIBRARY" \
+              LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_BACKEND=cpu \
               LIB_LLAMA_CPP_TEST_GPU_LAYERS=0 \
+              dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
+
+            LIB_LLAMA_CPP_TEST_LIBRARY="$LIB_LLAMA_CPP_TEST_VULKAN_LIBRARY" \
+              LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+              LIB_LLAMA_CPP_TEST_BACKEND=vulkan \
+              LIB_LLAMA_CPP_TEST_GPU_LAYERS=32 \
               dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
           fi
 
@@ -230,6 +249,7 @@ jobs:
         timeout-minutes: 10
         run: |
           $env:LIB_LLAMA_CPP_TEST_MODEL = $env:MODEL_PATH
+          $env:LIB_LLAMA_CPP_TEST_BACKEND = "cpu"
           $env:LIB_LLAMA_CPP_TEST_GPU_LAYERS = "0"
           dart test packages/lib_llama_cpp/test/real_model_tool_smoke_test.dart -r expanded
 

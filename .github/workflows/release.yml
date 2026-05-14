@@ -21,8 +21,98 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  e2e-gate:
+    name: E2E release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout release ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+
+      - name: Check e2e dispatch token
+        env:
+          PUBLISH_WORKFLOW_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
+        run: |
+          if [[ -z "$PUBLISH_WORKFLOW_TOKEN" ]]; then
+            echo "::error::Set the PUBLISH_WORKFLOW_TOKEN secret so release can verify or dispatch the e2e workflow."
+            exit 1
+          fi
+
+      - name: Ensure e2e passed for release ref
+        env:
+          GH_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
+          GIT_REF: ${{ inputs.git_ref }}
+        run: |
+          set -euo pipefail
+          target_sha="$(git rev-parse HEAD)"
+          existing_run="$(
+            gh run list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --workflow e2e.yml \
+              --json databaseId,headSha,status,conclusion,url,createdAt \
+              --limit 100 \
+              --jq '
+                [ .[]
+                  | select(.headSha == "'"${target_sha}"'")
+                  | select(.status == "completed")
+                  | select(.conclusion == "success")
+                ]
+                | sort_by(.createdAt)
+                | reverse
+                | .[0].url // empty
+              '
+          )"
+          if [[ -n "$existing_run" ]]; then
+            echo "Found successful e2e run for ${target_sha}: ${existing_run}"
+            exit 0
+          fi
+
+          start_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          gh workflow run e2e.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref "$GIT_REF" \
+            -f platform=all
+
+          run_id=""
+          for attempt in {1..40}; do
+            run_id="$(
+              gh run list \
+                --repo "${GITHUB_REPOSITORY}" \
+                --workflow e2e.yml \
+                --json databaseId,headSha,url,createdAt \
+                --limit 100 \
+                --jq '
+                  [ .[]
+                    | select(.headSha == "'"${target_sha}"'")
+                    | select(.createdAt >= "'"${start_time}"'")
+                  ]
+                  | sort_by(.createdAt)
+                  | reverse
+                  | .[0].databaseId // empty
+                '
+            )"
+            if [[ -n "$run_id" ]]; then
+              break
+            fi
+            sleep 15
+          done
+          if [[ -z "$run_id" ]]; then
+            echo "::error::Could not find dispatched e2e workflow run for ${target_sha}."
+            exit 1
+          fi
+          gh run watch "$run_id" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --exit-status \
+            --interval 30
+
   native-prebuilt-linux:
     name: Native prebuilt (linux)
+    needs:
+      - e2e-gate
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -51,6 +141,8 @@ jobs:
 
   native-prebuilt-android:
     name: Native prebuilt (android)
+    needs:
+      - e2e-gate
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -94,6 +186,8 @@ jobs:
 
   native-prebuilt-apple:
     name: Native prebuilt (apple)
+    needs:
+      - e2e-gate
     runs-on: macos-14
     timeout-minutes: 90
 
@@ -123,6 +217,8 @@ jobs:
 
   native-prebuilt-windows:
     name: Native prebuilt (windows)
+    needs:
+      - e2e-gate
     runs-on: windows-2022
     timeout-minutes: 60
 
