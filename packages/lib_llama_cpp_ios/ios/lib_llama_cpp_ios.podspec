@@ -3,7 +3,7 @@ prebuilt_framework = File.expand_path('Frameworks/lib_llama_cpp_ios.xcframework'
 
 Pod::Spec.new do |s|
   s.name             = 'lib_llama_cpp_ios'
-  s.version          = '0.5.4'
+  s.version          = '0.6.0'
   s.summary          = 'iOS native build for lib_llama_cpp.'
   s.description      = 'Builds and bundles the iOS llama.cpp FFI library.'
   s.homepage         = 'https://github.com/gsmlg-app/lib_llama_cpp'
