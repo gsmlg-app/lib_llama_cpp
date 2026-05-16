@@ -127,7 +127,7 @@ jobs:
       - name: Install Linux native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build libvulkan-dev shaderc
+          sudo apt-get install -y clang cmake ninja-build glslc libvulkan-dev
 
       - name: Build Linux prebuilt library
         env:
@@ -159,7 +159,7 @@ jobs:
       - name: Install Android native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build
+          sudo apt-get install -y cmake ninja-build glslc libvulkan-dev
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
