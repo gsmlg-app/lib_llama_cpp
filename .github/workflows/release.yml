@@ -235,11 +235,12 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.2
-        with:
-          version: latest
-          cache: true
+      - name: Install Vulkan SDK (vcpkg)
+        shell: pwsh
+        run: |
+          vcpkg install vulkan-headers vulkan-loader spirv-headers --triplet x64-windows
+          echo "VULKAN_SDK=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows" >> $env:GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows" >> $env:GITHUB_ENV
 
       - name: Build Windows prebuilt library
         shell: pwsh

@@ -133,7 +133,13 @@ build_android() {
     local vulkan_sdk="${VULKAN_SDK:-}"
     local vulkan_args=()
     if [[ -n "$vulkan_sdk" ]]; then
-      vulkan_args+=("-DCMAKE_FIND_ROOT_PATH=${vulkan_sdk}")
+      # The NDK toolchain restricts header search to its sysroot,
+      # so we inject host Vulkan headers as a system include path.
+      vulkan_args+=(
+        "-DVulkan_INCLUDE_DIR=${vulkan_sdk}/include"
+        "-DCMAKE_CXX_FLAGS=-isystem ${vulkan_sdk}/include"
+        "-DCMAKE_C_FLAGS=-isystem ${vulkan_sdk}/include"
+      )
     fi
 
     run_cmake -S "${repo_root}/packages/lib_llama_cpp_android/src" \
