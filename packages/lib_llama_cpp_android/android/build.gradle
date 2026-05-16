@@ -25,6 +25,12 @@ def prebuiltJniLibsDir = file("src/main/jniLibs")
 def hasPrebuiltJniLibs = prebuiltJniLibsDir.exists() &&
     fileTree(prebuiltJniLibsDir).matching { include "**/*.so" }.files.size() > 0
 
+// Allow Vulkan to be toggled via gradle property or environment variable.
+// Default: ON (most modern Android devices support Vulkan).
+def enableVulkan = project.findProperty("lib_llama_cpp.enable_vulkan")
+    ?: System.getenv("LIB_LLAMA_CPP_ENABLE_VULKAN")
+    ?: "ON"
+
 android {
     namespace = "com.gsmlg.libllamacpp.android"
     compileSdk = 36
@@ -51,5 +57,19 @@ android {
 
     defaultConfig {
         minSdk = 24
+
+        if (!hasPrebuiltJniLibs) {
+            externalNativeBuild {
+                cmake {
+                    arguments "-DLIB_LLAMA_CPP_ENABLE_VULKAN=${enableVulkan}"
+                    // 16KB page alignment for Android 16+ compatibility.
+                    cFlags "-D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"
+                    cppFlags "-D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"
+                }
+            }
+            ndk {
+                abiFilters "arm64-v8a", "x86_64"
+            }
+        }
     }
 }

@@ -199,5 +199,10 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
         "-Wl,--whole-archive"
         ${_lib_llama_cpp_existing_whole_archive_targets}
         "-Wl,--no-whole-archive")
+
+    # 16KB page alignment for Android 16+ compatibility.
+    if(ANDROID)
+      target_link_options(${target_name} PRIVATE "-Wl,-z,max-page-size=16384")
+    endif()
   endif()
 endfunction()
