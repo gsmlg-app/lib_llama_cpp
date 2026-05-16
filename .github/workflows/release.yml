@@ -179,7 +179,7 @@ jobs:
 
       - name: Build Android prebuilt libraries
         env:
-          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+          LIB_LLAMA_CPP_ENABLE_VULKAN: OFF
         run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
