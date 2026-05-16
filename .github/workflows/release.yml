@@ -127,9 +127,11 @@ jobs:
       - name: Install Linux native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build
+          sudo apt-get install -y clang cmake ninja-build libvulkan-dev shaderc
 
       - name: Build Linux prebuilt library
+        env:
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
         run: .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Linux prebuilt library
@@ -175,6 +177,8 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Build Android prebuilt libraries
+        env:
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
         run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
       - name: Upload Android prebuilt libraries
@@ -232,6 +236,8 @@ jobs:
 
       - name: Build Windows prebuilt library
         shell: pwsh
+        env:
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
         run: .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP\prebuilt"
 
       - name: Upload Windows prebuilt library
