@@ -202,15 +202,6 @@ final class NativeLlamaRuntime {
       mediaInputs: mediaInputs,
     );
 
-    if (command.tools.isEmpty) {
-      yield* _sampleFromEvaluatedPrompt(
-        loaded: loaded,
-        command: samplingCommand,
-        initialTokenCount: initialTokenCount,
-      );
-      return;
-    }
-
     final grammar = _samplingGrammarFor(templateResult);
     yield* streamToolAwareMessageResponses(
       sampled: _sampleFromEvaluatedPrompt(
