@@ -17,7 +17,10 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
     expect(descriptor.lookupName, 'liblib_llama_cpp_linux.so');
-    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+    expect(
+      descriptor.capabilities,
+      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}),
+    );
   });
 
   test('bundled Linux library rejects unsupported required backends', () async {
