@@ -130,13 +130,20 @@ build_android() {
     local build_dir="${build_root}/android-${abi}"
     local dst="${out_dir}/android/${abi}"
 
+    local vulkan_sdk="${VULKAN_SDK:-}"
+    local vulkan_args=()
+    if [[ -n "$vulkan_sdk" ]]; then
+      vulkan_args+=("-DCMAKE_FIND_ROOT_PATH=${vulkan_sdk}")
+    fi
+
     run_cmake -S "${repo_root}/packages/lib_llama_cpp_android/src" \
       -B "$build_dir" \
       -G "$cmake_generator" \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_TOOLCHAIN_FILE="${ndk_dir}/build/cmake/android.toolchain.cmake" \
       -DANDROID_ABI="$abi" \
-      -DANDROID_PLATFORM="$android_platform"
+      -DANDROID_PLATFORM="$android_platform" \
+      "${vulkan_args[@]}"
     cmake --build "$build_dir" --target lib_llama_cpp_android --parallel "$cmake_parallel"
 
     mkdir -p "$dst"

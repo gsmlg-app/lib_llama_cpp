@@ -160,6 +160,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build glslc libvulkan-dev spirv-headers
+          echo "VULKAN_SDK=/usr" >> "$GITHUB_ENV"
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
@@ -235,7 +236,7 @@ jobs:
           submodules: recursive
 
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.2.0
+        uses: humbletim/install-vulkan-sdk@v1.2
         with:
           version: latest
           cache: true
