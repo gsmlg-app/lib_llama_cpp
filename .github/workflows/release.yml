@@ -127,7 +127,7 @@ jobs:
       - name: Install Linux native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build glslc libvulkan-dev
+          sudo apt-get install -y clang cmake ninja-build glslc libvulkan-dev spirv-headers
 
       - name: Build Linux prebuilt library
         env:
@@ -159,7 +159,7 @@ jobs:
       - name: Install Android native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build glslc libvulkan-dev
+          sudo apt-get install -y cmake ninja-build glslc libvulkan-dev spirv-headers
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
@@ -233,6 +233,12 @@ jobs:
           ref: ${{ inputs.git_ref }}
           fetch-depth: 0
           submodules: recursive
+
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.2.0
+        with:
+          version: latest
+          cache: true
 
       - name: Build Windows prebuilt library
         shell: pwsh
