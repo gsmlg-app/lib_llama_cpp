@@ -19,24 +19,21 @@ void main() {
 
       expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
       expect(descriptor.lookupName, 'liblib_llama_cpp_android.so');
-      expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+      expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}));
     },
   );
 
-  test('bundled Android library rejects required Vulkan backend', () async {
-    await expectLater(
-      LibLlamaCppAndroid().resolveLibrary(
-        request: const LlamaCppLibraryRequest(
-          requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
-        ),
+  test('bundled Android library accepts required Vulkan backend', () async {
+    final descriptor = await LibLlamaCppAndroid().resolveLibrary(
+      request: const LlamaCppLibraryRequest(
+        requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
       ),
-      throwsA(
-        isA<UnsupportedError>().having(
-          (error) => error.message,
-          'message',
-          contains('vulkan'),
-        ),
-      ),
+    );
+
+    expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
+    expect(
+      descriptor.capabilities,
+      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}),
     );
   });
 

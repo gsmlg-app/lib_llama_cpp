@@ -17,7 +17,7 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
     expect(descriptor.lookupName, 'lib_llama_cpp_windows.dll');
-    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}));
   });
 
   test(
@@ -26,7 +26,7 @@ void main() {
       await expectLater(
         LibLlamaCppWindows().resolveLibrary(
           request: const LlamaCppLibraryRequest(
-            requiredCapabilities: {LlamaCppLibraryCapability.vulkan},
+            requiredCapabilities: {LlamaCppLibraryCapability.cuda},
           ),
         ),
         throwsA(isA<UnsupportedError>()),

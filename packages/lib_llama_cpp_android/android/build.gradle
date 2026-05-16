@@ -26,10 +26,11 @@ def hasPrebuiltJniLibs = prebuiltJniLibsDir.exists() &&
     fileTree(prebuiltJniLibsDir).matching { include "**/*.so" }.files.size() > 0
 
 // Allow Vulkan to be toggled via gradle property or environment variable.
-// Default: ON (most modern Android devices support Vulkan).
+// Default: OFF for source builds (prebuilt release binaries include Vulkan).
+// Set to ON if the Vulkan SDK is installed locally.
 def enableVulkan = project.findProperty("lib_llama_cpp.enable_vulkan")
     ?: System.getenv("LIB_LLAMA_CPP_ENABLE_VULKAN")
-    ?: "ON"
+    ?: "OFF"
 
 android {
     namespace = "com.gsmlg.libllamacpp.android"
