@@ -238,9 +238,11 @@ jobs:
       - name: Install Vulkan SDK (vcpkg)
         shell: pwsh
         run: |
-          vcpkg install vulkan-headers vulkan-loader spirv-headers --triplet x64-windows
-          echo "VULKAN_SDK=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows" >> $env:GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows" >> $env:GITHUB_ENV
+          vcpkg install vulkan-headers vulkan-loader spirv-headers shaderc --triplet x64-windows
+          $vcpkgInstalled = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
+          echo "VULKAN_SDK=$vcpkgInstalled" >> $env:GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$vcpkgInstalled" >> $env:GITHUB_ENV
+          echo "$vcpkgInstalled\tools\shaderc" >> $env:GITHUB_PATH
 
       - name: Build Windows prebuilt library
         shell: pwsh

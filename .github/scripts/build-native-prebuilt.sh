@@ -133,13 +133,24 @@ build_android() {
     local vulkan_sdk="${VULKAN_SDK:-}"
     local vulkan_args=()
     if [[ -n "$vulkan_sdk" ]]; then
-      # The NDK toolchain restricts header search to its sysroot,
-      # so we inject host Vulkan headers as a system include path.
+      # Point FindVulkan at the host Vulkan headers (the NDK doesn't ship
+      # the C++ vulkan.hpp wrapper). The Vulkan library itself comes from
+      # the NDK sysroot.
       vulkan_args+=(
         "-DVulkan_INCLUDE_DIR=${vulkan_sdk}/include"
-        "-DCMAKE_CXX_FLAGS=-isystem ${vulkan_sdk}/include"
-        "-DCMAKE_C_FLAGS=-isystem ${vulkan_sdk}/include"
       )
+      # Find the NDK's libvulkan.so for the target ABI
+      local ndk_sysroot="${ndk_dir}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+      local vulkan_lib
+      case "$abi" in
+        arm64-v8a)   vulkan_lib="${ndk_sysroot}/usr/lib/aarch64-linux-android/libvulkan.so" ;;
+        armeabi-v7a) vulkan_lib="${ndk_sysroot}/usr/lib/arm-linux-androideabi/libvulkan.so" ;;
+        x86_64)      vulkan_lib="${ndk_sysroot}/usr/lib/x86_64-linux-android/libvulkan.so" ;;
+        x86)         vulkan_lib="${ndk_sysroot}/usr/lib/i686-linux-android/libvulkan.so" ;;
+      esac
+      if [[ -n "${vulkan_lib:-}" && -f "$vulkan_lib" ]]; then
+        vulkan_args+=("-DVulkan_LIBRARY=${vulkan_lib}")
+      fi
     fi
 
     run_cmake -S "${repo_root}/packages/lib_llama_cpp_android/src" \
