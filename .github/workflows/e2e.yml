@@ -437,18 +437,18 @@ jobs:
           echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
 
       - name: Run Android plugin-backed real model E2E
-        timeout-minutes: 35
+        timeout-minutes: 50
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          target: google_atd
+          target: google_apis
           arch: x86_64
           profile: pixel_2
           cores: 2
           ram-size: 2048M
           heap-size: 512
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
-          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics
+          emulator-boot-timeout: 1200
           disable-animations: true
           script: |
             bash .github/scripts/android-real-model-smoke.sh

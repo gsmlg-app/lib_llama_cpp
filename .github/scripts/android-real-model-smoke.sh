@@ -58,6 +58,6 @@ else
 fi
 
 if [[ "$gpu_layers" != "0" ]]; then
-  grep -Eq 'ggml_vulkan|Vulkan[0-9]|assigned to device Vulkan|offloaded [0-9]+/[0-9]+ layers to GPU' \
+  grep -Eq 'assigned to device Vulkan|offloaded [1-9][0-9]*/[0-9]+ layers to GPU' \
     "$RUNNER_TEMP/android-llama-output.txt"
 fi

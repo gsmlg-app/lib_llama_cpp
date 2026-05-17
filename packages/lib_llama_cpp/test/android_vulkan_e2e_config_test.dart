@@ -33,7 +33,9 @@ void main() {
         ),
       );
       expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
+      expect(androidJob, contains('target: google_apis'));
       expect(androidJob, contains('arch: x86_64'));
+      expect(androidJob, contains('emulator-options: -no-window -gpu host'));
       expect(androidJob, isNot(contains('Enable Linux KVM')));
       expect(
         androidJob,
@@ -69,6 +71,20 @@ void main() {
       expect(script, contains('-DVulkan_LIBRARY='));
       expect(script, contains('android_api_level'));
       expect(script, contains('/\${android_api_level}/libvulkan.so'));
+    });
+
+    test('Android native smoke requires real Vulkan layer offload', () {
+      final root = _repoRoot();
+      final script = (root / '.github/scripts/android-real-model-smoke.sh')
+          .readAsStringSync();
+
+      expect(
+        script,
+        contains(
+          "grep -Eq 'assigned to device Vulkan|offloaded [1-9][0-9]*/[0-9]+ layers to GPU'",
+        ),
+      );
+      expect(script, isNot(contains("grep -Eq 'ggml_vulkan")));
     });
 
     test('Android prebuilt build resolves versioned NDK Vulkan library', () {
