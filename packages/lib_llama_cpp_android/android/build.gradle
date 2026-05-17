@@ -31,6 +31,43 @@ def hasPrebuiltJniLibs = prebuiltJniLibsDir.exists() &&
 def enableVulkan = project.findProperty("lib_llama_cpp.enable_vulkan")
     ?: System.getenv("LIB_LLAMA_CPP_ENABLE_VULKAN")
     ?: "OFF"
+def sourceVulkanEnabled = enableVulkan.toString().equalsIgnoreCase("ON")
+def vulkanEnabled = sourceVulkanEnabled || hasPrebuiltJniLibs
+def minSdkVersion = vulkanEnabled ? 28 : 24
+def androidAbis = (System.getenv("ANDROID_ABIS")
+    ?: System.getenv("ANDROID_ABI")
+    ?: "arm64-v8a x86_64")
+    .split(/[,\s]+/)
+    .findAll { it }
+def androidApiLevel = (System.getenv("ANDROID_PLATFORM") ?: "android-${minSdkVersion}")
+    .replaceFirst(/^android-/, "")
+def cmakeArguments = ["-DLIB_LLAMA_CPP_ENABLE_VULKAN=${enableVulkan}"]
+
+if (sourceVulkanEnabled && System.getenv("VULKAN_SDK")) {
+    cmakeArguments.add("-DVulkan_INCLUDE_DIR=${System.getenv("VULKAN_SDK")}/include")
+    cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
+    cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+
+    def vulkanAbi = androidAbis.size() == 1 ? androidAbis[0] : null
+    def vulkanTriples = [
+        "arm64-v8a": "aarch64-linux-android",
+        "armeabi-v7a": "arm-linux-androideabi",
+        "x86_64": "x86_64-linux-android",
+        "x86": "i686-linux-android",
+    ]
+    def ndkHome = System.getenv("ANDROID_NDK_HOME") ?: System.getenv("ANDROID_NDK_ROOT")
+    if (ndkHome && vulkanAbi && vulkanTriples.containsKey(vulkanAbi)) {
+        def vulkanLibrary = fileTree("${ndkHome}/toolchains/llvm/prebuilt")
+            .matching {
+                include "**/sysroot/usr/lib/${vulkanTriples[vulkanAbi]}/${androidApiLevel}/libvulkan.so"
+            }
+            .files
+            .find()
+        if (vulkanLibrary) {
+            cmakeArguments.add("-DVulkan_LIBRARY=${vulkanLibrary.absolutePath}")
+        }
+    }
+}
 
 android {
     namespace = "com.gsmlg.libllamacpp.android"
@@ -57,19 +94,19 @@ android {
     }
 
     defaultConfig {
-        minSdk = 24
+        minSdk = minSdkVersion
 
         if (!hasPrebuiltJniLibs) {
             externalNativeBuild {
                 cmake {
-                    arguments "-DLIB_LLAMA_CPP_ENABLE_VULKAN=${enableVulkan}"
+                    arguments(*cmakeArguments)
                     // 16KB page alignment for Android 16+ compatibility.
                     cFlags "-D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"
                     cppFlags "-D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"
                 }
             }
             ndk {
-                abiFilters "arm64-v8a", "x86_64"
+                abiFilters(*androidAbis)
             }
         }
     }

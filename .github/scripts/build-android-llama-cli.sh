@@ -5,8 +5,40 @@ set -euo pipefail
 
 android_ndk_home="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/27.0.12077973}"
 android_abi="${ANDROID_ABI:-x86_64}"
-android_platform="${ANDROID_PLATFORM:-android-24}"
 build_dir="${ANDROID_LLAMA_BUILD_DIR:-build/android-llama-cpp}"
+enable_vulkan="${LIB_LLAMA_CPP_ENABLE_VULKAN:-OFF}"
+default_android_platform="android-24"
+if [[ "$enable_vulkan" == "ON" ]]; then
+  default_android_platform="android-28"
+fi
+android_platform="${ANDROID_PLATFORM:-$default_android_platform}"
+android_api_level="${android_platform#android-}"
+vulkan_args=("-DGGML_VULKAN=$enable_vulkan")
+
+if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
+  vulkan_args+=(
+    "-DVulkan_INCLUDE_DIR=${VULKAN_SDK}/include"
+    "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
+    "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
+  )
+
+  ndk_sysroot="$(find "$android_ndk_home/toolchains/llvm/prebuilt" \
+    -type d -path '*/sysroot' | head -n 1)"
+  case "$android_abi" in
+    arm64-v8a)   vulkan_triple="aarch64-linux-android" ;;
+    armeabi-v7a) vulkan_triple="arm-linux-androideabi" ;;
+    x86_64)      vulkan_triple="x86_64-linux-android" ;;
+    x86)         vulkan_triple="i686-linux-android" ;;
+    *)           vulkan_triple="" ;;
+  esac
+
+  if [[ -n "$ndk_sysroot" && -n "$vulkan_triple" ]]; then
+    vulkan_library="${ndk_sysroot}/usr/lib/${vulkan_triple}/${android_api_level}/libvulkan.so"
+    if [[ -f "$vulkan_library" ]]; then
+      vulkan_args+=("-DVulkan_LIBRARY=${vulkan_library}")
+    fi
+  fi
+fi
 
 cmake -S third_party/llama.cpp -B "$build_dir" \
   -G Ninja \
@@ -21,6 +53,7 @@ cmake -S third_party/llama.cpp -B "$build_dir" \
   -DGGML_BLAS=OFF \
   -DGGML_METAL=OFF \
   -DGGML_OPENMP=OFF \
+  "${vulkan_args[@]}" \
   -DLLAMA_BUILD_EXAMPLES=ON \
   -DLLAMA_BUILD_SERVER=OFF \
   -DLLAMA_BUILD_TESTS=OFF \

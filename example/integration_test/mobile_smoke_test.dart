@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -7,6 +8,8 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
+import 'package:lib_llama_cpp_ffi/lib_llama_cpp_ffi.dart';
+import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 
 const _modelName = 'real-model';
 const _dartDefineModelPath = String.fromEnvironment('LIB_LLAMA_CPP_TEST_MODEL');
@@ -20,6 +23,11 @@ const _smokePrompt = String.fromEnvironment(
 const _smokeTokens = int.fromEnvironment(
   'LIB_LLAMA_CPP_TEST_TOKENS',
   defaultValue: 24,
+);
+const _dartDefineBackend = String.fromEnvironment('LIB_LLAMA_CPP_TEST_BACKEND');
+const _dartDefineGpuLayerCount = int.fromEnvironment(
+  'LIB_LLAMA_CPP_TEST_GPU_LAYERS',
+  defaultValue: -1,
 );
 
 String get _testModelPath {
@@ -36,6 +44,22 @@ String get _testMmprojPath {
   return Platform.environment['LIB_LLAMA_CPP_TEST_MMPROJ'] ?? '';
 }
 
+String get _testBackend {
+  if (_dartDefineBackend.isNotEmpty) {
+    return _dartDefineBackend;
+  }
+  return Platform.environment['LIB_LLAMA_CPP_TEST_BACKEND'] ?? '';
+}
+
+int? get _testGpuLayerCount {
+  if (_dartDefineGpuLayerCount >= 0) {
+    return _dartDefineGpuLayerCount;
+  }
+  return int.tryParse(
+    Platform.environment['LIB_LLAMA_CPP_TEST_GPU_LAYERS'] ?? '',
+  );
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -44,7 +68,8 @@ void main() {
   final runAdvancedCases = modelPath.isNotEmpty && mmprojPath.isNotEmpty;
   late final LlamaOpenAIClient client;
 
-  setUpAll(() {
+  setUpAll(() async {
+    await _expectRequiredBackendSupport();
     if (modelPath.isEmpty) {
       return;
     }
@@ -54,6 +79,7 @@ void main() {
           modelPath: modelPath,
           mmprojPath: mmprojPath.isEmpty ? null : mmprojPath,
           contextSize: 4096,
+          gpuLayerCount: _testGpuLayerCount,
         ),
       },
     );
@@ -191,6 +217,52 @@ void main() {
 
     expect(response.status, 'completed');
   }, skip: !runAdvancedCases);
+}
+
+Future<void> _expectRequiredBackendSupport() async {
+  final capability = _capabilityForBackend(_testBackend);
+  if (capability == null) {
+    return;
+  }
+
+  final descriptor = await LibLlamaCppPlatform.instance.resolveLibrary(
+    request: LlamaCppLibraryRequest(requiredCapabilities: {capability}),
+  );
+  final bindings = LlamaCppBindings(_openDynamicLibrary(descriptor));
+  expect(
+    bindings.llama_supports_gpu_offload(),
+    isTrue,
+    reason:
+        'The Android Vulkan e2e library must expose llama.cpp GPU offload '
+        'support before model loading runs.',
+  );
+}
+
+LlamaCppLibraryCapability? _capabilityForBackend(String backend) {
+  return switch (backend) {
+    '' || 'cpu' => null,
+    'vulkan' => LlamaCppLibraryCapability.vulkan,
+    _ => throw ArgumentError.value(
+      backend,
+      'LIB_LLAMA_CPP_TEST_BACKEND',
+      'Expected cpu or vulkan',
+    ),
+  };
+}
+
+DynamicLibrary _openDynamicLibrary(LlamaCppLibraryDescriptor descriptor) {
+  return switch (descriptor.resolution) {
+    LlamaCppLibraryResolution.process => DynamicLibrary.process(),
+    LlamaCppLibraryResolution.executable => DynamicLibrary.executable(),
+    LlamaCppLibraryResolution.path => DynamicLibrary.open(
+      descriptor.path ??
+          (throw StateError('Library descriptor is missing a path.')),
+    ),
+    LlamaCppLibraryResolution.lookupName => DynamicLibrary.open(
+      descriptor.lookupName ??
+          (throw StateError('Library descriptor is missing a lookup name.')),
+    ),
+  };
 }
 
 Uint8List _redPixelPng() {
