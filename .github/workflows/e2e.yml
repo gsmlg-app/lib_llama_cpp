@@ -387,7 +387,11 @@ jobs:
         run: |
           brew install cmake ninja shaderc spirv-headers vulkan-headers
           echo "$(brew --prefix shaderc)/bin" >> "$GITHUB_PATH"
-          echo "VULKAN_SDK=$(brew --prefix vulkan-headers)" >> "$GITHUB_ENV"
+          vulkan_sdk="$RUNNER_TEMP/vulkan-sdk"
+          mkdir -p "$vulkan_sdk/include"
+          ln -s "$(brew --prefix vulkan-headers)/include/vulkan" "$vulkan_sdk/include/vulkan"
+          ln -s "$(brew --prefix spirv-headers)/include/spirv" "$vulkan_sdk/include/spirv"
+          echo "VULKAN_SDK=$vulkan_sdk" >> "$GITHUB_ENV"
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4

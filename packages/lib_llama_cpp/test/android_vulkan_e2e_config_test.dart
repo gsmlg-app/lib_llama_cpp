@@ -23,9 +23,10 @@ void main() {
       expect(
         androidJob,
         contains(
-          'echo "VULKAN_SDK=\$(brew --prefix vulkan-headers)" >> "\$GITHUB_ENV"',
+          'ln -s "\$(brew --prefix spirv-headers)/include/spirv" "\$vulkan_sdk/include/spirv"',
         ),
       );
+      expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
       expect(androidJob, contains('arch: arm64-v8a'));
       expect(androidJob, isNot(contains('Enable Linux KVM')));
       expect(
