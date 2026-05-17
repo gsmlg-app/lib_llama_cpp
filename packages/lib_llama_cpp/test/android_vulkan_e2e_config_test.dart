@@ -36,13 +36,16 @@ void main() {
       expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
       expect(androidJob, contains('target: google_apis'));
       expect(androidJob, contains('arch: x86_64'));
-      expect(androidJob, contains('pre-emulator-launch-script: |'));
-      expect(androidJob, contains('echo "Vulkan = on"'));
-      expect(androidJob, contains('echo "GLDirectMem = on"'));
       expect(
         androidJob,
         contains(
-          'emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
+          'pre-emulator-launch-script: mkdir -p "\$HOME/.android" && printf "Vulkan = on\\nGLDirectMem = on\\n" > "\$HOME/.android/advancedFeatures.ini"',
+        ),
+      );
+      expect(
+        androidJob,
+        contains(
+          'emulator-options: -no-window -gpu guest -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
         ),
       );
       expect(androidJob, isNot(contains('Enable Linux KVM')));

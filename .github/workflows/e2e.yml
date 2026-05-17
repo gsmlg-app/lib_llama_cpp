@@ -448,13 +448,8 @@ jobs:
           cores: 2
           ram-size: 2048M
           heap-size: 512
-          pre-emulator-launch-script: |
-            mkdir -p "$HOME/.android"
-            {
-              echo "Vulkan = on"
-              echo "GLDirectMem = on"
-            } > "$HOME/.android/advancedFeatures.ini"
-          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
+          pre-emulator-launch-script: mkdir -p "$HOME/.android" && printf "Vulkan = on\nGLDirectMem = on\n" > "$HOME/.android/advancedFeatures.ini"
+          emulator-options: -no-window -gpu guest -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
           emulator-boot-timeout: 1200
           disable-animations: true
           script: |
