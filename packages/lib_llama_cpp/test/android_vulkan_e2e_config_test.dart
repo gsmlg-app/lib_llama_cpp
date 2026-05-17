@@ -9,8 +9,8 @@ void main() {
       final workflow = (root / '.github/workflows/e2e.yml').readAsStringSync();
       final androidJob = _workflowJob(workflow, 'android-real-model-smoke');
 
-      expect(androidJob, contains('runs-on: macos-14'));
-      expect(androidJob, contains('ANDROID_ABI: arm64-v8a'));
+      expect(androidJob, contains('runs-on: macos-15-intel'));
+      expect(androidJob, contains('ANDROID_ABI: x86_64'));
       expect(androidJob, contains('ANDROID_PLATFORM: android-28'));
       expect(androidJob, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
       expect(androidJob, contains("LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'"));
@@ -33,7 +33,7 @@ void main() {
         ),
       );
       expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
-      expect(androidJob, contains('arch: arm64-v8a'));
+      expect(androidJob, contains('arch: x86_64'));
       expect(androidJob, isNot(contains('Enable Linux KVM')));
       expect(
         androidJob,
