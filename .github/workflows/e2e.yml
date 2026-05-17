@@ -371,6 +371,7 @@ jobs:
     timeout-minutes: 75
     env:
       ANDROID_ABI: x86_64
+      ANDROID_EMU_VK_ICD: swiftshader
       ANDROID_PLATFORM: android-28
       LIB_LLAMA_CPP_ENABLE_VULKAN: ON
       LIB_LLAMA_CPP_TEST_BACKEND: vulkan
@@ -447,7 +448,13 @@ jobs:
           cores: 2
           ram-size: 2048M
           heap-size: 512
-          emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics
+          pre-emulator-launch-script: |
+            mkdir -p "$HOME/.android"
+            {
+              echo "Vulkan = on"
+              echo "GLDirectMem = on"
+            } > "$HOME/.android/advancedFeatures.ini"
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
           emulator-boot-timeout: 1200
           disable-animations: true
           script: |

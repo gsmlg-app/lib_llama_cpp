@@ -11,6 +11,7 @@ void main() {
 
       expect(androidJob, contains('runs-on: macos-15-intel'));
       expect(androidJob, contains('ANDROID_ABI: x86_64'));
+      expect(androidJob, contains('ANDROID_EMU_VK_ICD: swiftshader'));
       expect(androidJob, contains('ANDROID_PLATFORM: android-28'));
       expect(androidJob, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
       expect(androidJob, contains("LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'"));
@@ -35,7 +36,15 @@ void main() {
       expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
       expect(androidJob, contains('target: google_apis'));
       expect(androidJob, contains('arch: x86_64'));
-      expect(androidJob, contains('emulator-options: -no-window -gpu host'));
+      expect(androidJob, contains('pre-emulator-launch-script: |'));
+      expect(androidJob, contains('echo "Vulkan = on"'));
+      expect(androidJob, contains('echo "GLDirectMem = on"'));
+      expect(
+        androidJob,
+        contains(
+          'emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
+        ),
+      );
       expect(androidJob, isNot(contains('Enable Linux KVM')));
       expect(
         androidJob,
