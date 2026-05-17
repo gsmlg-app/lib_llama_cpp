@@ -389,8 +389,9 @@ jobs:
           echo "$(brew --prefix shaderc)/bin" >> "$GITHUB_PATH"
           vulkan_sdk="$RUNNER_TEMP/vulkan-sdk"
           mkdir -p "$vulkan_sdk/include"
-          ln -s "$(brew --prefix vulkan-headers)/include/vulkan" "$vulkan_sdk/include/vulkan"
-          ln -s "$(brew --prefix spirv-headers)/include/spirv" "$vulkan_sdk/include/spirv"
+          for include_dir in "$(brew --prefix vulkan-headers)/include" "$(brew --prefix spirv-headers)/include"; do
+            find "$include_dir" -mindepth 1 -maxdepth 1 -exec ln -s {} "$vulkan_sdk/include/" \;
+          done
           echo "VULKAN_SDK=$vulkan_sdk" >> "$GITHUB_ENV"
 
       - name: Setup Java for Android

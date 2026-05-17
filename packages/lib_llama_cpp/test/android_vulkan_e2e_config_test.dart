@@ -23,7 +23,13 @@ void main() {
       expect(
         androidJob,
         contains(
-          'ln -s "\$(brew --prefix spirv-headers)/include/spirv" "\$vulkan_sdk/include/spirv"',
+          'for include_dir in "\$(brew --prefix vulkan-headers)/include" "\$(brew --prefix spirv-headers)/include"; do',
+        ),
+      );
+      expect(
+        androidJob,
+        contains(
+          'find "\$include_dir" -mindepth 1 -maxdepth 1 -exec ln -s {} "\$vulkan_sdk/include/" \\;',
         ),
       );
       expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
