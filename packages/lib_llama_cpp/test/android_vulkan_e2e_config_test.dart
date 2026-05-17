@@ -35,7 +35,7 @@ void main() {
       );
       expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
       expect(androidJob, contains('api-level: 36'));
-      expect(androidJob, contains('target: google_apis'));
+      expect(androidJob, contains('target: default'));
       expect(androidJob, contains('arch: x86_64'));
       expect(
         androidJob,
