@@ -18,9 +18,23 @@ if [[ -z "$llama_bin" ]]; then
 fi
 llama_tool="$(basename "$llama_bin")"
 
-adb kill-server || true
 adb start-server
+adb devices -l
 adb -s "$device_id" wait-for-device
+
+for attempt in {1..90}; do
+  boot_completed="$(adb -s "$device_id" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+  if [[ "$boot_completed" == "1" ]]; then
+    break
+  fi
+  if [[ "$attempt" -eq 90 ]]; then
+    adb devices -l
+    adb -s "$device_id" shell getprop sys.boot_completed || true
+    echo "Timed out waiting for Android system boot completion."
+    exit 1
+  fi
+  sleep 2
+done
 
 wait_for_service() {
   local service="$1"

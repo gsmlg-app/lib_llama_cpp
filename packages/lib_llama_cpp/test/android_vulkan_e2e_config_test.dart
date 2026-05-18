@@ -9,7 +9,7 @@ void main() {
       final workflow = (root / '.github/workflows/e2e.yml').readAsStringSync();
       final androidJob = _workflowJob(workflow, 'android-real-model-smoke');
 
-      expect(androidJob, contains('runs-on: macos-15-intel'));
+      expect(androidJob, contains('runs-on: ubuntu-latest'));
       expect(androidJob, contains('ANDROID_ABI: x86_64'));
       expect(androidJob, contains('ANDROID_EMU_VK_ICD: swiftshader'));
       expect(androidJob, contains('ANDROID_PLATFORM: android-28'));
@@ -18,23 +18,12 @@ void main() {
       expect(
         androidJob,
         contains(
-          'brew install cmake ninja shaderc spirv-headers vulkan-headers',
+          'sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools',
         ),
       );
-      expect(
-        androidJob,
-        contains(
-          'for include_dir in "\$(brew --prefix vulkan-headers)/include" "\$(brew --prefix spirv-headers)/include"; do',
-        ),
-      );
-      expect(
-        androidJob,
-        contains(
-          'find "\$include_dir" -mindepth 1 -maxdepth 1 -exec ln -s {} "\$vulkan_sdk/include/" \\;',
-        ),
-      );
-      expect(androidJob, contains('echo "VULKAN_SDK=\$vulkan_sdk"'));
-      expect(androidJob, contains('api-level: 36'));
+      expect(androidJob, contains('echo "VULKAN_SDK=/usr"'));
+      expect(androidJob, contains('vulkaninfo --summary || true'));
+      expect(androidJob, contains('api-level: 35'));
       expect(androidJob, contains('target: default'));
       expect(androidJob, contains('arch: x86_64'));
       expect(
@@ -46,10 +35,11 @@ void main() {
       expect(
         androidJob,
         contains(
-          'emulator-options: -no-window -gpu guest -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
+          'emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
         ),
       );
-      expect(androidJob, isNot(contains('Enable Linux KVM')));
+      expect(androidJob, contains('Enable Linux KVM'));
+      expect(androidJob, contains('disable-linux-hw-accel: false'));
       expect(
         androidJob,
         contains(
@@ -91,6 +81,9 @@ void main() {
       final script = (root / '.github/scripts/android-real-model-smoke.sh')
           .readAsStringSync();
 
+      expect(script, isNot(contains('adb kill-server')));
+      expect(script, contains('adb devices -l'));
+      expect(script, contains('sys.boot_completed'));
       expect(
         script,
         contains(
