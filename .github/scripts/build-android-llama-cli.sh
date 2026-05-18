@@ -16,8 +16,10 @@ android_api_level="${android_platform#android-}"
 vulkan_args=("-DGGML_VULKAN=$enable_vulkan")
 
 if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
+  vulkan_include_dir="${VULKAN_SDK}/include"
   vulkan_args+=(
-    "-DVulkan_INCLUDE_DIR=${VULKAN_SDK}/include"
+    "-DVulkan_INCLUDE_DIR=${vulkan_include_dir}"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir}"
     "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
     "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
   )

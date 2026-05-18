@@ -138,12 +138,14 @@ build_android() {
     local vulkan_sdk="${VULKAN_SDK:-}"
     local vulkan_args=()
     if [[ -n "$vulkan_sdk" ]]; then
+      local vulkan_include_dir="${vulkan_sdk}/include"
       # The NDK doesn't ship the C++ vulkan.hpp wrapper, so we point
       # FindVulkan at the host Vulkan headers. We must also relax the
       # toolchain's find-root-path restrictions to allow discovery of
       # host include/lib paths alongside the NDK sysroot.
       vulkan_args+=(
-        "-DVulkan_INCLUDE_DIR=${vulkan_sdk}/include"
+        "-DVulkan_INCLUDE_DIR=${vulkan_include_dir}"
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir}"
         "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
         "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
       )
