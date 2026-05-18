@@ -11,7 +11,6 @@ void main() {
 
       expect(androidJob, contains('runs-on: ubuntu-latest'));
       expect(androidJob, contains('ANDROID_ABI: x86_64'));
-      expect(androidJob, contains('ANDROID_EMU_VK_ICD: swiftshader'));
       expect(androidJob, contains('ANDROID_PLATFORM: android-28'));
       expect(androidJob, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
       expect(androidJob, contains("LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'"));
@@ -23,6 +22,9 @@ void main() {
         ),
       );
       expect(androidJob, contains('echo "VULKAN_SDK=/usr"'));
+      expect(androidJob, contains('echo "LIBGL_ALWAYS_SOFTWARE=1"'));
+      expect(androidJob, contains('VK_ICD_FILENAMES='));
+      expect(androidJob, contains('storageBuffer16BitAccess'));
       expect(androidJob, contains('vulkaninfo --summary || true'));
       expect(androidJob, contains('api-level: 35'));
       expect(androidJob, contains('target: default'));
@@ -36,7 +38,7 @@ void main() {
       expect(
         androidJob,
         contains(
-          'emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
+          'emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
         ),
       );
       expect(androidJob, contains('Enable Linux KVM'));

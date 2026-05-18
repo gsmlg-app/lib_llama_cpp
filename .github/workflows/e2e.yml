@@ -371,7 +371,6 @@ jobs:
     timeout-minutes: 75
     env:
       ANDROID_ABI: x86_64
-      ANDROID_EMU_VK_ICD: swiftshader
       ANDROID_PLATFORM: android-28
       LIB_LLAMA_CPP_ENABLE_VULKAN: ON
       LIB_LLAMA_CPP_TEST_BACKEND: vulkan
@@ -396,7 +395,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools
           echo "VULKAN_SDK=/usr" >> "$GITHUB_ENV"
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+          if [[ -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json ]]; then
+            echo "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json" >> "$GITHUB_ENV"
+          fi
           vulkaninfo --summary || true
+          vulkaninfo 2>/dev/null | grep -E 'storageBuffer16BitAccess|uniformAndStorageBuffer16BitAccess' || true
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
@@ -452,7 +456,7 @@ jobs:
           ram-size: 2048M
           heap-size: 512
           pre-emulator-launch-script: mkdir -p "$HOME/.android" && printf "Vulkan = on\nGLDirectMem = on\n" > "$HOME/.android/advancedFeatures.ini"
-          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
+          emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
           emulator-boot-timeout: 1200
           disable-linux-hw-accel: false
           disable-animations: true
