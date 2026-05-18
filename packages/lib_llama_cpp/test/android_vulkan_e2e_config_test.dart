@@ -73,6 +73,7 @@ void main() {
       expect(script, contains('-DVulkan_INCLUDE_DIR='));
       expect(script, contains('-DCMAKE_CXX_FLAGS='));
       expect(script, contains('vulkan-host-headers'));
+      expect(script, contains('for include_name in vulkan spirv'));
       expect(script, contains('-DVulkan_LIBRARY='));
       expect(script, contains('android_api_level'));
       expect(script, contains('/\${android_api_level}/libvulkan.so'));

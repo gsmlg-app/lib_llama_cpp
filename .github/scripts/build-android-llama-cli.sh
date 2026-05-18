@@ -20,7 +20,11 @@ if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
   if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
     vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
     mkdir -p "${vulkan_overlay_dir}/include"
-    ln -sfn "${vulkan_include_dir}/vulkan" "${vulkan_overlay_dir}/include/vulkan"
+    for include_name in vulkan spirv; do
+      if [[ -d "${vulkan_include_dir}/${include_name}" ]]; then
+        ln -sfn "${vulkan_include_dir}/${include_name}" "${vulkan_overlay_dir}/include/${include_name}"
+      fi
+    done
     vulkan_include_dir="${vulkan_overlay_dir}/include"
   fi
   vulkan_args+=(
