@@ -1,0 +1,9 @@
+diff --git i/ggml/src/ggml-vulkan/ggml-vulkan.cpp w/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+index 0a79310..9829347 100644
+--- i/ggml/src/ggml-vulkan/ggml-vulkan.cpp
++++ w/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -5454,1 +5454,3 @@ static vk_device ggml_vk_get_device(size_t idx) {
+-        device_extensions.push_back("VK_KHR_16bit_storage");
++        if (fp16_storage) {
++            device_extensions.push_back("VK_KHR_16bit_storage");
++        }

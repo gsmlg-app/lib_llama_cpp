@@ -50,6 +50,18 @@ run_cmake() {
   cmake "${cmake_args[@]}"
 }
 
+apply_llama_cpp_ci_patches() {
+  local llama_cpp_dir="${repo_root}/third_party/llama.cpp"
+  local patch_file="${repo_root}/.github/patches/llama-vulkan-core-16bit-storage.patch"
+  if [[ ! -f "$patch_file" ]]; then
+    return
+  fi
+  if git -C "$llama_cpp_dir" apply --unidiff-zero --reverse --check "$patch_file" >/dev/null 2>&1; then
+    return
+  fi
+  git -C "$llama_cpp_dir" apply --unidiff-zero "$patch_file"
+}
+
 mkdir -p "$out_dir" "$build_root"
 
 find_built_file() {
@@ -124,8 +136,17 @@ build_android() {
   local ndk_dir
   ndk_dir="$(android_ndk_dir)"
 
+  if [[ "${LIB_LLAMA_CPP_ENABLE_VULKAN:-OFF}" == "ON" ]]; then
+    apply_llama_cpp_ci_patches
+  fi
+
   local abis="${ANDROID_ABIS:-armeabi-v7a arm64-v8a x86_64}"
-  local android_platform="${ANDROID_PLATFORM:-android-24}"
+  local default_android_platform="android-24"
+  if [[ "${LIB_LLAMA_CPP_ENABLE_VULKAN:-OFF}" == "ON" ]]; then
+    default_android_platform="android-28"
+  fi
+  local android_platform="${ANDROID_PLATFORM:-$default_android_platform}"
+  local android_api_level="${android_platform#android-}"
   for abi in $abis; do
     local build_dir="${build_root}/android-${abi}"
     local dst="${out_dir}/android/${abi}"
@@ -133,26 +154,43 @@ build_android() {
     local vulkan_sdk="${VULKAN_SDK:-}"
     local vulkan_args=()
     if [[ -n "$vulkan_sdk" ]]; then
+      local vulkan_include_dir="${vulkan_sdk}/include"
+      if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
+        local vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
+        mkdir -p "${vulkan_overlay_dir}/include"
+        for include_name in vulkan spirv; do
+          if [[ -d "${vulkan_include_dir}/${include_name}" ]]; then
+            ln -sfn "${vulkan_include_dir}/${include_name}" "${vulkan_overlay_dir}/include/${include_name}"
+          fi
+        done
+        vulkan_include_dir="${vulkan_overlay_dir}/include"
+      fi
       # The NDK doesn't ship the C++ vulkan.hpp wrapper, so we point
       # FindVulkan at the host Vulkan headers. We must also relax the
       # toolchain's find-root-path restrictions to allow discovery of
       # host include/lib paths alongside the NDK sysroot.
       vulkan_args+=(
-        "-DVulkan_INCLUDE_DIR=${vulkan_sdk}/include"
+        "-DVulkan_INCLUDE_DIR=${vulkan_include_dir}"
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir}"
         "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
         "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
       )
       # Use the NDK's libvulkan.so for the target ABI
-      local ndk_sysroot="${ndk_dir}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-      local vulkan_lib
+      local ndk_sysroot
+      ndk_sysroot="$(find "${ndk_dir}/toolchains/llvm/prebuilt" \
+        -type d -path '*/sysroot' | head -n 1)"
+      local vulkan_triple=""
       case "$abi" in
-        arm64-v8a)   vulkan_lib="${ndk_sysroot}/usr/lib/aarch64-linux-android/libvulkan.so" ;;
-        armeabi-v7a) vulkan_lib="${ndk_sysroot}/usr/lib/arm-linux-androideabi/libvulkan.so" ;;
-        x86_64)      vulkan_lib="${ndk_sysroot}/usr/lib/x86_64-linux-android/libvulkan.so" ;;
-        x86)         vulkan_lib="${ndk_sysroot}/usr/lib/i686-linux-android/libvulkan.so" ;;
+        arm64-v8a)   vulkan_triple="aarch64-linux-android" ;;
+        armeabi-v7a) vulkan_triple="arm-linux-androideabi" ;;
+        x86_64)      vulkan_triple="x86_64-linux-android" ;;
+        x86)         vulkan_triple="i686-linux-android" ;;
       esac
-      if [[ -n "${vulkan_lib:-}" && -f "$vulkan_lib" ]]; then
-        vulkan_args+=("-DVulkan_LIBRARY=${vulkan_lib}")
+      if [[ -n "$ndk_sysroot" && -n "$vulkan_triple" ]]; then
+        local vulkan_lib="${ndk_sysroot}/usr/lib/${vulkan_triple}/${android_api_level}/libvulkan.so"
+        if [[ -f "$vulkan_lib" ]]; then
+          vulkan_args+=("-DVulkan_LIBRARY=${vulkan_lib}")
+        fi
       fi
     fi
 

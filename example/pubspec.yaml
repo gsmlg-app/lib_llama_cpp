@@ -20,6 +20,10 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  lib_llama_cpp_ffi:
+    path: ../packages/lib_llama_cpp_ffi
+  lib_llama_cpp_platform_interface:
+    path: ../packages/lib_llama_cpp_platform_interface
 
 flutter:
   uses-material-design: true

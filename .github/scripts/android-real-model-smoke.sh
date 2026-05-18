@@ -5,6 +5,7 @@ device_id="${ANDROID_EMULATOR_ID:-emulator-5554}"
 remote_model_path="${LIB_LLAMA_CPP_TEST_MODEL:-/data/local/tmp/lib_llama_cpp_e2e/model.gguf}"
 remote_dir="$(dirname "$remote_model_path")"
 tokens="${SMOKE_TOKENS:-4}"
+gpu_layers="${LIB_LLAMA_CPP_TEST_GPU_LAYERS:-0}"
 
 : "${MODEL_PATH:?MODEL_PATH must point to the verified GGUF model}"
 : "${SMOKE_PROMPT:?SMOKE_PROMPT must be set}"
@@ -17,9 +18,23 @@ if [[ -z "$llama_bin" ]]; then
 fi
 llama_tool="$(basename "$llama_bin")"
 
-adb kill-server || true
 adb start-server
+adb devices -l
 adb -s "$device_id" wait-for-device
+
+for attempt in {1..90}; do
+  boot_completed="$(adb -s "$device_id" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+  if [[ "$boot_completed" == "1" ]]; then
+    break
+  fi
+  if [[ "$attempt" -eq 90 ]]; then
+    adb devices -l
+    adb -s "$device_id" shell getprop sys.boot_completed || true
+    echo "Timed out waiting for Android system boot completion."
+    exit 1
+  fi
+  sleep 2
+done
 
 wait_for_service() {
   local service="$1"
@@ -44,14 +59,24 @@ adb -s "$device_id" push "$MODEL_PATH" "$remote_model_path"
 adb -s "$device_id" shell "chmod 755 '$remote_dir/$llama_tool'"
 
 remote_prompt="$(printf '%q' "$SMOKE_PROMPT")"
+guest_env_prefix=""
+if [[ -n "${GGML_VK_VISIBLE_DEVICES:-}" ]]; then
+  guest_env_prefix="GGML_VK_VISIBLE_DEVICES=$(printf '%q' "$GGML_VK_VISIBLE_DEVICES") "
+fi
+
 if [[ "$llama_tool" == "llama-cli" ]]; then
   adb -s "$device_id" shell \
-    "cd '$remote_dir' && ./llama-cli -m '$remote_model_path' -p $remote_prompt -n $tokens --temp 0 --single-turn" \
+    "cd '$remote_dir' && ${guest_env_prefix}./llama-cli -m '$remote_model_path' -p $remote_prompt -n $tokens --temp 0 --gpu-layers $gpu_layers --single-turn" \
     2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
   grep -Eq 'Generation:' "$RUNNER_TEMP/android-llama-output.txt"
 else
   adb -s "$device_id" shell \
-    "cd '$remote_dir' && ./llama-simple -m '$remote_model_path' -p $remote_prompt" \
+    "cd '$remote_dir' && ${guest_env_prefix}./llama-simple -m '$remote_model_path' -n $tokens -ngl $gpu_layers $remote_prompt" \
     2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
   test -s "$RUNNER_TEMP/android-llama-output.txt"
+fi
+
+if [[ "$gpu_layers" != "0" ]]; then
+  grep -Eq 'assigned to device Vulkan|offloaded [1-9][0-9]*/[0-9]+ layers to GPU' \
+    "$RUNNER_TEMP/android-llama-output.txt"
 fi
