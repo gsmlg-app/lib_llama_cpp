@@ -139,6 +139,12 @@ build_android() {
     local vulkan_args=()
     if [[ -n "$vulkan_sdk" ]]; then
       local vulkan_include_dir="${vulkan_sdk}/include"
+      if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
+        local vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
+        mkdir -p "${vulkan_overlay_dir}/include"
+        ln -sfn "${vulkan_include_dir}/vulkan" "${vulkan_overlay_dir}/include/vulkan"
+        vulkan_include_dir="${vulkan_overlay_dir}/include"
+      fi
       # The NDK doesn't ship the C++ vulkan.hpp wrapper, so we point
       # FindVulkan at the host Vulkan headers. We must also relax the
       # toolchain's find-root-path restrictions to allow discovery of

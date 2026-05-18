@@ -72,6 +72,7 @@ void main() {
       expect(script, contains('default_android_platform="android-28"'));
       expect(script, contains('-DVulkan_INCLUDE_DIR='));
       expect(script, contains('-DCMAKE_CXX_FLAGS='));
+      expect(script, contains('vulkan-host-headers'));
       expect(script, contains('-DVulkan_LIBRARY='));
       expect(script, contains('android_api_level'));
       expect(script, contains('/\${android_api_level}/libvulkan.so'));
@@ -102,6 +103,7 @@ void main() {
       expect(script, contains('android_api_level'));
       expect(script, contains('/\${android_api_level}/libvulkan.so'));
       expect(script, contains('-DCMAKE_CXX_FLAGS='));
+      expect(script, contains('vulkan-host-headers'));
     });
 
     test('Android Gradle build resolves versioned NDK Vulkan library', () {

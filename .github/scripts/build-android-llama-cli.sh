@@ -17,6 +17,12 @@ vulkan_args=("-DGGML_VULKAN=$enable_vulkan")
 
 if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
   vulkan_include_dir="${VULKAN_SDK}/include"
+  if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
+    vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
+    mkdir -p "${vulkan_overlay_dir}/include"
+    ln -sfn "${vulkan_include_dir}/vulkan" "${vulkan_overlay_dir}/include/vulkan"
+    vulkan_include_dir="${vulkan_overlay_dir}/include"
+  fi
   vulkan_args+=(
     "-DVulkan_INCLUDE_DIR=${vulkan_include_dir}"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir}"
