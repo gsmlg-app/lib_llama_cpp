@@ -78,6 +78,8 @@ void main() {
       expect(script, contains('-DVulkan_INCLUDE_DIR='));
       expect(script, contains('-DCMAKE_CXX_FLAGS='));
       expect(script, contains('vulkan-host-headers'));
+      expect(script, contains('apply_llama_cpp_ci_patches'));
+      expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
       expect(script, contains('for include_name in vulkan spirv'));
       expect(script, contains('-DVulkan_LIBRARY='));
       expect(script, contains('android_api_level'));
@@ -112,6 +114,8 @@ void main() {
       expect(script, contains('/\${android_api_level}/libvulkan.so'));
       expect(script, contains('-DCMAKE_CXX_FLAGS='));
       expect(script, contains('vulkan-host-headers'));
+      expect(script, contains('apply_llama_cpp_ci_patches'));
+      expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
     });
 
     test('Android Gradle build resolves versioned NDK Vulkan library', () {

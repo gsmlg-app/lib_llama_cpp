@@ -50,6 +50,18 @@ run_cmake() {
   cmake "${cmake_args[@]}"
 }
 
+apply_llama_cpp_ci_patches() {
+  local llama_cpp_dir="${repo_root}/third_party/llama.cpp"
+  local patch_file="${repo_root}/.github/patches/llama-vulkan-core-16bit-storage.patch"
+  if [[ ! -f "$patch_file" ]]; then
+    return
+  fi
+  if git -C "$llama_cpp_dir" apply --reverse --check "$patch_file" >/dev/null 2>&1; then
+    return
+  fi
+  git -C "$llama_cpp_dir" apply "$patch_file"
+}
+
 mkdir -p "$out_dir" "$build_root"
 
 find_built_file() {
@@ -123,6 +135,10 @@ android_strip() {
 build_android() {
   local ndk_dir
   ndk_dir="$(android_ndk_dir)"
+
+  if [[ "${LIB_LLAMA_CPP_ENABLE_VULKAN:-OFF}" == "ON" ]]; then
+    apply_llama_cpp_ci_patches
+  fi
 
   local abis="${ANDROID_ABIS:-armeabi-v7a arm64-v8a x86_64}"
   local default_android_platform="android-24"

@@ -3,6 +3,8 @@ set -euo pipefail
 
 : "${ANDROID_HOME:?ANDROID_HOME must be set}"
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+llama_cpp_dir="${repo_root}/third_party/llama.cpp"
 android_ndk_home="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/27.0.12077973}"
 android_abi="${ANDROID_ABI:-x86_64}"
 build_dir="${ANDROID_LLAMA_BUILD_DIR:-build/android-llama-cpp}"
@@ -15,7 +17,20 @@ android_platform="${ANDROID_PLATFORM:-$default_android_platform}"
 android_api_level="${android_platform#android-}"
 vulkan_args=("-DGGML_VULKAN=$enable_vulkan")
 
+apply_llama_cpp_ci_patches() {
+  local patch_file="${repo_root}/.github/patches/llama-vulkan-core-16bit-storage.patch"
+  if [[ ! -f "$patch_file" ]]; then
+    return
+  fi
+  if git -C "$llama_cpp_dir" apply --reverse --check "$patch_file" >/dev/null 2>&1; then
+    return
+  fi
+  git -C "$llama_cpp_dir" apply "$patch_file"
+}
+
 if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
+  apply_llama_cpp_ci_patches
+
   vulkan_include_dir="${VULKAN_SDK}/include"
   if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
     vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
@@ -52,7 +67,7 @@ if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
   fi
 fi
 
-cmake -S third_party/llama.cpp -B "$build_dir" \
+cmake -S "$llama_cpp_dir" -B "$build_dir" \
   -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$android_ndk_home/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI="$android_abi" \
