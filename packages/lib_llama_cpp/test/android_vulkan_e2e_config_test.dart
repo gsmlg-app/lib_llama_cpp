@@ -15,6 +15,7 @@ void main() {
       expect(androidJob, contains('ANDROID_PLATFORM: android-28'));
       expect(androidJob, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
       expect(androidJob, contains("LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'"));
+      expect(androidJob, contains("GGML_VK_VISIBLE_DEVICES: '0'"));
       expect(
         androidJob,
         contains(
@@ -87,6 +88,8 @@ void main() {
       expect(script, isNot(contains('adb kill-server')));
       expect(script, contains('adb devices -l'));
       expect(script, contains('sys.boot_completed'));
+      expect(script, contains('guest_env_prefix='));
+      expect(script, contains(r'GGML_VK_VISIBLE_DEVICES=$(printf'));
       expect(
         script,
         contains(

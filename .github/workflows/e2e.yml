@@ -377,6 +377,7 @@ jobs:
       LIB_LLAMA_CPP_TEST_BACKEND: vulkan
       LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'
       LIB_LLAMA_CPP_TEST_MODEL: /data/local/tmp/lib_llama_cpp_e2e/model.gguf
+      GGML_VK_VISIBLE_DEVICES: '0'
 
     steps:
       - name: Checkout

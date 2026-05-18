@@ -59,14 +59,19 @@ adb -s "$device_id" push "$MODEL_PATH" "$remote_model_path"
 adb -s "$device_id" shell "chmod 755 '$remote_dir/$llama_tool'"
 
 remote_prompt="$(printf '%q' "$SMOKE_PROMPT")"
+guest_env_prefix=""
+if [[ -n "${GGML_VK_VISIBLE_DEVICES:-}" ]]; then
+  guest_env_prefix="GGML_VK_VISIBLE_DEVICES=$(printf '%q' "$GGML_VK_VISIBLE_DEVICES") "
+fi
+
 if [[ "$llama_tool" == "llama-cli" ]]; then
   adb -s "$device_id" shell \
-    "cd '$remote_dir' && ./llama-cli -m '$remote_model_path' -p $remote_prompt -n $tokens --temp 0 --gpu-layers $gpu_layers --single-turn" \
+    "cd '$remote_dir' && ${guest_env_prefix}./llama-cli -m '$remote_model_path' -p $remote_prompt -n $tokens --temp 0 --gpu-layers $gpu_layers --single-turn" \
     2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
   grep -Eq 'Generation:' "$RUNNER_TEMP/android-llama-output.txt"
 else
   adb -s "$device_id" shell \
-    "cd '$remote_dir' && ./llama-simple -m '$remote_model_path' -n $tokens -ngl $gpu_layers $remote_prompt" \
+    "cd '$remote_dir' && ${guest_env_prefix}./llama-simple -m '$remote_model_path' -n $tokens -ngl $gpu_layers $remote_prompt" \
     2>&1 | tee "$RUNNER_TEMP/android-llama-output.txt"
   test -s "$RUNNER_TEMP/android-llama-output.txt"
 fi
