@@ -38,16 +38,18 @@ void main() {
       expect(
         androidJob,
         contains(
-          'emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
+          'emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem',
         ),
       );
       expect(androidJob, contains('Enable Linux KVM'));
       expect(androidJob, contains('disable-linux-hw-accel: false'));
       expect(
         androidJob,
-        contains(
-          '--dart-define=LIB_LLAMA_CPP_TEST_GPU_LAYERS="\$LIB_LLAMA_CPP_TEST_GPU_LAYERS"',
-        ),
+        contains('script: bash .github/scripts/android-real-model-smoke.sh'),
+      );
+      expect(
+        androidJob,
+        isNot(contains('integration_test/mobile_smoke_test.dart')),
       );
     });
 

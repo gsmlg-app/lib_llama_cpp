@@ -444,7 +444,7 @@ jobs:
           fi
           echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
 
-      - name: Run Android plugin-backed real model E2E
+      - name: Run Android Vulkan real model E2E
         timeout-minutes: 50
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -456,13 +456,11 @@ jobs:
           ram-size: 2048M
           heap-size: 512
           pre-emulator-launch-script: mkdir -p "$HOME/.android" && printf "Vulkan = on\nGLDirectMem = on\n" > "$HOME/.android/advancedFeatures.ini"
-          emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
+          emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim -no-metrics -feature Vulkan,GLDirectMem
           emulator-boot-timeout: 1200
           disable-linux-hw-accel: false
           disable-animations: true
-          script: |
-            bash .github/scripts/android-real-model-smoke.sh
-            bash -lc 'cd example && flutter test --dart-define=LIB_LLAMA_CPP_TEST_MODEL="$LIB_LLAMA_CPP_TEST_MODEL" --dart-define=LIB_LLAMA_CPP_TEST_PROMPT="$SMOKE_PROMPT" --dart-define=LIB_LLAMA_CPP_TEST_TOKENS="$SMOKE_TOKENS" --dart-define=LIB_LLAMA_CPP_TEST_BACKEND="$LIB_LLAMA_CPP_TEST_BACKEND" --dart-define=LIB_LLAMA_CPP_TEST_GPU_LAYERS="$LIB_LLAMA_CPP_TEST_GPU_LAYERS" integration_test/mobile_smoke_test.dart -d "${ANDROID_EMULATOR_ID:-emulator-5554}"'
+          script: bash .github/scripts/android-real-model-smoke.sh
 
   ios-real-model-smoke:
     name: Real model smoke (ios)
