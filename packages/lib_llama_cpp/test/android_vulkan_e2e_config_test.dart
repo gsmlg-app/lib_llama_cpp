@@ -57,10 +57,20 @@ void main() {
       final root = _repoRoot();
       final workflow = (root / '.github/workflows/release.yml')
           .readAsStringSync();
+      final publishWorkflow = (root / '.github/workflows/publish.yml')
+          .readAsStringSync();
 
       expect(workflow, contains('echo "VULKAN_SDK=/usr" >> "\$GITHUB_ENV"'));
       expect(workflow, contains('ANDROID_PLATFORM: android-28'));
       expect(workflow, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
+      expect(
+        workflow,
+        contains('LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS: arm64-v8a'),
+      );
+      expect(
+        publishWorkflow,
+        contains('LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS: arm64-v8a'),
+      );
       expect(
         workflow,
         contains('.github/scripts/build-native-prebuilt.sh android'),
@@ -148,6 +158,23 @@ void main() {
       expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
       expect(script, contains('--unidiff-zero'));
       expect(script, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
+    });
+
+    test('publish package installs a size-bounded Android ABI set', () {
+      final root = _repoRoot();
+      final script = (root / '.github/scripts/install-prebuilt-packages.sh')
+          .readAsStringSync();
+      final readme = (root / 'packages/lib_llama_cpp_android/README.md')
+          .readAsStringSync();
+
+      expect(script, contains('LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS:-arm64-v8a'));
+      expect(script, contains('android_package_abi_list'));
+      expect(script, contains('Installed Android package ABIs'));
+      expect(script, contains('require_path "\${prebuilt_dir}/android/x86_64'));
+      expect(readme, contains('pub.dev releases'));
+      expect(readme, contains('`arm64-v8a`'));
+      expect(readme, contains('GitHub release prebuilt archive'));
+      expect(readme, contains('`x86_64`'));
     });
 
     test('Android Gradle build resolves versioned NDK Vulkan library', () {

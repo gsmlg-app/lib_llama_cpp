@@ -8,6 +8,14 @@ fi
 
 prebuilt_dir="$1"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+android_package_abis="${LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS:-arm64-v8a}"
+android_package_abis="${android_package_abis//,/ }"
+read -r -a android_package_abi_list <<< "$android_package_abis"
+
+if (( ${#android_package_abi_list[@]} == 0 )); then
+  echo "LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS must list at least one Android ABI." >&2
+  exit 1
+fi
 
 require_path() {
   local path="$1"
@@ -29,8 +37,12 @@ require_path "${prebuilt_dir}/windows/x64/lib_llama_cpp_windows.dll"
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs"
 mkdir -p "${repo_root}/packages/lib_llama_cpp_android/android/src/main"
-cp -R "${prebuilt_dir}/android" \
-  "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs"
+for abi in "${android_package_abi_list[@]}"; do
+  require_path "${prebuilt_dir}/android/${abi}/liblib_llama_cpp_android.so"
+  mkdir -p "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs/${abi}"
+  cp "${prebuilt_dir}/android/${abi}/liblib_llama_cpp_android.so" \
+    "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs/${abi}/"
+done
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_ios/ios/Frameworks"
 mkdir -p "${repo_root}/packages/lib_llama_cpp_ios/ios/Frameworks"
@@ -53,3 +65,4 @@ cp -R "${prebuilt_dir}/windows/." \
   "${repo_root}/packages/lib_llama_cpp_windows/windows/prebuilt/"
 
 echo "Installed native prebuilts into platform packages."
+echo "Installed Android package ABIs: ${android_package_abi_list[*]}"

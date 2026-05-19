@@ -252,6 +252,8 @@ jobs:
         run: .github/scripts/download-release-prebuilts.sh "${PUBLISH_TAG#v}" "$RUNNER_TEMP/prebuilt"
 
       - name: Install prebuilts into platform packages
+        env:
+          LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS: arm64-v8a
         run: .github/scripts/install-prebuilt-packages.sh "$RUNNER_TEMP/prebuilt"
 
       - name: Publish ${{ matrix.package }}

@@ -386,6 +386,8 @@ jobs:
           merge-multiple: true
 
       - name: Install prebuilts into publish packages
+        env:
+          LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS: arm64-v8a
         run: .github/scripts/install-prebuilt-packages.sh dist/prebuilt
 
       - name: Validate pub package archives
