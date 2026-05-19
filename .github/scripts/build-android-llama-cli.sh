@@ -42,9 +42,10 @@ if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
     done
     vulkan_include_dir="${vulkan_overlay_dir}/include"
   fi
+  cxx_flags="${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir} -DVULKAN_HPP_TYPESAFE_CONVERSION=1"
   vulkan_args+=(
     "-DVulkan_INCLUDE_DIR=${vulkan_include_dir}"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir}"
+    "-DCMAKE_CXX_FLAGS=${cxx_flags}"
     "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
     "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
   )

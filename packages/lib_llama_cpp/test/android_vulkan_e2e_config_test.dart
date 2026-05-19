@@ -110,6 +110,7 @@ void main() {
       expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
       expect(script, contains('--unidiff-zero'));
       expect(script, contains('for include_name in vulkan spirv'));
+      expect(script, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
       expect(script, contains('-DVulkan_LIBRARY='));
       expect(script, contains('android_api_level'));
       expect(script, contains('/\${android_api_level}/libvulkan.so'));
@@ -146,6 +147,7 @@ void main() {
       expect(script, contains('apply_llama_cpp_ci_patches'));
       expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
       expect(script, contains('--unidiff-zero'));
+      expect(script, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
     });
 
     test('Android Gradle build resolves versioned NDK Vulkan library', () {
