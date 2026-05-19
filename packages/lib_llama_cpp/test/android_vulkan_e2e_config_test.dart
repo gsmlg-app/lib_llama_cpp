@@ -67,6 +67,34 @@ void main() {
       );
     });
 
+    test('Android Flutter platform build compiles plugin with Vulkan', () {
+      final root = _repoRoot();
+      final workflow = (root / '.github/workflows/e2e.yml').readAsStringSync();
+      final platformJob = _workflowJob(workflow, 'flutter-platform-builds');
+
+      expect(platformJob, contains('flutter build apk --debug'));
+      expect(
+        platformJob,
+        contains('Install Android Vulkan plugin build dependencies'),
+      );
+      expect(
+        platformJob,
+        contains(
+          'sudo apt-get install -y cmake glslc libvulkan-dev ninja-build spirv-headers',
+        ),
+      );
+      expect(platformJob, contains('vulkan-host-headers'));
+      expect(platformJob, contains('echo "VULKAN_SDK='));
+      expect(platformJob, contains('echo "LIB_LLAMA_CPP_ENABLE_VULKAN=ON"'));
+      expect(platformJob, contains('echo "ANDROID_PLATFORM=android-28"'));
+      expect(platformJob, contains('echo "ANDROID_ABIS=x86_64"'));
+      expect(platformJob, contains('Setup Android SDK'));
+      expect(platformJob, contains('sdkmanager "platform-tools"'));
+      expect(platformJob, contains('platforms;android-36'));
+      expect(platformJob, contains('ndk;27.0.12077973'));
+      expect(platformJob, contains('ANDROID_NDK_HOME='));
+    });
+
     test('Android native smoke build can compile llama.cpp with Vulkan', () {
       final root = _repoRoot();
       final script = (root / '.github/scripts/build-android-llama-cli.sh')

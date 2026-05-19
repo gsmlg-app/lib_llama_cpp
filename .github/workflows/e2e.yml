@@ -552,12 +552,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang cmake libgtk-3-dev liblzma-dev ninja-build pkg-config
 
+      - name: Install Android Vulkan plugin build dependencies
+        if: matrix.platform == 'android'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake glslc libvulkan-dev ninja-build spirv-headers
+          mkdir -p "$RUNNER_TEMP/vulkan-host-headers/include"
+          ln -sfn /usr/include/vulkan "$RUNNER_TEMP/vulkan-host-headers/include/vulkan"
+          ln -sfn /usr/include/spirv "$RUNNER_TEMP/vulkan-host-headers/include/spirv"
+          echo "VULKAN_SDK=$RUNNER_TEMP/vulkan-host-headers" >> "$GITHUB_ENV"
+          echo "LIB_LLAMA_CPP_ENABLE_VULKAN=ON" >> "$GITHUB_ENV"
+          echo "ANDROID_PLATFORM=android-28" >> "$GITHUB_ENV"
+          echo "ANDROID_ABIS=x86_64" >> "$GITHUB_ENV"
+
       - name: Setup Java for Android
         if: matrix.platform == 'android'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Setup Android SDK
+        if: matrix.platform == 'android'
+        uses: android-actions/setup-android@v3
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -578,6 +595,13 @@ jobs:
 
       - name: Install Dart and Flutter dependencies
         run: dart pub get
+
+      - name: Install Android SDK packages
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "cmake;3.22.1" "ndk;27.0.12077973"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Enable desktop target
         if: matrix.platform == 'linux' || matrix.platform == 'macos' || matrix.platform == 'windows'
