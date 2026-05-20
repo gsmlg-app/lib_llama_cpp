@@ -1,112 +1,108 @@
-import 'package:args/args.dart';
-
-ArgParser buildLlamaServerArgParser() {
-  return ArgParser()
-    ..addOption('library', help: 'Path to the lib_llama_cpp dynamic library.')
-    ..addOption('model', help: 'Path to the GGUF model.')
-    ..addOption('alias', defaultsTo: 'local', help: 'Served model id.')
-    ..addOption('host', defaultsTo: '127.0.0.1', help: 'Bind host.')
-    ..addOption('port', defaultsTo: '8080', help: 'Bind port.')
-    ..addOption('ctx-size', help: 'Context size.')
-    ..addOption('gpu-layers', defaultsTo: '0', help: 'Number of GPU layers.')
-    ..addOption('parallel', defaultsTo: '1', help: 'Parallel slot count.')
-    ..addOption('chat-template', help: 'Optional llama.cpp chat template.')
-    ..addOption('reasoning-format', help: 'Optional reasoning format.')
-    ..addOption('api-key', defaultsTo: 'no-key', help: 'Bearer API key.')
-    ..addFlag(
-      'no-auth',
-      defaultsTo: false,
-      negatable: false,
-      help: 'Disable bearer authentication for inference routes.',
-    )
-    ..addFlag(
-      'cors',
-      defaultsTo: false,
-      negatable: false,
-      help: 'Enable permissive CORS headers.',
-    )
-    ..addOption(
-      'poll-timeout-ms',
-      defaultsTo: '100',
-      help: 'llcs poll timeout in milliseconds.',
-    );
-}
+import 'llcs_engine.dart';
 
 final class LlamaServerConfig {
   const LlamaServerConfig({
-    required this.libraryPath,
+    required this.model,
     required this.modelPath,
-    this.alias = 'local',
+    this.libraryPath,
     this.host = '127.0.0.1',
     this.port = 8080,
-    this.contextSize,
-    this.gpuLayerCount = 0,
-    this.parallelCount = 1,
+    this.ctxSize,
+    this.gpuLayers,
+    this.parallel = 1,
     this.chatTemplate,
     this.reasoningFormat,
-    this.apiKey = 'no-key',
-    this.noAuth = false,
-    this.cors = false,
+    this.logLevel,
     this.pollTimeout = const Duration(milliseconds: 100),
-    this.apiKeyWasParsed = false,
+    this.maxRequestBytes = 1024 * 1024,
   });
 
-  factory LlamaServerConfig.fromArgResults(ArgResults args) {
+  factory LlamaServerConfig.fromArgs(List<String> arguments) {
+    final parsed = _FlagParser.parse(arguments);
+    if (parsed.help) {
+      throw const LlamaServerConfigHelp();
+    }
+
+    final modelPath = parsed.option('model-path');
+    if (modelPath == null || modelPath.isEmpty) {
+      throw const FormatException('Missing required --model-path option.');
+    }
+
     return LlamaServerConfig(
-      libraryPath: _requiredString(args, 'library'),
-      modelPath: _requiredString(args, 'model'),
-      alias: _string(args, 'alias') ?? 'local',
-      host: _string(args, 'host') ?? '127.0.0.1',
-      port: _int(args, 'port') ?? 8080,
-      contextSize: _int(args, 'ctx-size'),
-      gpuLayerCount: _int(args, 'gpu-layers') ?? 0,
-      parallelCount: _int(args, 'parallel') ?? 1,
-      chatTemplate: _string(args, 'chat-template'),
-      reasoningFormat: _string(args, 'reasoning-format'),
-      apiKey: _string(args, 'api-key') ?? 'no-key',
-      noAuth: args['no-auth'] as bool? ?? false,
-      cors: args['cors'] as bool? ?? false,
-      pollTimeout: Duration(milliseconds: _int(args, 'poll-timeout-ms') ?? 100),
-      apiKeyWasParsed: args.wasParsed('api-key'),
+      libraryPath: parsed.option('library'),
+      model: parsed.option('model') ?? 'local',
+      modelPath: modelPath,
+      host: parsed.option('host') ?? '127.0.0.1',
+      port: _parseInt(parsed.option('port'), 'port') ?? 8080,
+      ctxSize: _parseInt(parsed.option('ctx-size'), 'ctx-size'),
+      gpuLayers: _parseInt(parsed.option('gpu-layers'), 'gpu-layers'),
+      parallel: _parseInt(parsed.option('parallel'), 'parallel') ?? 1,
+      chatTemplate: parsed.option('chat-template'),
+      reasoningFormat: parsed.option('reasoning-format'),
+      logLevel: parsed.option('log-level'),
     );
   }
 
-  final String libraryPath;
+  final String model;
   final String modelPath;
-  final String alias;
+  final String? libraryPath;
   final String host;
   final int port;
-  final int? contextSize;
-  final int? gpuLayerCount;
-  final int parallelCount;
+  final int? ctxSize;
+  final int? gpuLayers;
+  final int parallel;
   final String? chatTemplate;
   final String? reasoningFormat;
-  final String apiKey;
-  final bool noAuth;
-  final bool cors;
+  final String? logLevel;
   final Duration pollTimeout;
-  final bool apiKeyWasParsed;
-}
+  final int maxRequestBytes;
 
-String _requiredString(ArgResults args, String name) {
-  final value = _string(args, name);
-  if (value == null || value.isEmpty) {
-    throw FormatException('Missing required --$name option.');
+  LlcsEngineConfig toLlcsEngineConfig() {
+    return LlcsEngineConfig(
+      modelPath: modelPath,
+      nCtx: ctxSize,
+      nGpuLayers: gpuLayers,
+      nParallel: parallel,
+      chatTemplate: chatTemplate,
+      reasoningFormat: reasoningFormat,
+    );
   }
-  return value;
+
+  static const usage = '''
+Usage:
+  dart run lib_llama_cpp_server --model-path /models/model.gguf [options]
+
+Options:
+  --host <host>                 Bind host. Default: 127.0.0.1
+  --port <port>                 Bind port. Default: 8080
+  --library <path>              Dynamic library path. Uses platform lookup when omitted.
+  --model <alias>               Served model alias. Default: local
+  --model-path <path>           Required local GGUF model path.
+  --ctx-size <tokens>           Optional context size.
+  --gpu-layers <count>          Optional GPU layer count.
+  --parallel <count>            Parallel slot count. Default: 1
+  --chat-template <template>    Optional chat template.
+  --reasoning-format <format>   Optional reasoning format.
+  --log-level <level>           Optional CLI log level.
+  --help                        Print this help.
+''';
 }
 
-String? _string(ArgResults args, String name) {
-  final value = args[name] as String?;
+final class LlamaServerConfigHelp implements FormatException {
+  const LlamaServerConfigHelp();
+
+  @override
+  String get message => LlamaServerConfig.usage;
+
+  @override
+  int? get offset => null;
+
+  @override
+  dynamic get source => null;
+}
+
+int? _parseInt(String? value, String name) {
   if (value == null || value.isEmpty) {
-    return null;
-  }
-  return value;
-}
-
-int? _int(ArgResults args, String name) {
-  final value = _string(args, name);
-  if (value == null) {
     return null;
   }
   final parsed = int.tryParse(value);
@@ -114,4 +110,46 @@ int? _int(ArgResults args, String name) {
     throw FormatException('--$name must be an integer.');
   }
   return parsed;
+}
+
+final class _FlagParser {
+  const _FlagParser(this._options, {required this.help});
+
+  factory _FlagParser.parse(List<String> arguments) {
+    final options = <String, String>{};
+    var help = false;
+
+    for (var index = 0; index < arguments.length; index += 1) {
+      final argument = arguments[index];
+      if (argument == '--help' || argument == '-h') {
+        help = true;
+        continue;
+      }
+      if (!argument.startsWith('--')) {
+        throw FormatException('Unexpected argument: $argument');
+      }
+
+      final withoutPrefix = argument.substring(2);
+      final equalsIndex = withoutPrefix.indexOf('=');
+      if (equalsIndex >= 0) {
+        options[withoutPrefix.substring(0, equalsIndex)] = withoutPrefix
+            .substring(equalsIndex + 1);
+        continue;
+      }
+
+      if (index + 1 >= arguments.length ||
+          arguments[index + 1].startsWith('--')) {
+        throw FormatException('Missing value for $argument.');
+      }
+      options[withoutPrefix] = arguments[index + 1];
+      index += 1;
+    }
+
+    return _FlagParser(options, help: help);
+  }
+
+  final Map<String, String> _options;
+  final bool help;
+
+  String? option(String name) => _options[name];
 }
