@@ -4,12 +4,17 @@ import 'dart:io';
 import 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart';
 import 'package:test/test.dart';
 
+const _defaultModelAlias = 'gemma4-e2b';
+
 void main() {
   final libraryPath = Platform.environment['LIB_LLAMA_CPP_TEST_LIBRARY'] ?? '';
   final modelPath = Platform.environment['LIB_LLAMA_CPP_TEST_MODEL'] ?? '';
+  final modelAlias =
+      Platform.environment['LIB_LLAMA_CPP_TEST_MODEL_ALIAS'] ??
+      _defaultModelAlias;
   final hasRuntime = libraryPath.isNotEmpty && modelPath.isNotEmpty;
 
-  group('native server e2e', () {
+  group('Gemma 4 E2B native server API e2e', () {
     late LlamaHttpServer server;
     late Uri baseUri;
 
@@ -21,8 +26,9 @@ void main() {
       server = LlamaHttpServer.open(
         libraryPath: libraryPath,
         config: LlamaServerConfig(
-          model: 'local',
+          model: modelAlias,
           modelPath: modelPath,
+          ctxSize: 4096,
           pollTimeout: const Duration(milliseconds: 100),
         ),
       );
@@ -41,6 +47,7 @@ void main() {
 
       expect(response.statusCode, 200);
       expect(response.jsonBody['loaded'], isTrue);
+      expect(response.jsonBody['model'], modelAlias);
     }, skip: !hasRuntime);
 
     test('GET /v1/models', () async {
@@ -48,17 +55,20 @@ void main() {
 
       expect(response.statusCode, 200);
       expect(response.jsonBody['object'], 'list');
+      final data = response.jsonBody['data']! as List<Object?>;
+      expect(data.single, containsPair('id', modelAlias));
     }, skip: !hasRuntime);
 
     test('POST /v1/chat/completions non-streaming', () async {
       final response = await _postJson(
         baseUri.resolve('/v1/chat/completions'),
         {
-          'model': 'local',
+          'model': modelAlias,
           'messages': [
-            {'role': 'user', 'content': 'Say hello in one short sentence.'},
+            {'role': 'user', 'content': 'Reply with one short greeting.'},
           ],
-          'max_tokens': 32,
+          'max_tokens': 24,
+          'temperature': 0,
         },
       );
 
@@ -70,16 +80,18 @@ void main() {
       final response = await _postJson(
         baseUri.resolve('/v1/chat/completions'),
         {
-          'model': 'local',
+          'model': modelAlias,
           'stream': true,
           'messages': [
             {'role': 'user', 'content': 'Count from one to three.'},
           ],
           'max_tokens': 32,
+          'temperature': 0,
         },
       );
 
       expect(response.statusCode, 200);
+      expect(response.body, contains('data: '));
       expect(response.body, contains('data: [DONE]'));
     }, skip: !hasRuntime);
   });

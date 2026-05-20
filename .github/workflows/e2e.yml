@@ -364,6 +364,12 @@ jobs:
         timeout-minutes: 45
         run: dart test packages/lib_llama_cpp/test/real_model_e2e_test.dart -r expanded
 
+      - name: Run Gemma 4 E2B server API E2E
+        timeout-minutes: 20
+        run: |
+          LIB_LLAMA_CPP_TEST_MODEL_ALIAS=gemma4-e2b \
+            dart test packages/lib_llama_cpp_server/test/native_server_e2e_test.dart -r expanded
+
   android-real-model-smoke:
     name: Real model smoke (android)
     if: ${{ (inputs.platform || 'all') == 'all' || (inputs.platform || 'all') == 'android' }}

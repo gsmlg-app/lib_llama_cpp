@@ -123,10 +123,12 @@ Native tests are opt-in and require both environment variables:
 ```sh
 LIB_LLAMA_CPP_TEST_LIBRARY=/absolute/path/to/liblib_llama_cpp_linux.so \
 LIB_LLAMA_CPP_TEST_MODEL=/absolute/path/to/model.gguf \
+LIB_LLAMA_CPP_TEST_MODEL_ALIAS=gemma4-e2b \
 dart test -p vm packages/lib_llama_cpp_server/test/native_server_e2e_test.dart
 ```
 
-Without those variables, the native server tests are skipped.
+`LIB_LLAMA_CPP_TEST_MODEL_ALIAS` is optional and defaults to `gemma4-e2b`.
+Without the library and model variables, the native server tests are skipped.
 
 ## Troubleshooting
 
