@@ -217,6 +217,22 @@ void main() {
         lessThan(testSource.indexOf('if (modelPath.isEmpty)')),
       );
     });
+
+    test('Gemma 4 E2B workflow exercises server API through llama server', () {
+      final root = _repoRoot();
+      final workflow = (root / '.github/workflows/e2e.yml').readAsStringSync();
+      final gemmaJob = _workflowJob(workflow, 'gemma4-e2b-api-e2e');
+
+      expect(gemmaJob, contains('Run Gemma 4 E2B server API E2E'));
+      expect(gemmaJob, contains('LIB_LLAMA_CPP_TEST_MODEL_ALIAS=gemma4-e2b'));
+      expect(
+        gemmaJob,
+        contains(
+          'dart test packages/lib_llama_cpp_server/test/native_server_e2e_test.dart -r expanded',
+        ),
+      );
+      expect(gemmaJob, contains('Run Gemma 4 E2B multimodal and tool E2E'));
+    });
   });
 }
 

@@ -1,0 +1,17 @@
+name: lib_llama_cpp_server
+description: Local OpenAI-compatible HTTP server for lib_llama_cpp.
+version: 0.1.0
+repository: https://github.com/gsmlg-app/lib_llama_cpp
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+
+resolution: workspace
+
+dependencies:
+  ffi: ^2.1.4
+  lib_llama_cpp_ffi: ^0.6.2
+
+dev_dependencies:
+  test: ^1.26.3

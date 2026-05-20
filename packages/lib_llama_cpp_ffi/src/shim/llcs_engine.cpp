@@ -19,6 +19,9 @@
 #include <nlohmann/json.hpp>
 
 #include <atomic>
+#include <condition_variable>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <mutex>
@@ -26,6 +29,7 @@
 #include <thread>
 #include <unordered_map>
 #include <queue>
+#include <vector>
 
 using json = nlohmann::ordered_json;
 
@@ -49,9 +53,67 @@ static char * heap_empty() {
 
 static void set_error(char ** error_out, const std::string & msg) {
     if (error_out) {
-        json err_json = {{"error", msg}};
+        json err_json = {{"message", msg}};
         *error_out = heap_copy(err_json.dump());
     }
+}
+
+static std::mutex g_backend_mtx;
+static int g_backend_ref_count = 0;
+
+static void backend_acquire() {
+    std::lock_guard<std::mutex> lock(g_backend_mtx);
+    if (g_backend_ref_count == 0) {
+        llama_backend_init();
+    }
+    g_backend_ref_count += 1;
+}
+
+static void backend_release() {
+    std::lock_guard<std::mutex> lock(g_backend_mtx);
+    if (g_backend_ref_count <= 0) {
+        return;
+    }
+    g_backend_ref_count -= 1;
+    if (g_backend_ref_count == 0) {
+        llama_backend_free();
+    }
+}
+
+static bool contains_media_word(std::string value) {
+    for (char & ch : value) {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    return value.find("image") != std::string::npos ||
+           value.find("audio") != std::string::npos;
+}
+
+static bool request_contains_media(const json & value) {
+    if (value.is_array()) {
+        for (const auto & item : value) {
+            if (request_contains_media(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (!value.is_object()) {
+        return false;
+    }
+
+    auto type_it = value.find("type");
+    if (type_it != value.end() && type_it->is_string() &&
+            contains_media_word(type_it->get<std::string>())) {
+        return true;
+    }
+
+    for (auto it = value.begin(); it != value.end(); ++it) {
+        if (contains_media_word(it.key()) || request_contains_media(it.value())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +141,12 @@ struct llcs_engine {
     std::mutex tasks_mtx;
     std::unordered_map<int, std::shared_ptr<llcs_task_events>> task_map;
 
+    // Joinable request drainer threads. They are joined during destroy.
+    std::mutex drainers_mtx;
+    std::vector<std::thread> drainers;
+
     // Cached capabilities JSON string
+    mutable std::mutex caps_mtx;
     mutable std::string caps_cache;
     mutable bool caps_valid = false;
 
@@ -146,14 +213,15 @@ llcs_engine * llcs_engine_create(const char * params_json, char ** error_out) {
         engine->params.use_jinja = true;  // default: use jinja
     }
 
-    // Initialize backends
-    llama_backend_init();
+    // Initialize backends. llama.cpp backend state is process-global, so keep
+    // it alive until the last engine is destroyed.
+    backend_acquire();
     llama_numa_init(engine->params.numa);
 
     // Load model via server_context
     if (!engine->ctx_server.load_model(engine->params)) {
         set_error(error_out, "Failed to load model: " + engine->params.model.path);
-        llama_backend_free();
+        backend_release();
         return nullptr;
     }
 
@@ -169,6 +237,20 @@ llcs_engine * llcs_engine_create(const char * params_json, char ** error_out) {
 void llcs_engine_destroy(llcs_engine * engine) {
     if (!engine) return;
 
+    engine->running.store(false);
+
+    {
+        std::lock_guard<std::mutex> tasks_lock(engine->tasks_mtx);
+        for (auto & entry : engine->task_map) {
+            auto & events = entry.second;
+            {
+                std::lock_guard<std::mutex> event_lock(events->mtx);
+                events->finished = true;
+            }
+            events->cv.notify_all();
+        }
+    }
+
     // Terminate the processing loop
     engine->ctx_server.terminate();
 
@@ -177,15 +259,30 @@ void llcs_engine_destroy(llcs_engine * engine) {
         engine->loop_thread.join();
     }
 
-    engine->running.store(false);
+    std::vector<std::thread> drainers;
+    {
+        std::lock_guard<std::mutex> lock(engine->drainers_mtx);
+        drainers.swap(engine->drainers);
+    }
+    for (auto & drainer : drainers) {
+        if (drainer.joinable()) {
+            drainer.join();
+        }
+    }
 
-    llama_backend_free();
+    {
+        std::lock_guard<std::mutex> lock(engine->tasks_mtx);
+        engine->task_map.clear();
+    }
+
+    backend_release();
     delete engine;
 }
 
 char * llcs_engine_caps(const llcs_engine * engine) {
     if (!engine) return heap_copy("{}");
 
+    std::lock_guard<std::mutex> lock(engine->caps_mtx);
     if (engine->caps_valid) {
         return heap_copy(engine->caps_cache);
     }
@@ -228,6 +325,11 @@ llcs_task_id llcs_engine_submit(
         return -1;
     }
 
+    if (request_contains_media(body)) {
+        set_error(error_out, "unsupported_model_capability: image and audio content are not supported in server mode yet");
+        return -1;
+    }
+
     // Create a response reader for this request
     auto rd_ptr = std::make_unique<server_response_reader>(
         engine->ctx_server.get_response_reader());
@@ -245,6 +347,11 @@ llcs_task_id llcs_engine_submit(
         return -1;
     }
 
+    if (!files.empty()) {
+        set_error(error_out, "unsupported_model_capability: image and audio content are not supported in server mode yet");
+        return -1;
+    }
+
     // Build the task
     server_task task(SERVER_TASK_TYPE_COMPLETION);
     task.id = rd.get_new_id();
@@ -252,15 +359,11 @@ llcs_task_id llcs_engine_submit(
     // Tokenize the prompt
     try {
         const auto & prompt = data.at("prompt");
-        if (meta.has_mtmd) {
-            task.tokens = process_mtmd_prompt(nullptr /* TODO: mtmd ctx */, prompt.get<std::string>(), files);
-        } else {
-            auto inputs = tokenize_input_prompts(
-                llama_model_get_vocab(llama_get_model(engine->ctx_server.get_llama_context())),
-                nullptr, prompt, true, true);
-            if (!inputs.empty()) {
-                task.tokens = std::move(inputs[0]);
-            }
+        auto inputs = tokenize_input_prompts(
+            llama_model_get_vocab(llama_get_model(engine->ctx_server.get_llama_context())),
+            nullptr, prompt, true, true);
+        if (!inputs.empty()) {
+            task.tokens = std::move(inputs[0]);
         }
     } catch (const std::exception & e) {
         set_error(error_out, std::string("Failed to tokenize prompt: ") + e.what());
@@ -300,9 +403,8 @@ llcs_task_id llcs_engine_submit(
         task.params.chat_parser_params);
 
     // Spawn a drainer thread that pumps results into the event queue
-    std::thread([events, rd = std::move(rd_ptr), state = std::move(state),
-                 is_stream]() mutable {
-        auto should_stop = []() { return false; };
+    std::thread drainer([engine, events, rd = std::move(rd_ptr), state = std::move(state)]() mutable {
+        auto should_stop = [engine]() { return !engine->running.load(); };
 
         while (rd->has_next()) {
             auto result = rd->next(should_stop);
@@ -332,7 +434,12 @@ llcs_task_id llcs_engine_submit(
             events->finished = true;
         }
         events->cv.notify_one();
-    }).detach();
+    });
+
+    {
+        std::lock_guard<std::mutex> lock(engine->drainers_mtx);
+        engine->drainers.emplace_back(std::move(drainer));
+    }
 
     return static_cast<llcs_task_id>(task_id);
 }
@@ -442,8 +549,8 @@ void server_http_context::post(const std::string &, const handler_t &) const {}
 //
 // download.cpp is excluded from the embedded build because it depends on
 // libcurl. The only caller in server code is handle_media() which fetches
-// remote images over HTTP — we don't support that in in-process mode.
-// Users should provide images as base64 data URIs or local file:// paths.
+// remote images over HTTP. Server mode rejects media before that path until
+// the in-process mtmd flow is complete.
 // ---------------------------------------------------------------------------
 
 #include "download.h"
