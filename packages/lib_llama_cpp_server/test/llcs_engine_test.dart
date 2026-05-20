@@ -129,6 +129,23 @@ void main() {
       expect(bindings.freedStrings, hasLength(2));
     });
 
+    test('poll treats non-object native JSON as no event', () {
+      final bindings = FakeLlcsNativeBindings(
+        pollResults: [
+          jsonEncode(<Object?>['unexpected']),
+          null,
+        ],
+      );
+      final engine = LlcsEngine.withBindings(
+        bindings: bindings,
+        config: const LlcsEngineConfig(modelPath: '/models/local.gguf'),
+      );
+
+      expect(engine.poll(1), isEmpty);
+      expect(engine.poll(1), isNull);
+      expect(bindings.freedStrings, hasLength(1));
+    });
+
     test(
       'stream skips poll timeouts and cancels on listener cancellation',
       () async {

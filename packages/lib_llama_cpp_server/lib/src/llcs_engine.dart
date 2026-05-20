@@ -180,7 +180,7 @@ final class LlcsEngine {
     if (raw.isEmpty) {
       return const {};
     }
-    return _decodeObject(raw);
+    return _decodePollEvent(raw);
   }
 
   Stream<Map<String, Object?>> stream(
@@ -322,4 +322,15 @@ Map<String, Object?> _decodeObject(String raw) {
     return decoded.map((key, value) => MapEntry(key.toString(), value));
   }
   throw const FormatException('Expected JSON object from llcs.');
+}
+
+Map<String, Object?> _decodePollEvent(String raw) {
+  final decoded = jsonDecode(raw);
+  if (decoded is Map<String, Object?>) {
+    return decoded;
+  }
+  if (decoded is Map) {
+    return decoded.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return const {};
 }
