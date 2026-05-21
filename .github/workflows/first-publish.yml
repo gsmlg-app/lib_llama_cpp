@@ -38,16 +38,12 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-      id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.git_ref }}
-
-      - name: Setup Dart OIDC credentials
-        uses: dart-lang/setup-dart@v1
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -127,6 +123,30 @@ jobs:
         if: ${{ steps.published.outputs.should_publish == 'true' }}
         working-directory: ${{ steps.package.outputs.package_dir }}
         run: flutter pub publish --dry-run --ignore-warnings
+
+      - name: Configure pub credentials
+        if: ${{ steps.published.outputs.should_publish == 'true' && inputs.dry_run != true }}
+        env:
+          PUB_CREDENTIALS: ${{ secrets.PUB_CREDENTIALS }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PUB_CREDENTIALS}" ]]; then
+            {
+              echo "## First publish requires user credentials"
+              echo
+              echo "pub.dev only allows automated publishing for existing packages."
+              echo "Create the package with user-backed pub credentials first, then the regular publish workflow can use OIDC for later versions."
+              echo
+              echo "Set repository secret \`PUB_CREDENTIALS\` from a local \`~/.pub-cache/credentials.json\`, rerun this workflow, then remove the secret after the first publish."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Missing PUB_CREDENTIALS secret. pub.dev rejects OIDC for brand-new packages."
+            exit 1
+          fi
+
+          pub_cache="${PUB_CACHE:-$HOME/.pub-cache}"
+          mkdir -p "$pub_cache"
+          printf '%s' "$PUB_CREDENTIALS" > "$pub_cache/credentials.json"
+          chmod 0600 "$pub_cache/credentials.json"
 
       - name: Publish package
         if: ${{ steps.published.outputs.should_publish == 'true' && inputs.dry_run != true }}
