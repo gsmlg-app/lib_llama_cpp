@@ -1,5 +1,7 @@
 # lib_llama_cpp
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp.svg)](https://pub.dev/packages/lib_llama_cpp)
+
 App-facing Flutter plugin facade for direct llama.cpp inference.
 
 This package exposes an OpenAI-shaped local client facade backed by a lower-level

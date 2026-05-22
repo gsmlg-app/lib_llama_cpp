@@ -1,5 +1,7 @@
 # lib_llama_cpp_ios
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp_ios.svg)](https://pub.dev/packages/lib_llama_cpp_ios)
+
 iOS implementation package for the `lib_llama_cpp` federated Flutter plugin.
 
 This package registers the iOS platform implementation and CocoaPods metadata

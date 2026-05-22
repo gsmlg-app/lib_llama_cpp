@@ -1,5 +1,7 @@
 # lib_llama_cpp_windows
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp_windows.svg)](https://pub.dev/packages/lib_llama_cpp_windows)
+
 Windows implementation package for the `lib_llama_cpp` federated Flutter plugin.
 
 This package registers the Windows platform implementation and CMake metadata

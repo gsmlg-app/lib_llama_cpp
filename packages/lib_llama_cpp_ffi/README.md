@@ -1,5 +1,7 @@
 # lib_llama_cpp_ffi
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp_ffi.svg)](https://pub.dev/packages/lib_llama_cpp_ffi)
+
 Low-level Dart FFI bridge for llama.cpp.
 
 This package contains generated Dart bindings for the llama.cpp C ABI, native

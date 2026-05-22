@@ -1,5 +1,7 @@
 # lib_llama_cpp_android
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp_android.svg)](https://pub.dev/packages/lib_llama_cpp_android)
+
 Android implementation package for the `lib_llama_cpp` federated Flutter plugin.
 
 This package registers the Android platform implementation and native build

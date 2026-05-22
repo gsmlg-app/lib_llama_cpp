@@ -1,17 +1,28 @@
 # lib_llama_cpp
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp.svg)](https://pub.dev/packages/lib_llama_cpp)
+
 Federated Flutter FFI plugin workspace for direct llama.cpp inference from
 Dart and Flutter.
 
-The repository is intentionally split into narrow packages:
+## Packages
 
-- `packages/lib_llama_cpp` is the app-facing facade and isolate scheduler.
-- `packages/lib_llama_cpp_platform_interface` defines the federated contract.
-- `packages/lib_llama_cpp_ffi` owns generated Dart FFI bindings and opaque
-  native handle wrappers.
-- `packages/lib_llama_cpp_android`, `packages/lib_llama_cpp_ios`,
-  `packages/lib_llama_cpp_macos`, `packages/lib_llama_cpp_linux`, and
-  `packages/lib_llama_cpp_windows` isolate native build integration.
+The repository is intentionally split into narrow packages. Flutter apps should
+usually depend on `lib_llama_cpp`; the other packages are consumed transitively
+or by advanced integrations.
+
+| Package | Pub | Purpose |
+| --- | --- | --- |
+| [`lib_llama_cpp`](packages/lib_llama_cpp) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp.svg)](https://pub.dev/packages/lib_llama_cpp) | App-facing facade and inference isolate scheduler. |
+| [`lib_llama_cpp_platform_interface`](packages/lib_llama_cpp_platform_interface) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_platform_interface.svg)](https://pub.dev/packages/lib_llama_cpp_platform_interface) | Federated platform contract and native library resolution API. |
+| [`lib_llama_cpp_ffi`](packages/lib_llama_cpp_ffi) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_ffi.svg)](https://pub.dev/packages/lib_llama_cpp_ffi) | Generated Dart FFI bindings and opaque native handle wrappers. |
+| [`lib_llama_cpp_server`](packages/lib_llama_cpp_server) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_server.svg)](https://pub.dev/packages/lib_llama_cpp_server) | Local OpenAI-compatible HTTP server for GGUF model inference. |
+| [`lib_llama_cpp_android`](packages/lib_llama_cpp_android) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_android.svg)](https://pub.dev/packages/lib_llama_cpp_android) | Android registration, native build integration, and packaged binaries. |
+| [`lib_llama_cpp_ios`](packages/lib_llama_cpp_ios) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_ios.svg)](https://pub.dev/packages/lib_llama_cpp_ios) | iOS registration, CocoaPods metadata, and packaged binaries. |
+| [`lib_llama_cpp_macos`](packages/lib_llama_cpp_macos) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_macos.svg)](https://pub.dev/packages/lib_llama_cpp_macos) | macOS registration, CocoaPods metadata, and packaged binaries. |
+| [`lib_llama_cpp_linux`](packages/lib_llama_cpp_linux) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_linux.svg)](https://pub.dev/packages/lib_llama_cpp_linux) | Linux registration, CMake metadata, and packaged binaries. |
+| [`lib_llama_cpp_windows`](packages/lib_llama_cpp_windows) | [![pub package](https://img.shields.io/pub/v/lib_llama_cpp_windows.svg)](https://pub.dev/packages/lib_llama_cpp_windows) | Windows registration, CMake metadata, and packaged binaries. |
+
 - `third_party/llama.cpp` is a pinned git submodule.
 - `example` is the Flutter integration app.
 

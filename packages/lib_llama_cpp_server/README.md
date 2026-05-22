@@ -1,5 +1,7 @@
 # lib_llama_cpp_server
 
+[![pub package](https://img.shields.io/pub/v/lib_llama_cpp_server.svg)](https://pub.dev/packages/lib_llama_cpp_server)
+
 Pure Dart local HTTP server for `lib_llama_cpp`.
 
 This package provides a small OpenAI-compatible server around the persistent
