@@ -137,18 +137,72 @@ jobs:
               echo "pub.dev only allows automated publishing for existing packages."
               echo "Create the package with user-backed pub credentials first, then the regular publish workflow can use OIDC for later versions."
               echo
-              echo "Set repository secret \`PUB_CREDENTIALS\` from a local \`~/.pub-cache/credentials.json\`, rerun this workflow, then remove the secret after the first publish."
+              echo "Set repository secret \`PUB_CREDENTIALS\` from a local Dart pub credentials JSON file, rerun this workflow, then remove the secret after the first publish."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Missing PUB_CREDENTIALS secret. pub.dev rejects OIDC for brand-new packages."
             exit 1
           fi
 
           pub_cache="${PUB_CACHE:-$HOME/.pub-cache}"
+          pub_config="${XDG_CONFIG_HOME:-$HOME/.config}/dart"
           mkdir -p "$pub_cache"
-          printf '%s' "$PUB_CREDENTIALS" > "$pub_cache/credentials.json"
-          chmod 0600 "$pub_cache/credentials.json"
+          mkdir -p "$pub_config"
+
+          validate_credentials() {
+            python3 - "$1" <<'PY'
+          import json
+          import sys
+
+          try:
+              with open(sys.argv[1], encoding="utf-8") as handle:
+                  credentials = json.load(handle)
+          except Exception as exc:
+              print(f"invalid JSON: {exc}", file=sys.stderr)
+              sys.exit(1)
+
+          missing = [
+              key
+              for key in (
+                  "accessToken",
+                  "refreshToken",
+                  "tokenEndpoint",
+                  "scopes",
+                  "expiration",
+              )
+              if not credentials.get(key)
+          ]
+          if missing:
+              print(f"missing required field(s): {', '.join(missing)}", file=sys.stderr)
+              sys.exit(1)
+          PY
+          }
+
+          credentials_file="$pub_cache/credentials.json"
+          config_credentials_file="$pub_config/pub-credentials.json"
+          raw_credentials="$RUNNER_TEMP/pub-credentials.raw"
+          decoded_credentials="$RUNNER_TEMP/pub-credentials.decoded"
+
+          printf '%s' "$PUB_CREDENTIALS" > "$raw_credentials"
+          if validate_credentials "$raw_credentials"; then
+            mv "$raw_credentials" "$credentials_file"
+          elif base64 --decode "$raw_credentials" > "$decoded_credentials" 2>/dev/null &&
+            validate_credentials "$decoded_credentials"; then
+            mv "$decoded_credentials" "$credentials_file"
+          else
+            {
+              echo "## Invalid PUB_CREDENTIALS secret"
+              echo
+              echo "\`PUB_CREDENTIALS\` must contain either raw \`~/.pub-cache/credentials.json\` JSON or base64-encoded credentials JSON."
+              echo "The credentials must include \`accessToken\`, \`refreshToken\`, \`tokenEndpoint\`, \`scopes\`, and \`expiration\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::PUB_CREDENTIALS is not a usable pub credentials.json payload."
+            exit 1
+          fi
+
+          chmod 0600 "$credentials_file"
+          install -m 0600 "$credentials_file" "$config_credentials_file"
 
       - name: Publish package
         if: ${{ steps.published.outputs.should_publish == 'true' && inputs.dry_run != true }}
         working-directory: ${{ steps.package.outputs.package_dir }}
-        run: flutter pub publish --force
+        run: timeout 5m flutter pub publish --force
