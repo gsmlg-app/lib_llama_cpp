@@ -5,8 +5,9 @@
 App-facing Flutter plugin facade for direct llama.cpp inference.
 
 This package exposes an OpenAI-shaped local client facade backed by a lower-level
-command stream API. It is the package Flutter applications should depend on
-directly.
+command stream API and re-exports the recommended
+`lib_llama_cpp_server` local HTTP server API. It is the package Flutter
+applications should depend on directly.
 
 ## Import
 
@@ -23,7 +24,65 @@ custom native library resolution:
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 ```
 
-## Quick Start
+## Recommended Local Server
+
+```dart
+import 'package:lib_llama_cpp/lib_llama_cpp.dart';
+
+final server = LlamaHttpServer.open(
+  config: LlamaServerConfig(
+    model: 'local',
+    modelPath: '/path/to/model.gguf',
+    port: 0,
+  ),
+);
+final address = await server.start();
+
+final client = LlamaServerClient(
+  baseUri: Uri.parse('http://${address.host}:${address.port}/v1'),
+);
+
+final response = await client.createChatCompletion(
+  model: 'local',
+  messages: [
+    {'role': 'user', 'content': 'Write one sentence.'},
+  ],
+);
+
+print(response);
+
+await server.close();
+```
+
+The server keeps the GGUF model loaded behind an OpenAI-compatible HTTP
+boundary. This is the recommended integration path for applications that need a
+long-lived local model session, want to share one native runtime across multiple
+callers, or already speak OpenAI-compatible chat-completions APIs.
+
+The CLI entrypoint uses the same server:
+
+```sh
+dart run lib_llama_cpp_server \
+  --model local \
+  --model-path /path/to/model.gguf \
+  --host 127.0.0.1 \
+  --port 8080
+```
+
+Supported server endpoints:
+
+- `GET /healthz`
+- `GET /v1/models`
+- `POST /v1/chat/completions`
+
+Streaming chat completions are returned as OpenAI-style server-sent events.
+Server mode is model inference only; it does not expose local filesystem, shell,
+agent orchestration, or tool execution capabilities.
+
+## Direct In-Process Client
+
+Use `LlamaOpenAIClient` when you need direct in-process calls or focused tests
+around the Dart facade:
 
 ```dart
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
@@ -159,6 +218,7 @@ await for (final response in client.transform(commands)) {
 
 The facade exports these public types:
 
+- `LlamaHttpServer`, `LlamaServerConfig`, `LlamaServerClient`
 - `LlamaOpenAIClient`, `LlamaModelConfig`, `LlamaOpenAIException`
 - `LlamaResponseObject`, `LlamaResponseInputItem`,
   `LlamaResponseStreamEvent`, `LlamaResponseOutputTextDelta`,
@@ -254,10 +314,10 @@ Current platform defaults:
 
 | Platform | Resolution | Capabilities |
 | --- | --- | --- |
-| Android | lookup name `liblib_llama_cpp_android.so` | `cpu`, `vulkan` |
-| iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu`, `metal` |
+| Android | lookup name `liblib_llama_cpp_android.so` | `cpu` |
+| iOS | path `lib_llama_cpp_ios.framework/lib_llama_cpp_ios` | `cpu` |
 | Linux | lookup name `liblib_llama_cpp_linux.so` | `cpu` |
-| macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu`, `metal` |
+| macOS | path `lib_llama_cpp_macos.framework/lib_llama_cpp_macos` | `cpu` |
 | Windows | lookup name `lib_llama_cpp_windows.dll` | `cpu` |
 
 `preferredPath` is honored by the current platform resolvers. When a custom path
@@ -266,13 +326,26 @@ apps can route to caller-provided GPU builds. Bundled libraries reject
 unsupported `requiredCapabilities` instead of silently returning a CPU-only
 descriptor.
 
-Native source and prebuilt builds use the shared CMake helper. Apple builds
-enable Metal by default. Android, Linux, and Windows use Vulkan as the supported
-GPU backend direction; monorepo development builds can opt into Vulkan with
-`LIB_LLAMA_CPP_ENABLE_VULKAN=ON` when the runner has the required SDKs. CUDA is
-outside the supported default-package backend matrix; see
-[`../../docs/design/gpu-backend-support.md`](../../docs/design/gpu-backend-support.md).
-GPU offload still uses llama.cpp's normal `gpuLayerCount` load parameter.
+Published pub.dev platform packages include CPU prebuilts only. Metal, Vulkan,
+and CUDA prebuilts are built as separate GitHub release assets. From a
+repository checkout, download an optional accelerator archive into a local
+artifact directory:
+
+```sh
+.github/scripts/download-release-prebuilts.sh <version> ./prebuilt metal
+.github/scripts/download-release-prebuilts.sh <version> ./prebuilt vulkan-linux
+.github/scripts/download-release-prebuilts.sh <version> ./prebuilt cuda-linux
+```
+
+Without a repository checkout, download the matching asset from
+`https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v<version>/`.
+
+Pass the downloaded library with `LlamaCppLibraryRequest.preferredPath` for
+direct in-process use, or pass it to server mode with `--library` /
+`LlamaServerConfig.libraryPath`. GPU offload still uses llama.cpp's normal
+`gpuLayerCount` / `--gpu-layers` load parameter. See
+[`../../docs/design/gpu-backend-support.md`](../../docs/design/gpu-backend-support.md)
+for the release-asset backend matrix.
 
 ## Model Files and Smoke Tests
 

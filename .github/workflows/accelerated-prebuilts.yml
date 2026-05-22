@@ -1,0 +1,353 @@
+name: Accelerated Native Prebuilts
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (e.g. 1.2.3)
+        required: true
+        type: string
+      git_ref:
+        description: Git ref to build from
+        required: true
+        default: main
+        type: string
+      backend:
+        description: Backend group to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - metal
+          - vulkan
+          - cuda
+      upload_to_release:
+        description: Upload archives to the v<version> GitHub release
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.version }}-${{ inputs.backend }}
+  cancel-in-progress: false
+
+env:
+  VERSION: ${{ inputs.version }}
+
+jobs:
+  metal:
+    name: Metal prebuilts (apple)
+    if: inputs.backend == 'all' || inputs.backend == 'metal'
+    runs-on: macos-14
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Apple native build dependencies
+        run: brew install cmake ninja
+
+      - name: Build macOS Metal prebuilt framework
+        env:
+          LIB_LLAMA_CPP_ENABLE_METAL: ON
+        run: .github/scripts/build-native-prebuilt.sh macos "$RUNNER_TEMP/prebuilt"
+
+      - name: Build iOS Metal prebuilt framework
+        env:
+          LIB_LLAMA_CPP_ENABLE_METAL: ON
+        run: .github/scripts/build-native-prebuilt.sh ios "$RUNNER_TEMP/prebuilt"
+
+      - name: Create Metal release archive
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          archive="lib_llama_cpp-prebuilt-metal-${VERSION}.tar.gz"
+          tar -czf "dist/release/${archive}" -C "$RUNNER_TEMP/prebuilt" .
+          (
+            cd dist/release
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$archive" > "${archive}.sha256"
+            else
+              shasum -a 256 "$archive" | awk '{print $1 "  " $2}' > "${archive}.sha256"
+            fi
+          )
+
+      - name: Upload Metal workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-metal-${{ inputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Upload Metal assets to GitHub release
+        if: inputs.upload_to_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" dist/release/* --clobber
+
+  vulkan-linux:
+    name: Vulkan prebuilt (linux)
+    if: inputs.backend == 'all' || inputs.backend == 'vulkan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Linux Vulkan native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build glslc libvulkan-dev spirv-headers
+
+      - name: Build Linux Vulkan prebuilt library
+        env:
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+        run: .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
+
+      - name: Create Linux Vulkan release archive
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          archive="lib_llama_cpp-prebuilt-vulkan-linux-${VERSION}.tar.gz"
+          tar -czf "dist/release/${archive}" -C "$RUNNER_TEMP/prebuilt" .
+          (cd dist/release && sha256sum "$archive" > "${archive}.sha256")
+
+      - name: Upload Linux Vulkan workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-vulkan-linux-${{ inputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Upload Linux Vulkan assets to GitHub release
+        if: inputs.upload_to_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" dist/release/* --clobber
+
+  vulkan-android:
+    name: Vulkan prebuilts (android)
+    if: inputs.backend == 'all' || inputs.backend == 'vulkan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Android Vulkan native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build glslc libvulkan-dev spirv-headers
+          echo "VULKAN_SDK=/usr" >> "$GITHUB_ENV"
+
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+
+      - name: Build Android Vulkan prebuilt libraries
+        env:
+          ANDROID_PLATFORM: android-28
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+        run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
+
+      - name: Create Android Vulkan release archive
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          archive="lib_llama_cpp-prebuilt-vulkan-android-${VERSION}.tar.gz"
+          tar -czf "dist/release/${archive}" -C "$RUNNER_TEMP/prebuilt" .
+          (cd dist/release && sha256sum "$archive" > "${archive}.sha256")
+
+      - name: Upload Android Vulkan workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-vulkan-android-${{ inputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Upload Android Vulkan assets to GitHub release
+        if: inputs.upload_to_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" dist/release/* --clobber
+
+  vulkan-windows:
+    name: Vulkan prebuilt (windows)
+    if: inputs.backend == 'all' || inputs.backend == 'vulkan'
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Vulkan SDK (vcpkg)
+        shell: pwsh
+        run: |
+          vcpkg install vulkan-headers vulkan-loader spirv-headers shaderc --triplet x64-windows
+          $vcpkgInstalled = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
+          echo "VULKAN_SDK=$vcpkgInstalled" >> $env:GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$vcpkgInstalled" >> $env:GITHUB_ENV
+          echo "$vcpkgInstalled\tools\shaderc" >> $env:GITHUB_PATH
+
+      - name: Build Windows Vulkan prebuilt library
+        shell: pwsh
+        env:
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+        run: .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP\prebuilt"
+
+      - name: Create Windows Vulkan release archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/release | Out-Null
+          $archive = "lib_llama_cpp-prebuilt-vulkan-windows-$env:VERSION.tar.gz"
+          tar -czf "dist/release/$archive" -C "$env:RUNNER_TEMP\prebuilt" .
+          $hash = (Get-FileHash -Algorithm SHA256 "dist/release/$archive").Hash.ToLowerInvariant()
+          "$hash  $archive" | Out-File -Encoding ascii "dist/release/$archive.sha256"
+
+      - name: Upload Windows Vulkan workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-vulkan-windows-${{ inputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Upload Windows Vulkan assets to GitHub release
+        if: inputs.upload_to_release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v$env:VERSION" dist/release/* --clobber
+
+  cuda-linux:
+    name: CUDA prebuilt (linux)
+    if: inputs.backend == 'all' || inputs.backend == 'cuda'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install Linux native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build
+
+      - name: Setup CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.35
+        with:
+          cuda: '12.5.0'
+          method: network
+
+      - name: Build Linux CUDA prebuilt library
+        env:
+          LIB_LLAMA_CPP_ENABLE_CUDA: ON
+        run: .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
+
+      - name: Create Linux CUDA release archive
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          archive="lib_llama_cpp-prebuilt-cuda-linux-${VERSION}.tar.gz"
+          tar -czf "dist/release/${archive}" -C "$RUNNER_TEMP/prebuilt" .
+          (cd dist/release && sha256sum "$archive" > "${archive}.sha256")
+
+      - name: Upload Linux CUDA workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-cuda-linux-${{ inputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Upload Linux CUDA assets to GitHub release
+        if: inputs.upload_to_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" dist/release/* --clobber
+
+  cuda-windows:
+    name: CUDA prebuilt (windows)
+    if: inputs.backend == 'all' || inputs.backend == 'cuda'
+    runs-on: windows-2022
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.35
+        with:
+          cuda: '12.5.0'
+
+      - name: Build Windows CUDA prebuilt library
+        shell: pwsh
+        env:
+          LIB_LLAMA_CPP_ENABLE_CUDA: ON
+        run: .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP\prebuilt"
+
+      - name: Create Windows CUDA release archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/release | Out-Null
+          $archive = "lib_llama_cpp-prebuilt-cuda-windows-$env:VERSION.tar.gz"
+          tar -czf "dist/release/$archive" -C "$env:RUNNER_TEMP\prebuilt" .
+          $hash = (Get-FileHash -Algorithm SHA256 "dist/release/$archive").Hash.ToLowerInvariant()
+          "$hash  $archive" | Out-File -Encoding ascii "dist/release/$archive.sha256"
+
+      - name: Upload Windows CUDA workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib-llama-cpp-prebuilt-cuda-windows-${{ inputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Upload Windows CUDA assets to GitHub release
+        if: inputs.upload_to_release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v$env:VERSION" dist/release/* --clobber

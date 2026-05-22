@@ -2,9 +2,9 @@
 
 ## Status
 
-Proposed. This note defines the supported GPU backend direction for
-`lib_llama_cpp`. CUDA is intentionally outside this support track; Metal and
-Vulkan cover the platform set targeted by the federated Flutter packages.
+Proposed. This note defines the accelerator backend release direction for
+`lib_llama_cpp`. Pub.dev platform packages carry CPU prebuilts only; Metal,
+Vulkan, and CUDA binaries are produced as separate GitHub release assets.
 
 ## Problem
 
@@ -21,24 +21,22 @@ configuration plumbing.
 
 ## Supported Backend Matrix
 
-The supported matrix is:
+The pub.dev package matrix is CPU-only. Optional accelerated release assets use
+this matrix:
 
-| Package | Supported GPU backend |
+| Release asset | Platforms | Backend |
 | --- | --- |
-| `lib_llama_cpp_macos` | Metal |
-| `lib_llama_cpp_ios` | Metal |
-| `lib_llama_cpp_android` | Vulkan |
-| `lib_llama_cpp_linux` | Vulkan |
-| `lib_llama_cpp_windows` | Vulkan |
+| `lib_llama_cpp-prebuilt-metal-<version>.tar.gz` | macOS, iOS | Metal |
+| `lib_llama_cpp-prebuilt-vulkan-android-<version>.tar.gz` | Android | Vulkan |
+| `lib_llama_cpp-prebuilt-vulkan-linux-<version>.tar.gz` | Linux | Vulkan |
+| `lib_llama_cpp-prebuilt-vulkan-windows-<version>.tar.gz` | Windows | Vulkan |
+| `lib_llama_cpp-prebuilt-cuda-linux-<version>.tar.gz` | Linux | CUDA |
+| `lib_llama_cpp-prebuilt-cuda-windows-<version>.tar.gz` | Windows | CUDA |
 
-CPU remains available on every platform and is always the fallback path when a
-requested GPU backend cannot initialize.
-
-CUDA is not part of this matrix. Supporting CUDA well requires per-architecture
-toolkit builds, redistributable runtime handling, NVIDIA-specific runner
-provisioning, and a separate packaging story. If CUDA becomes necessary, it
-should land as a separate flavor such as `lib_llama_cpp_cuda`, not as an
-implicit default in the cross-platform packages.
+CPU remains available on every platform and is the only backend bundled into
+published platform packages. Accelerated binaries are opt-in release artifacts;
+callers load them with `LlamaCppLibraryRequest.preferredPath` or
+`LlamaServerConfig.libraryPath`.
 
 ## Backend Details
 
@@ -68,6 +66,18 @@ SPIR-V shaders are compiled at build time. Android can use the NDK-provided
 tooling; Linux and Windows builders need Vulkan SDK tooling, including `glslc`.
 If the target host lacks a working Vulkan loader or device, initialization must
 fall back to CPU without crossing the FFI boundary as an uncaught exception.
+
+### CUDA
+
+Linux and Windows CUDA release assets use:
+
+```text
+GGML_CUDA=ON
+```
+
+CUDA assets are not bundled into pub.dev packages because toolkit and
+redistributable runtime requirements are platform-specific and substantially
+increase package size.
 
 ## Backend Registration
 
@@ -132,18 +142,20 @@ through `LlamaModelConfig.modelPath`. Apps that want GPU offload set
 
 Suggested rollout:
 
-- Metal remains enabled for Apple platform packages.
-- Vulkan becomes the supported non-Apple GPU backend once CI and release runners
-  are provisioned with shader tooling.
-- CUDA remains out of scope for the federated default packages.
+- Published platform packages include CPU prebuilts only.
+- Metal, Vulkan, and CUDA are built by the accelerated-prebuilts workflow and
+  attached to the GitHub release.
+- Apps that need acceleration download the matching release archive and pass the
+  downloaded library path explicitly.
 
 ## Acceptance Criteria
 
-- Root documentation links to this note and states that CUDA is out of scope for
-  the supported backend matrix.
-- Apple packages document Metal as the supported GPU backend.
-- Android, Linux, and Windows packages document Vulkan as the supported GPU
-  backend.
+- Root documentation links to this note and states that pub.dev packages include
+  CPU prebuilts only.
+- Apple packages document Metal as a separate GitHub release asset.
+- Android, Linux, and Windows packages document Vulkan as a separate GitHub
+  release asset.
+- Linux and Windows packages document CUDA as a separate GitHub release asset.
 - Runtime loading has a path from Dart `gpuLayerCount` to
   `llama_model_params.n_gpu_layers`.
 - Backend tests verify observed GPU initialization, not just build flags.

@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 import 'package:lib_llama_cpp_windows/lib_llama_cpp_windows.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('registerWith installs the Windows platform implementation', () {
@@ -17,10 +17,7 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
     expect(descriptor.lookupName, 'lib_llama_cpp_windows.dll');
-    expect(
-      descriptor.capabilities,
-      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}),
-    );
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 
   test(

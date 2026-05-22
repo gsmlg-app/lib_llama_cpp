@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Exported `lib_llama_cpp_server` from the app-facing facade and documented
+  server mode as the recommended local-model integration path.
+- Documented CPU-only pub.dev prebuilts with separate Metal, Vulkan, and CUDA
+  GitHub release assets.
 - Stream parsed plain-text deltas during tool-aware message generation while
   preserving structured tool-call parsing.
 - Added Metal capability reporting for bundled Apple libraries and explicit

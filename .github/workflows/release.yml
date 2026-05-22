@@ -110,7 +110,7 @@ jobs:
             --interval 30
 
   native-prebuilt-linux:
-    name: Native prebuilt (linux)
+    name: Native CPU prebuilt (linux)
     needs:
       - e2e-gate
     runs-on: ubuntu-latest
@@ -127,14 +127,12 @@ jobs:
       - name: Install Linux native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build glslc libvulkan-dev spirv-headers
+          sudo apt-get install -y clang cmake ninja-build
 
-      - name: Build Linux prebuilt library
-        env:
-          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+      - name: Build Linux CPU prebuilt library
         run: .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
 
-      - name: Upload Linux prebuilt library
+      - name: Upload Linux CPU prebuilt library
         uses: actions/upload-artifact@v4
         with:
           name: lib-llama-cpp-prebuilt-linux-${{ inputs.version }}
@@ -142,7 +140,7 @@ jobs:
           if-no-files-found: error
 
   native-prebuilt-android:
-    name: Native prebuilt (android)
+    name: Native CPU prebuilt (android)
     needs:
       - e2e-gate
     runs-on: ubuntu-latest
@@ -159,8 +157,7 @@ jobs:
       - name: Install Android native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build glslc libvulkan-dev spirv-headers
-          echo "VULKAN_SDK=/usr" >> "$GITHUB_ENV"
+          sudo apt-get install -y cmake ninja-build
 
       - name: Setup Java for Android
         uses: actions/setup-java@v4
@@ -177,13 +174,12 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
-      - name: Build Android prebuilt libraries
+      - name: Build Android CPU prebuilt libraries
         env:
-          ANDROID_PLATFORM: android-28
-          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
+          ANDROID_PLATFORM: android-24
         run: .github/scripts/build-native-prebuilt.sh android "$RUNNER_TEMP/prebuilt"
 
-      - name: Upload Android prebuilt libraries
+      - name: Upload Android CPU prebuilt libraries
         uses: actions/upload-artifact@v4
         with:
           name: lib-llama-cpp-prebuilt-android-${{ inputs.version }}
@@ -191,7 +187,7 @@ jobs:
           if-no-files-found: error
 
   native-prebuilt-apple:
-    name: Native prebuilt (apple)
+    name: Native CPU prebuilt (apple)
     needs:
       - e2e-gate
     runs-on: macos-14
@@ -208,13 +204,17 @@ jobs:
       - name: Install Apple native build dependencies
         run: brew install cmake ninja
 
-      - name: Build macOS prebuilt framework
+      - name: Build macOS CPU prebuilt framework
+        env:
+          LIB_LLAMA_CPP_ENABLE_METAL: OFF
         run: .github/scripts/build-native-prebuilt.sh macos "$RUNNER_TEMP/prebuilt"
 
-      - name: Build iOS prebuilt framework
+      - name: Build iOS CPU prebuilt framework
+        env:
+          LIB_LLAMA_CPP_ENABLE_METAL: OFF
         run: .github/scripts/build-native-prebuilt.sh ios "$RUNNER_TEMP/prebuilt"
 
-      - name: Upload Apple prebuilt frameworks
+      - name: Upload Apple CPU prebuilt frameworks
         uses: actions/upload-artifact@v4
         with:
           name: lib-llama-cpp-prebuilt-apple-${{ inputs.version }}
@@ -222,7 +222,7 @@ jobs:
           if-no-files-found: error
 
   native-prebuilt-windows:
-    name: Native prebuilt (windows)
+    name: Native CPU prebuilt (windows)
     needs:
       - e2e-gate
     runs-on: windows-2022
@@ -236,22 +236,11 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Install Vulkan SDK (vcpkg)
+      - name: Build Windows CPU prebuilt library
         shell: pwsh
-        run: |
-          vcpkg install vulkan-headers vulkan-loader spirv-headers shaderc --triplet x64-windows
-          $vcpkgInstalled = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows"
-          echo "VULKAN_SDK=$vcpkgInstalled" >> $env:GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$vcpkgInstalled" >> $env:GITHUB_ENV
-          echo "$vcpkgInstalled\tools\shaderc" >> $env:GITHUB_PATH
-
-      - name: Build Windows prebuilt library
-        shell: pwsh
-        env:
-          LIB_LLAMA_CPP_ENABLE_VULKAN: ON
         run: .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP\prebuilt"
 
-      - name: Upload Windows prebuilt library
+      - name: Upload Windows CPU prebuilt library
         uses: actions/upload-artifact@v4
         with:
           name: lib-llama-cpp-prebuilt-windows-${{ inputs.version }}
@@ -319,7 +308,7 @@ jobs:
           dart pub get
           for pubspec in packages/*/pubspec.yaml; do
             perl -0pi -e 's/^version: .+$/version: $ENV{VERSION}/m' "$pubspec"
-            perl -0pi -e 's/^(\s+(?:lib_llama_cpp_android|lib_llama_cpp_ffi|lib_llama_cpp_ios|lib_llama_cpp_linux|lib_llama_cpp_macos|lib_llama_cpp_platform_interface|lib_llama_cpp_windows): )\^?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/${1}^$ENV{VERSION}/mg' "$pubspec"
+            perl -0pi -e 's/^(\s+(?:lib_llama_cpp_android|lib_llama_cpp_ffi|lib_llama_cpp_ios|lib_llama_cpp_linux|lib_llama_cpp_macos|lib_llama_cpp_platform_interface|lib_llama_cpp_server|lib_llama_cpp_windows): )\^?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/${1}^$ENV{VERSION}/mg' "$pubspec"
           done
           python3 - <<'PY'
           import os
@@ -484,6 +473,18 @@ jobs:
             --target "$(git rev-parse HEAD)" \
             --generate-notes \
             --title "v${VERSION}"
+
+      - name: Dispatch accelerated native prebuilt release assets
+        env:
+          GH_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh workflow run accelerated-prebuilts.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref "v${VERSION}" \
+            -f version="${VERSION}" \
+            -f git_ref="v${VERSION}" \
+            -f upload_to_release=true
 
       - name: Dispatch pub.dev publish
         env:

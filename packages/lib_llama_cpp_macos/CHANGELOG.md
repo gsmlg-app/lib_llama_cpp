@@ -1,6 +1,7 @@
 ## Unreleased
 
-- Added Metal capability reporting for the bundled macOS framework.
+- Report the bundled macOS framework as CPU-only and document separate Metal
+  GitHub release assets.
 
 ## 0.4.0
 

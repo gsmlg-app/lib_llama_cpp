@@ -53,16 +53,20 @@ void main() {
       );
     });
 
-    test('release workflow builds Android prebuilts with Vulkan', () {
+    test('release workflow keeps pub package prebuilts CPU-only', () {
       final root = _repoRoot();
       final workflow = (root / '.github/workflows/release.yml')
           .readAsStringSync();
       final publishWorkflow = (root / '.github/workflows/publish.yml')
           .readAsStringSync();
+      final androidJob = _workflowJob(workflow, 'native-prebuilt-android');
+      final appleJob = _workflowJob(workflow, 'native-prebuilt-apple');
+      final windowsJob = _workflowJob(workflow, 'native-prebuilt-windows');
 
-      expect(workflow, contains('echo "VULKAN_SDK=/usr" >> "\$GITHUB_ENV"'));
-      expect(workflow, contains('ANDROID_PLATFORM: android-28'));
-      expect(workflow, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
+      expect(androidJob, contains('ANDROID_PLATFORM: android-24'));
+      expect(androidJob, isNot(contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON')));
+      expect(appleJob, contains('LIB_LLAMA_CPP_ENABLE_METAL: OFF'));
+      expect(windowsJob, isNot(contains('Install Vulkan SDK')));
       expect(
         workflow,
         contains('LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS: arm64-v8a'),
@@ -74,6 +78,50 @@ void main() {
       expect(
         workflow,
         contains('.github/scripts/build-native-prebuilt.sh android'),
+      );
+      expect(
+        publishWorkflow,
+        contains('Download CPU native prebuilts from GitHub release'),
+      );
+      expect(
+        _workflowJob(publishWorkflow, 'publish-facade'),
+        contains('- wait-for-server'),
+      );
+      expect(
+        workflow,
+        contains('Dispatch accelerated native prebuilt release assets'),
+      );
+    });
+
+    test('accelerated prebuilt workflow builds release GPU assets', () {
+      final root = _repoRoot();
+      final workflow = (root / '.github/workflows/accelerated-prebuilts.yml')
+          .readAsStringSync();
+
+      expect(workflow, contains('LIB_LLAMA_CPP_ENABLE_METAL: ON'));
+      expect(workflow, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
+      expect(workflow, contains('LIB_LLAMA_CPP_ENABLE_CUDA: ON'));
+      expect(workflow, contains('lib_llama_cpp-prebuilt-metal-'));
+      expect(workflow, contains('lib_llama_cpp-prebuilt-vulkan-linux-'));
+      expect(workflow, contains('lib_llama_cpp-prebuilt-vulkan-android-'));
+      expect(workflow, contains('lib_llama_cpp-prebuilt-vulkan-windows-'));
+      expect(workflow, contains('lib_llama_cpp-prebuilt-cuda-linux-'));
+      expect(workflow, contains('lib_llama_cpp-prebuilt-cuda-windows-'));
+      expect(workflow, contains(r'gh release upload "v${VERSION}"'));
+    });
+
+    test('release prebuilt download hook supports accelerator variants', () {
+      final root = _repoRoot();
+      final script = (root / '.github/scripts/download-release-prebuilts.sh')
+          .readAsStringSync();
+
+      expect(script, contains('cpu|metal|vulkan-linux|vulkan-android'));
+      expect(script, contains('vulkan-windows|cuda-linux|cuda-windows'));
+      expect(
+        script,
+        contains(
+          'archive="lib_llama_cpp-prebuilt-\${variant}-\${version}.tar.gz"',
+        ),
       );
     });
 
@@ -173,7 +221,7 @@ void main() {
       expect(script, contains('require_path "\${prebuilt_dir}/android/x86_64'));
       expect(readme, contains('pub.dev releases'));
       expect(readme, contains('`arm64-v8a`'));
-      expect(readme, contains('GitHub release prebuilt archive'));
+      expect(readme, contains('GitHub release CPU archive'));
       expect(readme, contains('`x86_64`'));
     });
 
@@ -184,7 +232,7 @@ void main() {
               .readAsStringSync();
 
       expect(gradle, contains('androidApiLevel'));
-      expect(gradle, contains('sourceVulkanEnabled || hasPrebuiltJniLibs'));
+      expect(gradle, contains('vulkanEnabled = sourceVulkanEnabled'));
       expect(gradle, contains('minSdkVersion = vulkanEnabled ? 28 : 24'));
       expect(gradle, contains('minSdk = minSdkVersion'));
       expect(gradle, contains('/\${androidApiLevel}/libvulkan.so'));

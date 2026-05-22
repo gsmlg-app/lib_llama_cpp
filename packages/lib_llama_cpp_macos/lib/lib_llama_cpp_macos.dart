@@ -26,10 +26,7 @@ final class LibLlamaCppMacos extends LibLlamaCppPlatform {
     );
   }
 
-  static const _capabilities = {
-    LlamaCppLibraryCapability.cpu,
-    LlamaCppLibraryCapability.metal,
-  };
+  static const _capabilities = {LlamaCppLibraryCapability.cpu};
 }
 
 Set<LlamaCppLibraryCapability> _capabilitiesForPreferredPath(

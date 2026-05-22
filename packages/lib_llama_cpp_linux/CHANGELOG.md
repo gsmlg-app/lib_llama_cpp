@@ -2,6 +2,7 @@
 
 - Added unsupported-capability errors for bundled CPU-only Linux libraries and
   custom-path capability reporting for caller-provided CUDA or Vulkan builds.
+- Documented separate Vulkan and CUDA GitHub release assets.
 
 ## 0.4.0
 

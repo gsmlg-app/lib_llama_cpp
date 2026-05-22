@@ -26,10 +26,7 @@ final class LibLlamaCppAndroid extends LibLlamaCppPlatform {
     );
   }
 
-  static const _capabilities = {
-    LlamaCppLibraryCapability.cpu,
-    LlamaCppLibraryCapability.vulkan,
-  };
+  static const _capabilities = {LlamaCppLibraryCapability.cpu};
 }
 
 Set<LlamaCppLibraryCapability> _capabilitiesForPreferredPath(

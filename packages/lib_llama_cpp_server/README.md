@@ -9,6 +9,27 @@ This package provides a small OpenAI-compatible server around the persistent
 routes for local clients that want to talk to a GGUF model through HTTP while
 keeping the model loaded in process.
 
+Flutter apps should normally depend on `lib_llama_cpp`, which re-exports this
+server API. Server mode is the recommended local-model integration path for
+long-lived application sessions.
+
+```dart
+import 'package:lib_llama_cpp/lib_llama_cpp.dart';
+
+final server = LlamaHttpServer.open(
+  config: LlamaServerConfig(
+    model: 'local',
+    modelPath: '/models/model.gguf',
+    port: 0,
+  ),
+);
+final address = await server.start();
+
+final client = LlamaServerClient(
+  baseUri: Uri.parse('http://${address.host}:${address.port}/v1'),
+);
+```
+
 ```sh
 dart run lib_llama_cpp_server \
   --library /path/to/liblib_llama_cpp_linux.so \

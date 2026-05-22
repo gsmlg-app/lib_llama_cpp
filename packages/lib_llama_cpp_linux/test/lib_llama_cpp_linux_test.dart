@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:lib_llama_cpp_linux/lib_llama_cpp_linux.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('registerWith installs the Linux platform implementation', () {
@@ -17,10 +17,7 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
     expect(descriptor.lookupName, 'liblib_llama_cpp_linux.so');
-    expect(
-      descriptor.capabilities,
-      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.vulkan}),
-    );
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 
   test('bundled Linux library rejects unsupported required backends', () async {

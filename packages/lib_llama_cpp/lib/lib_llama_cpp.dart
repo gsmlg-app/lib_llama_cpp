@@ -9,3 +9,4 @@ export 'src/openai/errors.dart';
 export 'src/openai/llama_openai_client.dart';
 export 'src/openai/model_config.dart';
 export 'src/openai/responses.dart';
+export 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart';

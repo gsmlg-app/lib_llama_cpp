@@ -32,6 +32,22 @@ void main() {
         );
       }
     });
+
+    test('facade package re-exports the local server package', () {
+      final root = _repoRoot();
+      final pubspec = (root / 'packages/lib_llama_cpp/pubspec.yaml')
+          .readAsStringSync();
+      final library = (root / 'packages/lib_llama_cpp/lib/lib_llama_cpp.dart')
+          .readAsStringSync();
+
+      expect(pubspec, contains('  lib_llama_cpp_server: ^'));
+      expect(
+        library,
+        contains(
+          "export 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart';",
+        ),
+      );
+    });
   });
 }
 

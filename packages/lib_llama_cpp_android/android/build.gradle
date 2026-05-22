@@ -26,13 +26,13 @@ def hasPrebuiltJniLibs = prebuiltJniLibsDir.exists() &&
     fileTree(prebuiltJniLibsDir).matching { include "**/*.so" }.files.size() > 0
 
 // Allow Vulkan to be toggled via gradle property or environment variable.
-// Default: OFF for source builds (prebuilt release binaries include Vulkan).
+// Default: OFF for source builds and packaged CPU prebuilts.
 // Set to ON if the Vulkan SDK is installed locally.
 def enableVulkan = project.findProperty("lib_llama_cpp.enable_vulkan")
     ?: System.getenv("LIB_LLAMA_CPP_ENABLE_VULKAN")
     ?: "OFF"
 def sourceVulkanEnabled = enableVulkan.toString().equalsIgnoreCase("ON")
-def vulkanEnabled = sourceVulkanEnabled || hasPrebuiltJniLibs
+def vulkanEnabled = sourceVulkanEnabled
 def minSdkVersion = vulkanEnabled ? 28 : 24
 def androidAbis = (System.getenv("ANDROID_ABIS")
     ?: System.getenv("ANDROID_ABI")

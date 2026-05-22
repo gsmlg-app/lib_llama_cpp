@@ -1,15 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 2 ]]; then
-  echo "Usage: download-release-prebuilts.sh <version-or-tag> <output-dir>" >&2
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+  echo "Usage: download-release-prebuilts.sh <version-or-tag> <output-dir> [cpu|metal|vulkan-linux|vulkan-android|vulkan-windows|cuda-linux|cuda-windows]" >&2
   exit 64
 fi
 
 version="${1#v}"
 tag="v${version}"
 out_dir="$2"
-archive="lib_llama_cpp-prebuilt-${version}.tar.gz"
+variant="${3:-cpu}"
+
+case "$variant" in
+  cpu|metal|vulkan-linux|vulkan-android|vulkan-windows|cuda-linux|cuda-windows)
+    ;;
+  *)
+    echo "Unsupported prebuilt variant: $variant" >&2
+    exit 64
+    ;;
+esac
+
+if [[ "$variant" == "cpu" ]]; then
+  archive="lib_llama_cpp-prebuilt-${version}.tar.gz"
+else
+  archive="lib_llama_cpp-prebuilt-${variant}-${version}.tar.gz"
+fi
 checksum="${archive}.sha256"
 tmp_dir="$(mktemp -d)"
 

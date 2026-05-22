@@ -19,6 +19,7 @@ dependencies:
   lib_llama_cpp_linux: ^0.7.0
   lib_llama_cpp_macos: ^0.7.0
   lib_llama_cpp_platform_interface: ^0.7.0
+  lib_llama_cpp_server: ^0.7.0
   lib_llama_cpp_windows: ^0.7.0
 
 dev_dependencies:

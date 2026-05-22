@@ -1,6 +1,7 @@
 ## Unreleased
 
-- Added Vulkan capability reporting for bundled Android release libraries.
+- Report bundled Android release libraries as CPU-only and document separate
+  Vulkan GitHub release assets.
 - Added unsupported-capability errors for bundled Android libraries and
   custom-path capability reporting for caller-provided backend builds.
 

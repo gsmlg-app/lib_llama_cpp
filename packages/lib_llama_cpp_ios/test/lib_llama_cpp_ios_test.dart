@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:lib_llama_cpp_ios/lib_llama_cpp_ios.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('registerWith installs the iOS platform implementation', () {
@@ -17,10 +17,7 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.path);
     expect(descriptor.path, 'lib_llama_cpp_ios.framework/lib_llama_cpp_ios');
-    expect(
-      descriptor.capabilities,
-      equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.metal}),
-    );
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
   });
 
   test('bundled iOS library rejects unsupported required backends', () async {

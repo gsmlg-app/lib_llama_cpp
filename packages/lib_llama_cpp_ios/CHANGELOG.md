@@ -1,6 +1,7 @@
 ## Unreleased
 
-- Added Metal capability reporting for the bundled iOS framework.
+- Report the bundled iOS framework as CPU-only and document separate Metal
+  GitHub release assets.
 
 ## 0.4.0
 
