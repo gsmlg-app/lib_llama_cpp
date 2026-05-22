@@ -22,6 +22,8 @@ on:
           - metal
           - vulkan
           - cuda
+          - cuda-linux
+          - cuda-windows
       upload_to_release:
         description: Upload archives to the v<version> GitHub release
         required: true
@@ -255,7 +257,7 @@ jobs:
 
   cuda-linux:
     name: CUDA prebuilt (linux)
-    if: inputs.backend == 'all' || inputs.backend == 'cuda'
+    if: inputs.backend == 'all' || inputs.backend == 'cuda' || inputs.backend == 'cuda-linux'
     runs-on: ubuntu-22.04
     timeout-minutes: 90
 
@@ -306,9 +308,9 @@ jobs:
 
   cuda-windows:
     name: CUDA prebuilt (windows)
-    if: inputs.backend == 'all' || inputs.backend == 'cuda'
+    if: inputs.backend == 'all' || inputs.backend == 'cuda' || inputs.backend == 'cuda-windows'
     runs-on: windows-2022
-    timeout-minutes: 90
+    timeout-minutes: 240
 
     steps:
       - name: Checkout

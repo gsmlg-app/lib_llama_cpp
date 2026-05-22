@@ -107,6 +107,15 @@ void main() {
       expect(workflow, contains('lib_llama_cpp-prebuilt-vulkan-windows-'));
       expect(workflow, contains('lib_llama_cpp-prebuilt-cuda-linux-'));
       expect(workflow, contains('lib_llama_cpp-prebuilt-cuda-windows-'));
+      expect(workflow, contains('- cuda-windows'));
+      expect(
+        _workflowJob(workflow, 'cuda-windows'),
+        contains("inputs.backend == 'cuda-windows'"),
+      );
+      expect(
+        _workflowJob(workflow, 'cuda-windows'),
+        contains('timeout-minutes: 240'),
+      );
       expect(workflow, contains(r'gh release upload "v${VERSION}"'));
     });
 
