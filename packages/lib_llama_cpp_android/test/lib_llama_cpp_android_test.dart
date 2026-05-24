@@ -19,7 +19,10 @@ void main() {
 
       expect(descriptor.resolution, LlamaCppLibraryResolution.lookupName);
       expect(descriptor.lookupName, 'liblib_llama_cpp_android.so');
-      expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+      expect(
+        descriptor.capabilities,
+        equals({LlamaCppLibraryCapability.cpu, LlamaCppLibraryCapability.nnapi}),
+      );
     },
   );
 

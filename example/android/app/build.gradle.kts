@@ -7,6 +7,8 @@ plugins {
 
 val libLlamaCppVulkanEnabled =
     (System.getenv("LIB_LLAMA_CPP_ENABLE_VULKAN") ?: "OFF").equals("ON", ignoreCase = true)
+val libLlamaCppNnapiEnabled =
+    (System.getenv("LIB_LLAMA_CPP_ENABLE_NNAPI") ?: "ON").equals("ON", ignoreCase = true)
 
 android {
     namespace = "com.gsmlg.libllamacpp.lib_llama_cpp_example"
@@ -27,7 +29,7 @@ android {
         applicationId = "com.gsmlg.libllamacpp.lib_llama_cpp_example"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = if (libLlamaCppVulkanEnabled) 28 else flutter.minSdkVersion
+        minSdk = if (libLlamaCppVulkanEnabled || libLlamaCppNnapiEnabled) 28 else flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

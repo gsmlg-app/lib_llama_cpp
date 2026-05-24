@@ -25,15 +25,22 @@ def prebuiltJniLibsDir = file("src/main/jniLibs")
 def hasPrebuiltJniLibs = prebuiltJniLibsDir.exists() &&
     fileTree(prebuiltJniLibsDir).matching { include "**/*.so" }.files.size() > 0
 
-// Allow Vulkan to be toggled via gradle property or environment variable.
-// Default: OFF for source builds and packaged CPU prebuilts.
-// Set to ON if the Vulkan SDK is installed locally.
+// Allow Vulkan and NNAPI to be toggled via gradle property or environment variable.
+// Default Vulkan: OFF (opt-in)
+// Default NNAPI: ON (opt-out for Tensor acceleration)
 def enableVulkan = project.findProperty("lib_llama_cpp.enable_vulkan")
     ?: System.getenv("LIB_LLAMA_CPP_ENABLE_VULKAN")
     ?: "OFF"
+def enableNnapi = project.findProperty("lib_llama_cpp.enable_nnapi")
+    ?: System.getenv("LIB_LLAMA_CPP_ENABLE_NNAPI")
+    ?: "ON"
+
 def sourceVulkanEnabled = enableVulkan.toString().equalsIgnoreCase("ON")
+def sourceNnapiEnabled = enableNnapi.toString().equalsIgnoreCase("ON")
 def vulkanEnabled = sourceVulkanEnabled
-def minSdkVersion = vulkanEnabled ? 28 : 24
+def nnapiEnabled = sourceNnapiEnabled
+
+def minSdkVersion = (vulkanEnabled || nnapiEnabled) ? 28 : 24
 def androidAbis = (System.getenv("ANDROID_ABIS")
     ?: System.getenv("ANDROID_ABI")
     ?: "arm64-v8a x86_64")
@@ -41,7 +48,28 @@ def androidAbis = (System.getenv("ANDROID_ABIS")
     .findAll { it }
 def androidApiLevel = (System.getenv("ANDROID_PLATFORM") ?: "android-${minSdkVersion}")
     .replaceFirst(/^android-/, "")
-def cmakeArguments = ["-DLIB_LLAMA_CPP_ENABLE_VULKAN=${enableVulkan}"]
+def cmakeArguments = [
+    "-DLIB_LLAMA_CPP_ENABLE_VULKAN=${enableVulkan}",
+    "-DLIB_LLAMA_CPP_ENABLE_NNAPI=${enableNnapi}"
+]
+
+def ndkHome = System.getenv("ANDROID_NDK_HOME")
+    ?: System.getenv("ANDROID_NDK_ROOT")
+    ?: (project.hasProperty('android') ? project.android.ndkDirectory?.absolutePath : null)
+
+if (ndkHome) {
+    // If staying with Vulkan, bundle glslc from the NDK for build-time compilation
+    def glslcExecutable = fileTree("${ndkHome}/shader-tools")
+        .matching {
+            include "**/glslc"
+            include "**/glslc.exe"
+        }
+        .files
+        .find()
+    if (glslcExecutable) {
+        cmakeArguments.add("-DVulkan_GLSLC_EXECUTABLE=${glslcExecutable.absolutePath}")
+    }
+}
 
 if (sourceVulkanEnabled && System.getenv("VULKAN_SDK")) {
     cmakeArguments.add("-DVulkan_INCLUDE_DIR=${System.getenv("VULKAN_SDK")}/include")
@@ -55,7 +83,6 @@ if (sourceVulkanEnabled && System.getenv("VULKAN_SDK")) {
         "x86_64": "x86_64-linux-android",
         "x86": "i686-linux-android",
     ]
-    def ndkHome = System.getenv("ANDROID_NDK_HOME") ?: System.getenv("ANDROID_NDK_ROOT")
     if (ndkHome && vulkanAbi && vulkanTriples.containsKey(vulkanAbi)) {
         def vulkanLibrary = fileTree("${ndkHome}/toolchains/llvm/prebuilt")
             .matching {

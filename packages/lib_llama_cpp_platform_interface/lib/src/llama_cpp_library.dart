@@ -8,6 +8,7 @@ enum LlamaCppLibraryCapability {
   openCl,
   openBlas,
   rpc,
+  nnapi,
 }
 
 final class LlamaCppLibraryRequest {

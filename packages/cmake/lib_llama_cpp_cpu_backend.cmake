@@ -21,6 +21,10 @@ function(lib_llama_cpp_configure_cpu_backend_options)
     LIB_LLAMA_CPP_ENABLE_VULKAN
     "Enable the llama.cpp Vulkan backend. Requires Vulkan SDK tools including glslc."
     OFF)
+  option(
+    LIB_LLAMA_CPP_ENABLE_NNAPI
+    "Enable the llama.cpp NNAPI backend."
+    OFF)
 
   if(LIB_LLAMA_CPP_ENABLE_METAL AND NOT APPLE)
     message(FATAL_ERROR "LIB_LLAMA_CPP_ENABLE_METAL is only supported on Apple platforms.")
@@ -52,6 +56,7 @@ function(lib_llama_cpp_configure_cpu_backend_options)
   set(GGML_VULKAN ${LIB_LLAMA_CPP_ENABLE_VULKAN} CACHE BOOL "Enable Vulkan backend." FORCE)
   set(GGML_METAL ${LIB_LLAMA_CPP_ENABLE_METAL} CACHE BOOL "Enable Metal backend." FORCE)
   set(GGML_METAL_EMBED_LIBRARY ${LIB_LLAMA_CPP_ENABLE_METAL} CACHE BOOL "Embed Metal source library." FORCE)
+  set(GGML_NNAPI ${LIB_LLAMA_CPP_ENABLE_NNAPI} CACHE BOOL "Enable NNAPI backend." FORCE)
   set(GGML_OPENCL OFF CACHE BOOL "Disable OpenCL backend." FORCE)
   set(GGML_RPC OFF CACHE BOOL "Disable RPC backend." FORCE)
   set(GGML_SYCL OFF CACHE BOOL "Disable SYCL backend." FORCE)
@@ -65,7 +70,7 @@ function(lib_llama_cpp_configure_cpu_backend_options)
 
   message(STATUS
     "lib_llama_cpp backends: CPU=ON "
-    "Metal=${GGML_METAL} CUDA=${GGML_CUDA} Vulkan=${GGML_VULKAN}")
+    "Metal=${GGML_METAL} CUDA=${GGML_CUDA} Vulkan=${GGML_VULKAN} NNAPI=${GGML_NNAPI}")
 endfunction()
 
 macro(lib_llama_cpp_prepare_backend_languages)
@@ -203,6 +208,49 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
     # 16KB page alignment for Android 16+ compatibility.
     if(ANDROID)
       target_link_options(${target_name} PRIVATE "-Wl,-z,max-page-size=16384")
+
+      if(GGML_NNAPI)
+        target_link_libraries(${target_name} PRIVATE neuralnetworks)
+      endif()
+
+      if(GGML_VULKAN)
+        # Link shaderc from NDK if staying with Vulkan
+        set(SHADERC_SRC_DIR "${ANDROID_NDK}/sources/third_party/shaderc")
+        # Try both c++_shared and c++_static
+        set(SHADERC_LIB "")
+        foreach(stl c++_shared c++_static)
+          if(EXISTS "${SHADERC_SRC_DIR}/libs/${stl}/${ANDROID_ABI}/libshaderc_combined.a")
+            set(SHADERC_LIB "${SHADERC_SRC_DIR}/libs/${stl}/${ANDROID_ABI}/libshaderc_combined.a")
+            break()
+          endif()
+        endforeach()
+
+        if(SHADERC_LIB STREQUAL "")
+          message(STATUS "Building shaderc from NDK...")
+          if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+            set(NDK_BUILD "${ANDROID_NDK}/ndk-build.cmd")
+          else()
+            set(NDK_BUILD "${ANDROID_NDK}/ndk-build")
+          endif()
+
+          # Build shaderc with c++_shared since Flutter/Dart FFI uses it
+          execute_process(
+            COMMAND ${NDK_BUILD} NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk APP_STL=c++_shared APP_ABI=${ANDROID_ABI} libshaderc_combined
+            WORKING_DIRECTORY "${SHADERC_SRC_DIR}"
+            RESULT_VARIABLE NDK_BUILD_RESULT
+          )
+          if(NDK_BUILD_RESULT EQUAL 0 AND EXISTS "${SHADERC_SRC_DIR}/libs/c++_shared/${ANDROID_ABI}/libshaderc_combined.a")
+            set(SHADERC_LIB "${SHADERC_SRC_DIR}/libs/c++_shared/${ANDROID_ABI}/libshaderc_combined.a")
+          else()
+            message(WARNING "Failed to build shaderc from NDK (result: ${NDK_BUILD_RESULT})")
+          endif()
+        endif()
+
+        if(NOT SHADERC_LIB STREQUAL "")
+          message(STATUS "Found shaderc from NDK: ${SHADERC_LIB}")
+          target_link_libraries(${target_name} PRIVATE "${SHADERC_LIB}")
+        endif()
+      endif()
     endif()
   endif()
 endfunction()
