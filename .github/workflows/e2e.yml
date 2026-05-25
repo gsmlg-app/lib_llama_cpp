@@ -95,7 +95,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools
+          sudo apt-get install -y clang cmake glslc libgtk-3-dev liblzma-dev libvulkan-dev mesa-vulkan-drivers ninja-build pkg-config spirv-headers vulkan-tools xvfb
           if [[ -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json ]]; then
             echo "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json" >> "$GITHUB_ENV"
           fi
@@ -171,6 +171,55 @@ jobs:
 
       - name: Install Dart and Flutter dependencies
         run: dart pub get
+
+      - name: Enable Flutter desktop target
+        run: flutter config --enable-${{ matrix.platform }}-desktop
+
+      - name: Run example E2E harness
+        if: runner.os != 'Windows'
+        shell: bash
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          cd example
+          model_define=(--dart-define=LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH")
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            mkdir -p assets/e2e
+            cp "$MODEL_PATH" assets/e2e/model.gguf
+            model_define=(
+              --dart-define=LIB_LLAMA_CPP_TEST_MODEL_ASSET=assets/e2e/model.gguf
+            )
+          fi
+          harness_command=(
+            flutter test
+            "${model_define[@]}"
+            --dart-define=LIB_LLAMA_CPP_TEST_PROMPT="$SMOKE_PROMPT"
+            --dart-define=LIB_LLAMA_CPP_TEST_TOKENS="$SMOKE_TOKENS"
+            --dart-define=LIB_LLAMA_CPP_TEST_BACKEND=cpu
+            --dart-define=LIB_LLAMA_CPP_TEST_GPU_LAYERS=0
+            integration_test/e2e_harness_test.dart
+            -d "${{ matrix.platform }}"
+          )
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            xvfb-run -a "${harness_command[@]}"
+          else
+            "${harness_command[@]}"
+          fi
+
+      - name: Run example E2E harness
+        if: runner.os == 'Windows'
+        shell: pwsh
+        timeout-minutes: 30
+        run: |
+          cd example
+          $defines = @(
+            "--dart-define=LIB_LLAMA_CPP_TEST_MODEL=$env:MODEL_PATH",
+            "--dart-define=LIB_LLAMA_CPP_TEST_PROMPT=$env:SMOKE_PROMPT",
+            "--dart-define=LIB_LLAMA_CPP_TEST_TOKENS=$env:SMOKE_TOKENS",
+            "--dart-define=LIB_LLAMA_CPP_TEST_BACKEND=cpu",
+            "--dart-define=LIB_LLAMA_CPP_TEST_GPU_LAYERS=0"
+          )
+          flutter test @defines integration_test/e2e_harness_test.dart -d windows
 
       - name: Build native API library
         if: runner.os != 'Windows'
@@ -381,6 +430,8 @@ jobs:
       LIB_LLAMA_CPP_ENABLE_VULKAN: ON
       LIB_LLAMA_CPP_TEST_BACKEND: vulkan
       LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'
+      LIB_LLAMA_CPP_EXAMPLE_TEST_BACKEND: cpu
+      LIB_LLAMA_CPP_EXAMPLE_TEST_GPU_LAYERS: '0'
       LIB_LLAMA_CPP_TEST_MODEL: /data/local/tmp/lib_llama_cpp_e2e/model.gguf
       GGML_VK_VISIBLE_DEVICES: '0'
 
@@ -400,7 +451,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools
-          echo "VULKAN_SDK=/usr" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/vulkan-host-headers/include"
+          ln -sfn /usr/include/vulkan "$RUNNER_TEMP/vulkan-host-headers/include/vulkan"
+          ln -sfn /usr/include/spirv "$RUNNER_TEMP/vulkan-host-headers/include/spirv"
+          echo "VULKAN_SDK=$RUNNER_TEMP/vulkan-host-headers" >> "$GITHUB_ENV"
           echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
           if [[ -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json ]]; then
             echo "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json" >> "$GITHUB_ENV"
@@ -450,8 +504,8 @@ jobs:
           fi
           echo "MODEL_PATH=$model_path" >> "$GITHUB_ENV"
 
-      - name: Run Android Vulkan real model E2E
-        timeout-minutes: 50
+      - name: Run Android Vulkan and example E2E harness
+        timeout-minutes: 65
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -530,11 +584,15 @@ jobs:
         shell: bash
         run: |
           cd example
+          mkdir -p assets/e2e
+          cp "$MODEL_PATH" assets/e2e/model.gguf
           flutter test \
-            --dart-define=LIB_LLAMA_CPP_TEST_MODEL="$MODEL_PATH" \
+            --dart-define=LIB_LLAMA_CPP_TEST_MODEL_ASSET=assets/e2e/model.gguf \
             --dart-define=LIB_LLAMA_CPP_TEST_PROMPT="$SMOKE_PROMPT" \
             --dart-define=LIB_LLAMA_CPP_TEST_TOKENS="$SMOKE_TOKENS" \
-            integration_test/mobile_smoke_test.dart \
+            --dart-define=LIB_LLAMA_CPP_TEST_BACKEND=cpu \
+            --dart-define=LIB_LLAMA_CPP_TEST_GPU_LAYERS=0 \
+            integration_test/e2e_harness_test.dart \
             -d "$IOS_SIMULATOR_ID"
 
   flutter-platform-builds:

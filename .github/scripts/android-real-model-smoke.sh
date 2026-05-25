@@ -6,6 +6,8 @@ remote_model_path="${LIB_LLAMA_CPP_TEST_MODEL:-/data/local/tmp/lib_llama_cpp_e2e
 remote_dir="$(dirname "$remote_model_path")"
 tokens="${SMOKE_TOKENS:-4}"
 gpu_layers="${LIB_LLAMA_CPP_TEST_GPU_LAYERS:-0}"
+harness_backend="${LIB_LLAMA_CPP_EXAMPLE_TEST_BACKEND:-${LIB_LLAMA_CPP_TEST_BACKEND:-cpu}}"
+harness_gpu_layers="${LIB_LLAMA_CPP_EXAMPLE_TEST_GPU_LAYERS:-$gpu_layers}"
 
 : "${MODEL_PATH:?MODEL_PATH must point to the verified GGUF model}"
 : "${SMOKE_PROMPT:?SMOKE_PROMPT must be set}"
@@ -80,3 +82,15 @@ if [[ "$gpu_layers" != "0" ]]; then
   grep -Eq 'assigned to device Vulkan|offloaded [1-9][0-9]*/[0-9]+ layers to GPU' \
     "$RUNNER_TEMP/android-llama-output.txt"
 fi
+
+echo "::group::Run Flutter example E2E harness"
+cd example
+flutter test \
+  --dart-define=LIB_LLAMA_CPP_TEST_MODEL="$remote_model_path" \
+  --dart-define=LIB_LLAMA_CPP_TEST_PROMPT="$SMOKE_PROMPT" \
+  --dart-define=LIB_LLAMA_CPP_TEST_TOKENS="$tokens" \
+  --dart-define=LIB_LLAMA_CPP_TEST_BACKEND="$harness_backend" \
+  --dart-define=LIB_LLAMA_CPP_TEST_GPU_LAYERS="$harness_gpu_layers" \
+  integration_test/e2e_harness_test.dart \
+  -d "$device_id"
+echo "::endgroup::"

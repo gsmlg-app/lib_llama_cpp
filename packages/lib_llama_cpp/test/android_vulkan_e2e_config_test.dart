@@ -14,6 +14,11 @@ void main() {
       expect(androidJob, contains('ANDROID_PLATFORM: android-28'));
       expect(androidJob, contains('LIB_LLAMA_CPP_ENABLE_VULKAN: ON'));
       expect(androidJob, contains("LIB_LLAMA_CPP_TEST_GPU_LAYERS: '1'"));
+      expect(androidJob, contains('LIB_LLAMA_CPP_EXAMPLE_TEST_BACKEND: cpu'));
+      expect(
+        androidJob,
+        contains("LIB_LLAMA_CPP_EXAMPLE_TEST_GPU_LAYERS: '0'"),
+      );
       expect(androidJob, contains("GGML_VK_VISIBLE_DEVICES: '0'"));
       expect(
         androidJob,
@@ -21,7 +26,11 @@ void main() {
           'sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools',
         ),
       );
-      expect(androidJob, contains('echo "VULKAN_SDK=/usr"'));
+      expect(androidJob, contains('vulkan-host-headers'));
+      expect(
+        androidJob,
+        contains(r'echo "VULKAN_SDK=$RUNNER_TEMP/vulkan-host-headers"'),
+      );
       expect(androidJob, contains('echo "LIBGL_ALWAYS_SOFTWARE=1"'));
       expect(androidJob, contains('VK_ICD_FILENAMES='));
       expect(androidJob, contains('storageBuffer16BitAccess'));
@@ -49,7 +58,7 @@ void main() {
       );
       expect(
         androidJob,
-        isNot(contains('integration_test/mobile_smoke_test.dart')),
+        contains('Run Android Vulkan and example E2E harness'),
       );
     });
 
@@ -193,6 +202,11 @@ void main() {
       expect(script, contains('sys.boot_completed'));
       expect(script, contains('guest_env_prefix='));
       expect(script, contains(r'GGML_VK_VISIBLE_DEVICES=$(printf'));
+      expect(script, contains('flutter test'));
+      expect(script, contains('integration_test/e2e_harness_test.dart'));
+      expect(script, contains('LIB_LLAMA_CPP_TEST_BACKEND='));
+      expect(script, contains('LIB_LLAMA_CPP_EXAMPLE_TEST_BACKEND'));
+      expect(script, contains('LIB_LLAMA_CPP_EXAMPLE_TEST_GPU_LAYERS'));
       expect(
         script,
         contains(
@@ -242,9 +256,14 @@ void main() {
 
       expect(gradle, contains('androidApiLevel'));
       expect(gradle, contains('vulkanEnabled = sourceVulkanEnabled'));
-      expect(gradle, contains('minSdkVersion = vulkanEnabled ? 28 : 24'));
+      expect(
+        gradle,
+        contains('minSdkVersion = (vulkanEnabled || nnapiEnabled) ? 28 : 24'),
+      );
       expect(gradle, contains('minSdk = minSdkVersion'));
       expect(gradle, contains('/\${androidApiLevel}/libvulkan.so'));
+      expect(gradle, contains('-DCMAKE_CXX_FLAGS='));
+      expect(gradle, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
     });
 
     test('example Android app raises minSdk for Vulkan e2e', () {
@@ -256,23 +275,41 @@ void main() {
       expect(
         gradle,
         contains(
-          'minSdk = if (libLlamaCppVulkanEnabled) 28 else flutter.minSdkVersion',
+          'minSdk = if (libLlamaCppVulkanEnabled || libLlamaCppNnapiEnabled) 28 else flutter.minSdkVersion',
         ),
       );
     });
 
-    test('mobile integration smoke requests GPU layers when configured', () {
+    test('example e2e harness requests GPU layers when configured', () {
       final root = _repoRoot();
       final testSource =
-          (root / 'example/integration_test/mobile_smoke_test.dart')
+          (root / 'example/integration_test/e2e_harness_test.dart')
               .readAsStringSync();
+      final harnessSource = (root / 'example/lib/main.dart').readAsStringSync();
 
-      expect(testSource, contains('LIB_LLAMA_CPP_TEST_GPU_LAYERS'));
-      expect(testSource, contains('gpuLayerCount: _testGpuLayerCount'));
+      expect(harnessSource, contains('LIB_LLAMA_CPP_TEST_GPU_LAYERS'));
+      expect(harnessSource, contains('LIB_LLAMA_CPP_TEST_MODEL_ASSET'));
+      expect(harnessSource, contains('gpuLayerCount: gpuLayerCount'));
       expect(
-        testSource.indexOf('await _expectRequiredBackendSupport();'),
-        lessThan(testSource.indexOf('if (modelPath.isEmpty)')),
+        harnessSource,
+        contains('backendCapability: config.backendCapability'),
       );
+      expect(
+        testSource.indexOf('await runner.expectRequiredBackendSupport();'),
+        lessThan(testSource.indexOf('client = await runner.createClient();')),
+      );
+    });
+
+    test('sandboxed Apple workflow passes the model as an example asset', () {
+      final root = _repoRoot();
+      final workflow = (root / '.github/workflows/e2e.yml').readAsStringSync();
+      final realModelJob = _workflowJob(workflow, 'real-model-smoke');
+      final iosJob = _workflowJob(workflow, 'ios-real-model-smoke');
+
+      expect(realModelJob, contains('assets/e2e/model.gguf'));
+      expect(realModelJob, contains('LIB_LLAMA_CPP_TEST_MODEL_ASSET'));
+      expect(iosJob, contains('assets/e2e/model.gguf'));
+      expect(iosJob, contains('LIB_LLAMA_CPP_TEST_MODEL_ASSET'));
     });
 
     test('Gemma 4 E2B workflow exercises server API through llama server', () {

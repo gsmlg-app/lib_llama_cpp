@@ -72,7 +72,11 @@ if (ndkHome) {
 }
 
 if (sourceVulkanEnabled && System.getenv("VULKAN_SDK")) {
-    cmakeArguments.add("-DVulkan_INCLUDE_DIR=${System.getenv("VULKAN_SDK")}/include")
+    def vulkanIncludeDir = "${System.getenv("VULKAN_SDK")}/include"
+    def vulkanCxxFlags = "${System.getenv("CMAKE_CXX_FLAGS") ?: ""} " +
+        "-I${vulkanIncludeDir} -DVULKAN_HPP_TYPESAFE_CONVERSION=1"
+    cmakeArguments.add("-DVulkan_INCLUDE_DIR=${vulkanIncludeDir}")
+    cmakeArguments.add("-DCMAKE_CXX_FLAGS=${vulkanCxxFlags}")
     cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
     cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
 
