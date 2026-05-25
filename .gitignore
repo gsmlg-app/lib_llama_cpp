@@ -21,6 +21,7 @@ devenv.local.nix
 graphify-out/
 
 **/android/.gradle/
+**/android/.cxx/
 android/local.properties
 **/android/local.properties
 
