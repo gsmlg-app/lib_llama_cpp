@@ -14,6 +14,13 @@
 
 using json = nlohmann::ordered_json;
 
+#ifdef __ANDROID__
+__attribute__((constructor)) static void llcpp_android_vulkan_init() {
+    setenv("GGML_VK_DISABLE_COOPMAT2", "1", 1);
+}
+#endif
+
+
 struct lib_llama_cpp_chat_templates {
     explicit lib_llama_cpp_chat_templates(common_chat_templates_ptr value)
         : templates(std::move(value)) {}

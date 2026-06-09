@@ -35,3 +35,9 @@ android/local.properties
 
 **/linux/flutter/ephemeral/
 **/windows/flutter/ephemeral/
+
+# CMake generated/downloaded Vulkan headers
+packages/cmake/vulkan-hpp/
+
+# Temp scratch folder
+scratch/

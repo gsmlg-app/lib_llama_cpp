@@ -1,9 +1,15 @@
 diff --git i/ggml/src/ggml-vulkan/ggml-vulkan.cpp w/ggml/src/ggml-vulkan/ggml-vulkan.cpp
-index 0a79310..9829347 100644
+index e7d0463..c9f91c7 100644
 --- i/ggml/src/ggml-vulkan/ggml-vulkan.cpp
 +++ w/ggml/src/ggml-vulkan/ggml-vulkan.cpp
-@@ -5454,1 +5454,3 @@ static vk_device ggml_vk_get_device(size_t idx) {
+@@ -5954,7 +5954,9 @@ static vk_device ggml_vk_get_device(size_t idx) {
+             throw std::runtime_error("Unsupported device");
+         }
+ 
 -        device_extensions.push_back("VK_KHR_16bit_storage");
 +        if (fp16_storage) {
 +            device_extensions.push_back("VK_KHR_16bit_storage");
 +        }
+ 
+ #ifdef GGML_VULKAN_VALIDATE
+         device_extensions.push_back("VK_KHR_shader_non_semantic_info");

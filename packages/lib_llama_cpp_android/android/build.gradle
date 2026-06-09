@@ -79,6 +79,8 @@ if (sourceVulkanEnabled && System.getenv("VULKAN_SDK")) {
     cmakeArguments.add("-DCMAKE_CXX_FLAGS=${vulkanCxxFlags}")
     cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
     cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+    cmakeArguments.add("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
+    cmakeArguments.add("-DSPIRV-Headers_DIR=${System.getenv("VULKAN_SDK")}/share/cmake/SPIRV-Headers")
 
     def vulkanAbi = androidAbis.size() == 1 ? androidAbis[0] : null
     def vulkanTriples = [
@@ -103,7 +105,7 @@ if (sourceVulkanEnabled && System.getenv("VULKAN_SDK")) {
 android {
     namespace = "com.gsmlg.libllamacpp.android"
     compileSdk = 36
-    ndkVersion = android.ndkVersion
+    ndkVersion = "26.3.11579264"
 
     sourceSets {
         main {
