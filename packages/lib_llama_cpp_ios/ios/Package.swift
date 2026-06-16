@@ -3,7 +3,7 @@ import PackageDescription
 import Foundation
 
 let packageRoot = URL(fileURLWithPath: #file).deletingLastPathComponent().path
-let prebuiltFrameworkPath = packageRoot + "/Frameworks/lib_llama_cpp_ios.xcframework"
+let prebuiltFrameworkPath = packageRoot + "/lib_llama_cpp_ios/Frameworks/lib_llama_cpp_ios.xcframework"
 let sourcesPath = packageRoot + "/llama_cpp_sources"
 
 let usePrebuilt = FileManager.default.fileExists(atPath: prebuiltFrameworkPath)
@@ -69,7 +69,7 @@ let target: Target
 if usePrebuilt {
     target = .binaryTarget(
         name: "lib_llama_cpp_ios",
-        path: "Frameworks/lib_llama_cpp_ios.xcframework"
+        path: "lib_llama_cpp_ios/Frameworks/lib_llama_cpp_ios.xcframework"
     )
 } else if hasSources {
     target = .target(

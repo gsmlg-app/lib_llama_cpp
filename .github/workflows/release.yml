@@ -439,9 +439,9 @@ jobs:
             --exclude='dist' \
             --exclude='example/build' \
             --exclude='packages/lib_llama_cpp_android/android/src/main/jniLibs' \
-            --exclude='packages/lib_llama_cpp_ios/ios/Frameworks' \
+            --exclude='packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios/Frameworks' \
             --exclude='packages/lib_llama_cpp_linux/linux/prebuilt' \
-            --exclude='packages/lib_llama_cpp_macos/macos/Frameworks' \
+            --exclude='packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks' \
             --exclude='packages/lib_llama_cpp_windows/windows/prebuilt' \
             .
           tar -czf "dist/release/lib_llama_cpp_example-linux-${VERSION}.tar.gz" \

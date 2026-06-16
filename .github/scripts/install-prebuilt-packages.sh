@@ -44,20 +44,20 @@ for abi in "${android_package_abi_list[@]}"; do
     "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs/${abi}/"
 done
 
-rm -rf "${repo_root}/packages/lib_llama_cpp_ios/ios/Frameworks"
-mkdir -p "${repo_root}/packages/lib_llama_cpp_ios/ios/Frameworks"
+rm -rf "${repo_root}/packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios/Frameworks"
+mkdir -p "${repo_root}/packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios/Frameworks"
 cp -R "${prebuilt_dir}/ios/lib_llama_cpp_ios.xcframework" \
-  "${repo_root}/packages/lib_llama_cpp_ios/ios/Frameworks/"
+  "${repo_root}/packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios/Frameworks/"
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_linux/linux/prebuilt"
 mkdir -p "${repo_root}/packages/lib_llama_cpp_linux/linux/prebuilt"
 cp -R "${prebuilt_dir}/linux/." \
   "${repo_root}/packages/lib_llama_cpp_linux/linux/prebuilt/"
 
-rm -rf "${repo_root}/packages/lib_llama_cpp_macos/macos/Frameworks"
-mkdir -p "${repo_root}/packages/lib_llama_cpp_macos/macos/Frameworks"
+rm -rf "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks"
+mkdir -p "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks"
 cp -R "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework" \
-  "${repo_root}/packages/lib_llama_cpp_macos/macos/Frameworks/"
+  "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks/"
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_windows/windows/prebuilt"
 mkdir -p "${repo_root}/packages/lib_llama_cpp_windows/windows/prebuilt"

@@ -1,5 +1,5 @@
 repo_root = File.expand_path('../../..', File.realpath(__dir__))
-prebuilt_framework = File.expand_path('Frameworks/lib_llama_cpp_macos.xcframework', File.realpath(__dir__))
+prebuilt_framework = File.expand_path('lib_llama_cpp_macos/Frameworks/lib_llama_cpp_macos.xcframework', File.realpath(__dir__))
 
 Pod::Spec.new do |s|
   s.name             = 'lib_llama_cpp_macos'
@@ -17,8 +17,8 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   if File.exist?(prebuilt_framework)
-    s.vendored_frameworks = 'Frameworks/lib_llama_cpp_macos.xcframework'
-    s.preserve_paths = 'Frameworks/lib_llama_cpp_macos.xcframework'
+    s.vendored_frameworks = 'lib_llama_cpp_macos/Frameworks/lib_llama_cpp_macos.xcframework'
+    s.preserve_paths = 'lib_llama_cpp_macos/Frameworks/lib_llama_cpp_macos.xcframework'
     s.pod_target_xcconfig = {
       'DEFINES_MODULE' => 'YES'
     }

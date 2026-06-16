@@ -33,6 +33,84 @@ void main() {
       }
     });
 
+    test('Apple SwiftPM manifests use Flutter plugin package layout', () {
+      final root = _repoRoot();
+      final installScript =
+          (root / '.github/scripts/install-prebuilt-packages.sh')
+              .readAsStringSync();
+      final releaseWorkflow = (root / '.github/workflows/release.yml')
+          .readAsStringSync();
+      final packages = {
+        'lib_llama_cpp_ios': (
+          platform: 'ios',
+          minimumPlatform: '.iOS("13.0")',
+          podspec:
+              root / 'packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios.podspec',
+        ),
+        'lib_llama_cpp_macos': (
+          platform: 'macos',
+          minimumPlatform: '.macOS("10.15")',
+          podspec:
+              root /
+              'packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos.podspec',
+        ),
+      };
+
+      for (final entry in packages.entries) {
+        final packageName = entry.key;
+        final platform = entry.value.platform;
+        final swiftPackageRoot =
+            root / 'packages/$packageName/$platform/$packageName';
+        final manifest = File('${swiftPackageRoot.path}/Package.swift');
+        final legacyManifest =
+            root / 'packages/$packageName/$platform/Package.swift';
+        final prebuiltPath = '$packageName/Frameworks/$packageName.xcframework';
+
+        expect(
+          manifest.existsSync(),
+          isTrue,
+          reason:
+              '$packageName must expose SwiftPM at $platform/$packageName/Package.swift.',
+        );
+
+        final manifestContents = manifest.readAsStringSync();
+        expect(manifestContents, contains('name: "$packageName"'));
+        expect(manifestContents, contains(entry.value.minimumPlatform));
+        expect(
+          manifestContents,
+          contains(
+            '.library(name: "${packageName.replaceAll('_', '-')}", '
+            'targets: ["$packageName"])',
+          ),
+        );
+        expect(
+          manifestContents,
+          contains(
+            '.package(name: "FlutterFramework", path: "../FlutterFramework")',
+          ),
+        );
+        expect(manifestContents, contains('.binaryTarget('));
+        expect(
+          manifestContents,
+          contains('path: "Frameworks/$packageName.xcframework"'),
+        );
+
+        final podspecContents = entry.value.podspec.readAsStringSync();
+        expect(podspecContents, contains(prebuiltPath));
+        expect(legacyManifest.readAsStringSync(), contains(prebuiltPath));
+        expect(
+          installScript,
+          contains('packages/$packageName/$platform/$packageName/Frameworks'),
+        );
+        expect(
+          releaseWorkflow,
+          contains(
+            "--exclude='packages/$packageName/$platform/$packageName/Frameworks'",
+          ),
+        );
+      }
+    });
+
     test('facade package re-exports the local server package', () {
       final root = _repoRoot();
       final pubspec = (root / 'packages/lib_llama_cpp/pubspec.yaml')
