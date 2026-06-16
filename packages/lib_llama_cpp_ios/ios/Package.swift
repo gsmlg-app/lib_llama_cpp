@@ -83,6 +83,7 @@ if usePrebuilt {
             "llama_cpp_sources/llama.cpp/common/preset.cpp",
             "llama_cpp_sources/llama.cpp/tools/mtmd/deprecation-warning.cpp",
             "llama_cpp_sources/llama.cpp/tools/mtmd/mtmd-cli.cpp",
+            "llama_cpp_sources/llama.cpp/tools/server/main.cpp",
             "llama_cpp_sources/llama.cpp/tools/server/server.cpp",
             "llama_cpp_sources/llama.cpp/tools/server/server-http.cpp",
             "llama_cpp_sources/llama.cpp/tools/server/server-models.cpp",

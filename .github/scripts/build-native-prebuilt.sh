@@ -155,10 +155,11 @@ build_android() {
     local vulkan_args=()
     if [[ -n "$vulkan_sdk" ]]; then
       local vulkan_include_dir="${vulkan_sdk}/include"
+      local spirv_headers_dir="${vulkan_sdk}/share/cmake/SPIRV-Headers"
       if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
         local vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
         mkdir -p "${vulkan_overlay_dir}/include"
-        for include_name in vulkan spirv; do
+        for include_name in vulkan spirv vk_video; do
           if [[ -d "${vulkan_include_dir}/${include_name}" ]]; then
             ln -sfn "${vulkan_include_dir}/${include_name}" "${vulkan_overlay_dir}/include/${include_name}"
           fi
@@ -169,13 +170,20 @@ build_android() {
       # FindVulkan at the host Vulkan headers. We must also relax the
       # toolchain's find-root-path restrictions to allow discovery of
       # host include/lib paths alongside the NDK sysroot.
+      if [[ ! -d "$spirv_headers_dir" ]]; then
+        spirv_headers_dir="$(find /usr -path '*/SPIRV-HeadersConfig.cmake' -exec dirname {} \; -quit 2>/dev/null || true)"
+      fi
       local cxx_flags="${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir} -DVULKAN_HPP_TYPESAFE_CONVERSION=1"
       vulkan_args+=(
         "-DVulkan_INCLUDE_DIR=${vulkan_include_dir}"
         "-DCMAKE_CXX_FLAGS=${cxx_flags}"
         "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
         "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
+        "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH"
       )
+      if [[ -n "$spirv_headers_dir" ]]; then
+        vulkan_args+=("-DSPIRV-Headers_DIR=${spirv_headers_dir}")
+      fi
       # Use the NDK's libvulkan.so for the target ABI
       local ndk_sysroot
       ndk_sysroot="$(find "${ndk_dir}/toolchains/llvm/prebuilt" \

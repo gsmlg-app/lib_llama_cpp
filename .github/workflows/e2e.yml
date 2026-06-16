@@ -451,9 +451,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake glslc libvulkan-dev mesa-vulkan-drivers ninja-build spirv-headers vulkan-tools
-          mkdir -p "$RUNNER_TEMP/vulkan-host-headers/include"
+          mkdir -p "$RUNNER_TEMP/vulkan-host-headers/include" "$RUNNER_TEMP/vulkan-host-headers/share/cmake"
           ln -sfn /usr/include/vulkan "$RUNNER_TEMP/vulkan-host-headers/include/vulkan"
           ln -sfn /usr/include/spirv "$RUNNER_TEMP/vulkan-host-headers/include/spirv"
+          if [[ -d /usr/include/vk_video ]]; then
+            ln -sfn /usr/include/vk_video "$RUNNER_TEMP/vulkan-host-headers/include/vk_video"
+          fi
+          spirv_headers_cmake_dir="$(find /usr -path '*/SPIRV-HeadersConfig.cmake' -exec dirname {} \; -quit)"
+          if [[ -z "$spirv_headers_cmake_dir" ]]; then
+            echo "Could not find SPIRV-HeadersConfig.cmake." >&2
+            exit 1
+          fi
+          ln -sfn "$spirv_headers_cmake_dir" "$RUNNER_TEMP/vulkan-host-headers/share/cmake/SPIRV-Headers"
           echo "VULKAN_SDK=$RUNNER_TEMP/vulkan-host-headers" >> "$GITHUB_ENV"
           echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
           if [[ -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json ]]; then
@@ -621,9 +630,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake glslc libvulkan-dev ninja-build spirv-headers
-          mkdir -p "$RUNNER_TEMP/vulkan-host-headers/include"
+          mkdir -p "$RUNNER_TEMP/vulkan-host-headers/include" "$RUNNER_TEMP/vulkan-host-headers/share/cmake"
           ln -sfn /usr/include/vulkan "$RUNNER_TEMP/vulkan-host-headers/include/vulkan"
           ln -sfn /usr/include/spirv "$RUNNER_TEMP/vulkan-host-headers/include/spirv"
+          if [[ -d /usr/include/vk_video ]]; then
+            ln -sfn /usr/include/vk_video "$RUNNER_TEMP/vulkan-host-headers/include/vk_video"
+          fi
+          spirv_headers_cmake_dir="$(find /usr -path '*/SPIRV-HeadersConfig.cmake' -exec dirname {} \; -quit)"
+          if [[ -z "$spirv_headers_cmake_dir" ]]; then
+            echo "Could not find SPIRV-HeadersConfig.cmake." >&2
+            exit 1
+          fi
+          ln -sfn "$spirv_headers_cmake_dir" "$RUNNER_TEMP/vulkan-host-headers/share/cmake/SPIRV-Headers"
           echo "VULKAN_SDK=$RUNNER_TEMP/vulkan-host-headers" >> "$GITHUB_ENV"
           echo "LIB_LLAMA_CPP_ENABLE_VULKAN=ON" >> "$GITHUB_ENV"
           echo "ANDROID_PLATFORM=android-28" >> "$GITHUB_ENV"

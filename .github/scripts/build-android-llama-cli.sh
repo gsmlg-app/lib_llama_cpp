@@ -32,15 +32,19 @@ if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
   apply_llama_cpp_ci_patches
 
   vulkan_include_dir="${VULKAN_SDK}/include"
+  spirv_headers_dir="${VULKAN_SDK}/share/cmake/SPIRV-Headers"
   if [[ "$vulkan_include_dir" == "/usr/include" ]]; then
     vulkan_overlay_dir="${build_dir}/vulkan-host-headers"
     mkdir -p "${vulkan_overlay_dir}/include"
-    for include_name in vulkan spirv; do
+    for include_name in vulkan spirv vk_video; do
       if [[ -d "${vulkan_include_dir}/${include_name}" ]]; then
         ln -sfn "${vulkan_include_dir}/${include_name}" "${vulkan_overlay_dir}/include/${include_name}"
       fi
     done
     vulkan_include_dir="${vulkan_overlay_dir}/include"
+  fi
+  if [[ ! -d "$spirv_headers_dir" ]]; then
+    spirv_headers_dir="$(find /usr -path '*/SPIRV-HeadersConfig.cmake' -exec dirname {} \; -quit 2>/dev/null || true)"
   fi
   cxx_flags="${CMAKE_CXX_FLAGS:-} -I${vulkan_include_dir} -DVULKAN_HPP_TYPESAFE_CONVERSION=1"
   vulkan_args+=(
@@ -48,7 +52,11 @@ if [[ "$enable_vulkan" == "ON" && -n "${VULKAN_SDK:-}" ]]; then
     "-DCMAKE_CXX_FLAGS=${cxx_flags}"
     "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH"
     "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH"
+    "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH"
   )
+  if [[ -n "$spirv_headers_dir" ]]; then
+    vulkan_args+=("-DSPIRV-Headers_DIR=${spirv_headers_dir}")
+  fi
 
   ndk_sysroot="$(find "$android_ndk_home/toolchains/llvm/prebuilt" \
     -type d -path '*/sysroot' | head -n 1)"

@@ -31,6 +31,9 @@ void main() {
         androidJob,
         contains(r'echo "VULKAN_SDK=$RUNNER_TEMP/vulkan-host-headers"'),
       );
+      expect(androidJob, contains('ln -sfn /usr/include/vk_video'));
+      expect(androidJob, contains('SPIRV-HeadersConfig.cmake'));
+      expect(androidJob, contains('share/cmake/SPIRV-Headers'));
       expect(androidJob, contains('echo "LIBGL_ALWAYS_SOFTWARE=1"'));
       expect(androidJob, contains('VK_ICD_FILENAMES='));
       expect(androidJob, contains('storageBuffer16BitAccess'));
@@ -161,6 +164,9 @@ void main() {
       );
       expect(platformJob, contains('vulkan-host-headers'));
       expect(platformJob, contains('echo "VULKAN_SDK='));
+      expect(platformJob, contains('ln -sfn /usr/include/vk_video'));
+      expect(platformJob, contains('SPIRV-HeadersConfig.cmake'));
+      expect(platformJob, contains('share/cmake/SPIRV-Headers'));
       expect(platformJob, contains('echo "LIB_LLAMA_CPP_ENABLE_VULKAN=ON"'));
       expect(platformJob, contains('echo "ANDROID_PLATFORM=android-28"'));
       expect(platformJob, contains('echo "ANDROID_ABIS=x86_64"'));
@@ -185,7 +191,9 @@ void main() {
       expect(script, contains('apply_llama_cpp_ci_patches'));
       expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
       expect(script, contains('--unidiff-zero'));
-      expect(script, contains('for include_name in vulkan spirv'));
+      expect(script, contains('for include_name in vulkan spirv vk_video'));
+      expect(script, contains('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH'));
+      expect(script, contains('-DSPIRV-Headers_DIR='));
       expect(script, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
       expect(script, contains('-DVulkan_LIBRARY='));
       expect(script, contains('android_api_level'));
@@ -228,6 +236,9 @@ void main() {
       expect(script, contains('apply_llama_cpp_ci_patches'));
       expect(script, contains('llama-vulkan-core-16bit-storage.patch'));
       expect(script, contains('--unidiff-zero'));
+      expect(script, contains('for include_name in vulkan spirv vk_video'));
+      expect(script, contains('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH'));
+      expect(script, contains('-DSPIRV-Headers_DIR='));
       expect(script, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
     });
 
@@ -263,6 +274,8 @@ void main() {
       expect(gradle, contains('minSdk = minSdkVersion'));
       expect(gradle, contains('/\${androidApiLevel}/libvulkan.so'));
       expect(gradle, contains('-DCMAKE_CXX_FLAGS='));
+      expect(gradle, contains('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH'));
+      expect(gradle, contains('-DSPIRV-Headers_DIR='));
       expect(gradle, contains('VULKAN_HPP_TYPESAFE_CONVERSION=1'));
     });
 

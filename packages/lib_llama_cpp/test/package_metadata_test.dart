@@ -111,6 +111,32 @@ void main() {
       }
     });
 
+    test('Apple source manifests exclude llama.cpp server entrypoint', () {
+      final root = _repoRoot();
+      const serverMain = 'llama_cpp_sources/llama.cpp/tools/server/main.cpp';
+      final manifests = [
+        root / 'packages/lib_llama_cpp_ios/ios/lib_llama_cpp_ios.podspec',
+        root / 'packages/lib_llama_cpp_ios/ios/Package.swift',
+        root / 'packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos.podspec',
+        root / 'packages/lib_llama_cpp_macos/macos/Package.swift',
+      ];
+
+      for (final manifest in manifests) {
+        final contents = manifest.readAsStringSync();
+        final exclusionBlock = manifest.path.endsWith('.podspec')
+            ? contents.indexOf('s.exclude_files')
+            : contents.indexOf('exclude: [');
+
+        expect(exclusionBlock, isNonNegative);
+        expect(
+          contents.indexOf(serverMain, exclusionBlock),
+          isNonNegative,
+          reason:
+              '${manifest.path} must not compile llama.cpp server/main.cpp.',
+        );
+      }
+    });
+
     test('facade package re-exports the local server package', () {
       final root = _repoRoot();
       final pubspec = (root / 'packages/lib_llama_cpp/pubspec.yaml')
