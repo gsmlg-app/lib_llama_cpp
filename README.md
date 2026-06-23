@@ -43,6 +43,11 @@ Flutter apps should import the facade package:
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
 ```
 
+The workspace targets Dart `^3.11.5`. Flutter platform packages require
+Flutter `>=3.41.0`.
+
+### Recommended Local Server
+
 For production local-model use, start the OpenAI-compatible local server and
 talk to it through HTTP. The server keeps the model loaded in process, isolates
 the native runtime behind a small API boundary, and is exported by the facade
@@ -82,6 +87,22 @@ dart run lib_llama_cpp_server \
   --port 8080
 ```
 
+Supported server endpoints:
+
+- `GET /healthz`
+- `GET /v1/models`
+- `POST /v1/chat/completions`
+- `POST /v1/chat/completions` with `stream: true`
+
+Streaming chat completions are returned as OpenAI-style server-sent events and
+can be consumed with `LlamaServerClient.streamChatCompletion(...)`.
+
+Server mode is model inference only. It does not expose local filesystem,
+shell, agent orchestration, or tool execution capabilities. Server-mode
+vision/audio content is rejected until the `mtmd` server path is complete.
+
+### Direct In-Process Client
+
 `LlamaOpenAIClient` remains available for direct in-process integrations and
 focused tests:
 
@@ -97,6 +118,36 @@ final response = await client.responses.create(
   input: 'Write one sentence.',
 );
 ```
+
+Direct streaming uses typed response events:
+
+```dart
+await for (final event in client.responses.stream(
+  model: 'local',
+  input: 'Write one sentence.',
+)) {
+  if (event case LlamaResponseOutputTextDelta(:final delta)) {
+    print(delta);
+  }
+}
+```
+
+Direct chat-style callers can use the compatibility adapter:
+
+```dart
+final completion = await client.chat.completions.create(
+  model: 'local',
+  messages: [
+    const LlamaChatMessage(role: 'user', content: 'Write one sentence.'),
+  ],
+);
+```
+
+Direct multimodal input is available through llama.cpp `mtmd` when the app
+supplies a compatible model and multimodal projector path in `LlamaModelConfig`.
+Tool calling is model-generated only: the package streams structured tool-call
+events, and host apps execute tools externally before sending follow-up tool
+result messages.
 
 The lower-level `LibLlamaCpp.transform(...)` command stream remains available
 for lifecycle control and engine tests.
@@ -120,6 +171,7 @@ dart pub get
 melos bootstrap
 melos run analyze
 melos run test
+melos run format
 ```
 
 Opt-in real-model smoke tests require a pre-existing GGUF file:
