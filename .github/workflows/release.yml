@@ -171,7 +171,25 @@ jobs:
       - name: Install Android SDK packages
         shell: bash
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
+          set -euo pipefail
+          install_android_sdk_packages() {
+            rm -rf \
+              "$ANDROID_HOME/.temp" \
+              "$ANDROID_HOME/cmake/3.22.1" \
+              "$ANDROID_HOME/ndk/27.0.12077973"
+            sdkmanager "platform-tools" "platforms;android-35" "cmake;3.22.1" "ndk;27.0.12077973"
+          }
+
+          for attempt in 1 2 3; do
+            if install_android_sdk_packages; then
+              break
+            fi
+            if [[ "$attempt" == 3 ]]; then
+              exit 1
+            fi
+            sleep "$((attempt * 15))"
+          done
+
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Build Android CPU prebuilt libraries
