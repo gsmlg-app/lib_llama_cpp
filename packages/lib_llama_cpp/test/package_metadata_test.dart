@@ -62,6 +62,14 @@ void main() {
         final swiftPackageRoot =
             root / 'packages/$packageName/$platform/$packageName';
         final manifest = File('${swiftPackageRoot.path}/Package.swift');
+        final flutterFrameworkRoot =
+            root / 'packages/$packageName/$platform/FlutterFramework';
+        final flutterFrameworkManifest = File(
+          '${flutterFrameworkRoot.path}/Package.swift',
+        );
+        final flutterFrameworkStub = File(
+          '${flutterFrameworkRoot.path}/Sources/FlutterFramework/FlutterFramework.swift',
+        );
         final legacyManifest =
             root / 'packages/$packageName/$platform/Package.swift';
         final prebuiltPath = '$packageName/Frameworks/$packageName.xcframework';
@@ -88,6 +96,23 @@ void main() {
           contains(
             '.package(name: "FlutterFramework", path: "../FlutterFramework")',
           ),
+        );
+        expect(
+          flutterFrameworkManifest.existsSync(),
+          isTrue,
+          reason:
+              '$packageName must publish $platform/FlutterFramework/Package.swift '
+              'for direct SwiftPM package resolution.',
+        );
+        expect(
+          flutterFrameworkManifest.readAsStringSync(),
+          contains('name: "FlutterFramework"'),
+        );
+        expect(
+          flutterFrameworkStub.existsSync(),
+          isTrue,
+          reason:
+              '$packageName must publish a FlutterFramework stub source file.',
         );
         expect(manifestContents, contains('.binaryTarget('));
         expect(
