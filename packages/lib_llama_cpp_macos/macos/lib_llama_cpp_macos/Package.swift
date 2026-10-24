@@ -15,7 +15,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "lib_llama_cpp_macos",
-            path: "Frameworks/lib_llama_cpp_macos.xcframework"
+            // Pub expands symlinks in directories; keep framework versions in a zip.
+            path: "Frameworks/lib_llama_cpp_macos.xcframework.zip"
         )
     ]
 )

@@ -30,10 +30,19 @@ require_path "${prebuilt_dir}/android/arm64-v8a/liblib_llama_cpp_android.so"
 require_path "${prebuilt_dir}/android/x86_64/liblib_llama_cpp_android.so"
 require_path "${prebuilt_dir}/ios/lib_llama_cpp_ios.xcframework"
 require_path "${prebuilt_dir}/linux/x64/liblib_llama_cpp_linux.so"
+require_path "${prebuilt_dir}/linux/arm64/liblib_llama_cpp_linux.so"
 require_path "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework"
 require_path "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework/macos-arm64_x86_64/lib_llama_cpp_macos.framework/Versions/Current/Resources/Info.plist"
 require_path "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework/macos-arm64_x86_64/lib_llama_cpp_macos.framework/Versions/Current/lib_llama_cpp_macos"
 require_path "${prebuilt_dir}/windows/x64/lib_llama_cpp_windows.dll"
+
+macos_framework="${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework/macos-arm64_x86_64/lib_llama_cpp_macos.framework"
+for link in Versions/Current Headers Modules Resources lib_llama_cpp_macos; do
+  if [[ ! -L "${macos_framework}/${link}" ]]; then
+    echo "Expected framework symlink: ${macos_framework}/${link}. Preserve Apple artifacts with tar." >&2
+    exit 1
+  fi
+done
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_android/android/src/main/jniLibs"
 mkdir -p "${repo_root}/packages/lib_llama_cpp_android/android/src/main"
@@ -58,6 +67,13 @@ rm -rf "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Fram
 mkdir -p "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks"
 cp -R "${prebuilt_dir}/macos/lib_llama_cpp_macos.xcframework" \
   "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks/"
+
+# Pub expands directory symlinks. SwiftPM extracts this archive itself, keeping
+# the versioned macOS framework layout intact. CocoaPods uses the directory.
+(
+  cd "${repo_root}/packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks"
+  zip -qry lib_llama_cpp_macos.xcframework.zip lib_llama_cpp_macos.xcframework
+)
 
 rm -rf "${repo_root}/packages/lib_llama_cpp_windows/windows/prebuilt"
 mkdir -p "${repo_root}/packages/lib_llama_cpp_windows/windows/prebuilt"

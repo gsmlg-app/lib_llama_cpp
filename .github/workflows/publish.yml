@@ -227,6 +227,11 @@ jobs:
             build-command: flutter build windows --debug
 
     steps:
+      - name: Checkout verification script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PUBLISH_REF }}
+
       - name: Install Linux desktop build dependencies
         if: matrix.platform == 'linux'
         run: |
@@ -266,6 +271,70 @@ jobs:
             sleep 15
           done
           $BUILD_COMMAND
+
+      - name: Verify published SwiftPM binary archive
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_dir="$RUNNER_TEMP/lib_llama_cpp_pub_smoke"
+          package_dir="$(
+            cd "$app_dir"
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import unquote, urlparse
+
+          config = Path('.dart_tool/package_config.json').resolve()
+          packages = json.loads(config.read_text())['packages']
+          uri = next(p['rootUri'] for p in packages if p['name'] == 'lib_llama_cpp_macos')
+          if uri.startswith('file:'):
+              print(unquote(urlparse(uri).path))
+          else:
+              print((config.parent / uri).resolve())
+          PY
+          )"
+          bash "$GITHUB_WORKSPACE/.github/scripts/test-macos-swiftpm-prebuilt.sh" "$package_dir"
+
+  fresh-pub-native-linux:
+    name: Published Linux native consumer (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    needs:
+      - wait-for-platforms
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-latest
+          - arch: arm64
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout verification script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PUBLISH_REF }}
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++
+
+      - name: Verify published Linux package
+        run: |
+          set -euo pipefail
+          version="${PUBLISH_TAG#v}"
+          package_dir="$RUNNER_TEMP/linux-pub-package"
+          mkdir -p "$package_dir"
+          curl -fsSL "https://pub.dev/api/packages/lib_llama_cpp_linux/versions/${version}" > "$RUNNER_TEMP/linux-package.json"
+          archive_url="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_url"])' "$RUNNER_TEMP/linux-package.json")"
+          archive_sha256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' "$RUNNER_TEMP/linux-package.json")"
+          curl -fsSL "$archive_url" -o "$RUNNER_TEMP/linux-package.tar.gz"
+          echo "$archive_sha256  $RUNNER_TEMP/linux-package.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/linux-package.tar.gz" -C "$package_dir"
+          bash .github/scripts/test-linux-prebuilt-package.sh "$package_dir"
 
   wait-for-foundation:
     name: Wait for foundation packages

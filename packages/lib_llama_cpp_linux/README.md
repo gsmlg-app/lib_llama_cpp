@@ -8,7 +8,8 @@ This package registers the Linux platform implementation and CMake metadata used
 by the app-facing `lib_llama_cpp` package. It is usually consumed as a
 transitive dependency through `lib_llama_cpp`.
 
-Published pub.dev releases include a prebuilt CPU shared library. Vulkan and
+Published pub.dev releases include prebuilt CPU shared libraries for x64 and
+ARM64 Linux. Vulkan and
 CUDA prebuilts are published as separate GitHub release assets and are not
 bundled into the pub.dev package. Monorepo development builds compile from the
 pinned `third_party/llama.cpp` checkout when the prebuilt library is absent, and

@@ -126,11 +126,19 @@ jobs:
           done
 
   native-prebuilt-linux:
-    name: Native CPU prebuilt (linux)
+    name: Native CPU prebuilt (linux-${{ matrix.arch }})
     needs:
       - e2e-gate
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-latest
+          - arch: arm64
+            os: ubuntu-24.04-arm
 
     steps:
       - name: Checkout
@@ -148,10 +156,31 @@ jobs:
       - name: Build Linux CPU prebuilt library
         run: .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
 
+      - name: Load Linux CPU prebuilt library
+        env:
+          LIBRARY_PATH: ${{ runner.temp }}/prebuilt/linux/${{ matrix.arch }}/liblib_llama_cpp_linux.so
+        run: |
+          python3 - <<'PY'
+          import ctypes
+          import os
+          import platform
+
+          library = ctypes.CDLL(os.environ["LIBRARY_PATH"])
+          assert library.lib_llama_cpp_stub_abi_version() == 1
+          library.llama_backend_init()
+          library.llama_backend_free()
+          print(f"Loaded native CPU library on {platform.machine()}")
+          PY
+
+      - name: Build standalone Linux package consumer
+        run: |
+          cp -R "$RUNNER_TEMP/prebuilt/linux" packages/lib_llama_cpp_linux/linux/prebuilt
+          bash .github/scripts/test-linux-prebuilt-package.sh packages/lib_llama_cpp_linux
+
       - name: Upload Linux CPU prebuilt library
         uses: actions/upload-artifact@v4
         with:
-          name: lib-llama-cpp-prebuilt-linux-${{ inputs.version }}
+          name: lib-llama-cpp-prebuilt-linux-${{ matrix.arch }}-${{ inputs.version }}
           path: ${{ runner.temp }}/prebuilt
           if-no-files-found: error
 
@@ -248,11 +277,22 @@ jobs:
           LIB_LLAMA_CPP_ENABLE_METAL: OFF
         run: .github/scripts/build-native-prebuilt.sh ios "$RUNNER_TEMP/prebuilt"
 
+      - name: Verify SwiftPM binary archive consumers
+        run: |
+          frameworks="packages/lib_llama_cpp_macos/macos/lib_llama_cpp_macos/Frameworks"
+          mkdir -p "$frameworks"
+          cp -R "$RUNNER_TEMP/prebuilt/macos/lib_llama_cpp_macos.xcframework" "$frameworks/"
+          (cd "$frameworks" && zip -qry lib_llama_cpp_macos.xcframework.zip lib_llama_cpp_macos.xcframework)
+          bash .github/scripts/test-macos-swiftpm-prebuilt.sh packages/lib_llama_cpp_macos
+
+      - name: Preserve Apple framework symlinks
+        run: tar -czf "$RUNNER_TEMP/apple-prebuilt.tar.gz" -C "$RUNNER_TEMP/prebuilt" ios macos
+
       - name: Upload Apple CPU prebuilt frameworks
         uses: actions/upload-artifact@v4
         with:
           name: lib-llama-cpp-prebuilt-apple-${{ inputs.version }}
-          path: ${{ runner.temp }}/prebuilt
+          path: ${{ runner.temp }}/apple-prebuilt.tar.gz
           if-no-files-found: error
 
   native-prebuilt-windows:
@@ -411,7 +451,10 @@ jobs:
       - name: Install prebuilts into publish packages
         env:
           LIB_LLAMA_CPP_ANDROID_PACKAGE_ABIS: arm64-v8a
-        run: .github/scripts/install-prebuilt-packages.sh dist/prebuilt
+        run: |
+          tar -xzf dist/prebuilt/apple-prebuilt.tar.gz -C dist/prebuilt
+          rm dist/prebuilt/apple-prebuilt.tar.gz
+          .github/scripts/install-prebuilt-packages.sh dist/prebuilt
 
       - name: Validate pub package archives
         run: |

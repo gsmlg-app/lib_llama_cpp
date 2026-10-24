@@ -1,3 +1,8 @@
+## 0.7.4
+
+- Include native ARM64 CPU prebuilts alongside x64 in pub.dev packages, and
+  verify both architectures without the monorepo source tree (#33).
+
 ## Unreleased
 
 - Added unsupported-capability errors for bundled CPU-only Linux libraries and

@@ -73,6 +73,9 @@ void main() {
         final legacyManifest =
             root / 'packages/$packageName/$platform/Package.swift';
         final prebuiltPath = '$packageName/Frameworks/$packageName.xcframework';
+        final swiftPrebuiltPath = platform == 'macos'
+            ? '$packageName.xcframework.zip'
+            : '$packageName.xcframework';
 
         expect(
           manifest.existsSync(),
@@ -117,12 +120,15 @@ void main() {
         expect(manifestContents, contains('.binaryTarget('));
         expect(
           manifestContents,
-          contains('path: "Frameworks/$packageName.xcframework"'),
+          contains('path: "Frameworks/$swiftPrebuiltPath"'),
         );
 
         final podspecContents = entry.value.podspec.readAsStringSync();
         expect(podspecContents, contains(prebuiltPath));
-        expect(legacyManifest.readAsStringSync(), contains(prebuiltPath));
+        expect(
+          legacyManifest.readAsStringSync(),
+          contains('$packageName/Frameworks/$swiftPrebuiltPath'),
+        );
         expect(
           installScript,
           contains('packages/$packageName/$platform/$packageName/Frameworks'),

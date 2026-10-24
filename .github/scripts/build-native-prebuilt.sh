@@ -93,8 +93,17 @@ strip_macho() {
 }
 
 build_linux() {
-  local build_dir="${build_root}/linux-x64"
-  local dst="${out_dir}/linux/x64"
+  local arch
+  case "$(uname -m)" in
+    x86_64|amd64|AMD64) arch=x64 ;;
+    aarch64|arm64|ARM64) arch=arm64 ;;
+    *)
+      echo "Unsupported Linux CPU architecture: $(uname -m)" >&2
+      exit 64
+      ;;
+  esac
+  local build_dir="${build_root}/linux-${arch}"
+  local dst="${out_dir}/linux/${arch}"
 
   run_cmake -S "${repo_root}/packages/lib_llama_cpp_linux/src" \
     -B "$build_dir" \

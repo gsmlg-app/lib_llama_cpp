@@ -1,3 +1,8 @@
+## 0.7.4
+
+- Preserve versioned framework symlinks in a local SwiftPM binary ZIP and in
+  Apple release artifacts (#32).
+
 ## Unreleased
 
 - Report the bundled macOS framework as CPU-only and document separate Metal

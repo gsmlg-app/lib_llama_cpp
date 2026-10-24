@@ -47,6 +47,9 @@ jobs:
       - name: Install Dart and Flutter dependencies
         run: dart pub get
 
+      - name: Test native package installation
+        run: python3 .github/scripts/test-native-packaging.py
+
       - name: Run pure Dart tests
         run: dart test packages/lib_llama_cpp_platform_interface/test && dart test packages/lib_llama_cpp_ffi/test
 
