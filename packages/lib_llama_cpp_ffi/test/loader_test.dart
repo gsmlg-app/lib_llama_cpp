@@ -8,6 +8,7 @@ void main() {
     test('opens an explicit library path with the injected opener', () {
       final openedPaths = <String>[];
       final loader = LlamaCppDynamicLibraryLoader(
+        validate: (_) {},
         openLibrary: (path) {
           openedPaths.add(path);
           return DynamicLibrary.process();
@@ -25,15 +26,16 @@ void main() {
       final cases = <String, String>{
         'android': 'libllama.so',
         'ios': 'libllama.dylib',
-        'linux': 'libllama.so',
+        'linux': 'liblib_llama_cpp_linux.so',
         'macos': 'libllama.dylib',
-        'windows': 'llama.dll',
+        'windows': 'lib_llama_cpp_windows.dll',
       };
 
       for (final MapEntry(key: operatingSystem, value: expectedPath)
           in cases.entries) {
         final openedPaths = <String>[];
         final loader = LlamaCppDynamicLibraryLoader(
+          validate: (_) {},
           openLibrary: (path) {
             openedPaths.add(path);
             return DynamicLibrary.process();
@@ -61,6 +63,37 @@ void main() {
 
       expect(loader.open, throwsUnsupportedError);
       expect(opened, isFalse);
+    });
+
+    test('rejects libraries without project shim symbols', () {
+      expect(
+        () => LlamaCppDynamicLibraryLoader.validateLibrary(
+          DynamicLibrary.process(),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('shim symbol'),
+          ),
+        ),
+      );
+    });
+
+    test('explicit load errors identify the requested path', () {
+      final loader = LlamaCppDynamicLibraryLoader(
+        openLibrary: (_) => throw ArgumentError('missing dependency'),
+      );
+      expect(
+        () => loader.open('/missing/accelerator.dll'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('/missing/accelerator.dll'),
+          ),
+        ),
+      );
     });
   });
 }

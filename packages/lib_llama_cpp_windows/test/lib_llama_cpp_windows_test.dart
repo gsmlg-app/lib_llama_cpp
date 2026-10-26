@@ -34,26 +34,29 @@ void main() {
     },
   );
 
-  test('preferred Windows path can declare CUDA and Vulkan support', () async {
-    final descriptor = await LibLlamaCppWindows().resolveLibrary(
-      request: const LlamaCppLibraryRequest(
-        preferredPath: r'C:\llama\lib_llama_cpp_windows.dll',
-        requiredCapabilities: {
+  test(
+    'preferred Windows path does not claim unverified GPU support',
+    () async {
+      final descriptor = await LibLlamaCppWindows().resolveLibrary(
+        request: const LlamaCppLibraryRequest(
+          preferredPath: r'C:\llama\lib_llama_cpp_windows.dll',
+          requiredCapabilities: {
+            LlamaCppLibraryCapability.cuda,
+            LlamaCppLibraryCapability.vulkan,
+          },
+        ),
+      );
+
+      expect(descriptor.resolution, LlamaCppLibraryResolution.path);
+      expect(descriptor.path, r'C:\llama\lib_llama_cpp_windows.dll');
+      expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
+      expect(
+        descriptor.requestedCapabilities,
+        equals({
           LlamaCppLibraryCapability.cuda,
           LlamaCppLibraryCapability.vulkan,
-        },
-      ),
-    );
-
-    expect(descriptor.resolution, LlamaCppLibraryResolution.path);
-    expect(descriptor.path, r'C:\llama\lib_llama_cpp_windows.dll');
-    expect(
-      descriptor.capabilities,
-      equals({
-        LlamaCppLibraryCapability.cpu,
-        LlamaCppLibraryCapability.cuda,
-        LlamaCppLibraryCapability.vulkan,
-      }),
-    );
-  });
+        }),
+      );
+    },
+  );
 }

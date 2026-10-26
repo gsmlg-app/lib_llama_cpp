@@ -31,7 +31,7 @@ void main() {
     );
   });
 
-  test('preferred Linux path can declare CUDA and Vulkan support', () async {
+  test('preferred Linux path does not claim unverified GPU support', () async {
     final descriptor = await LibLlamaCppLinux().resolveLibrary(
       request: const LlamaCppLibraryRequest(
         preferredPath: '/tmp/libllama_gpu.so',
@@ -44,10 +44,10 @@ void main() {
 
     expect(descriptor.resolution, LlamaCppLibraryResolution.path);
     expect(descriptor.path, '/tmp/libllama_gpu.so');
+    expect(descriptor.capabilities, equals({LlamaCppLibraryCapability.cpu}));
     expect(
-      descriptor.capabilities,
+      descriptor.requestedCapabilities,
       equals({
-        LlamaCppLibraryCapability.cpu,
         LlamaCppLibraryCapability.cuda,
         LlamaCppLibraryCapability.vulkan,
       }),

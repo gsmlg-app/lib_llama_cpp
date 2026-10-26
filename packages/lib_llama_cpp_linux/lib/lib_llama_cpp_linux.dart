@@ -14,7 +14,8 @@ final class LibLlamaCppLinux extends LibLlamaCppPlatform {
       return LlamaCppLibraryDescriptor(
         resolution: LlamaCppLibraryResolution.path,
         path: preferredPath,
-        capabilities: _capabilitiesForPreferredPath(request),
+        capabilities: _capabilities,
+        requestedCapabilities: request.requiredCapabilities,
       );
     }
 
@@ -27,12 +28,6 @@ final class LibLlamaCppLinux extends LibLlamaCppPlatform {
   }
 
   static const _capabilities = {LlamaCppLibraryCapability.cpu};
-}
-
-Set<LlamaCppLibraryCapability> _capabilitiesForPreferredPath(
-  LlamaCppLibraryRequest request,
-) {
-  return {LlamaCppLibraryCapability.cpu, ...request.requiredCapabilities};
 }
 
 void _validateRequiredCapabilities(

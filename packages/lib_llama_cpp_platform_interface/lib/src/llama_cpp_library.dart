@@ -27,12 +27,16 @@ final class LlamaCppLibraryDescriptor {
     this.path,
     this.lookupName,
     this.capabilities = const {},
+    this.requestedCapabilities = const {},
   });
 
   final LlamaCppLibraryResolution resolution;
   final String? path;
   final String? lookupName;
   final Set<LlamaCppLibraryCapability> capabilities;
+
+  /// Requirements to verify after opening; these are not advertised support.
+  final Set<LlamaCppLibraryCapability> requestedCapabilities;
 
   @override
   bool operator ==(Object other) {
@@ -41,7 +45,8 @@ final class LlamaCppLibraryDescriptor {
             other.resolution == resolution &&
             other.path == path &&
             other.lookupName == lookupName &&
-            _setEquals(other.capabilities, capabilities);
+            _setEquals(other.capabilities, capabilities) &&
+            _setEquals(other.requestedCapabilities, requestedCapabilities);
   }
 
   @override
@@ -50,6 +55,7 @@ final class LlamaCppLibraryDescriptor {
     path,
     lookupName,
     Object.hashAllUnordered(capabilities),
+    Object.hashAllUnordered(requestedCapabilities),
   );
 
   @override
@@ -57,11 +63,15 @@ final class LlamaCppLibraryDescriptor {
     final capabilityNames =
         capabilities.map((capability) => capability.name).toList()..sort();
 
+    final requestedNames =
+        requestedCapabilities.map((capability) => capability.name).toList()
+          ..sort();
     return 'LlamaCppLibraryDescriptor('
         'resolution: ${resolution.name}, '
         'path: $path, '
         'lookupName: $lookupName, '
         'capabilities: {${capabilityNames.join(', ')}}'
+        '${requestedNames.isEmpty ? '' : ', requestedCapabilities: {${requestedNames.join(', ')}}'}'
         ')';
   }
 }
