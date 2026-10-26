@@ -1,0 +1,45 @@
+67bd0e1a4247439fb96b0e9d11cc80de45703ed9d1a47e981fa9dba92cdd16f0  /tmp/libllama-20261027-validation/build-cpu/liblib_llama_cpp_linux.so
+25d2924794b76c72fb0e68b1b72f735599024fed805d991e48e71d004ddc3f98  /tmp/libllama-20261027-validation/build-cuda/liblib_llama_cpp_linux.so
+Linux 7.0.0-1019-nvidia aarch64 GNU/Linux
+Architecture:                            aarch64
+CPU op-mode(s):                          64-bit
+Byte Order:                              Little Endian
+CPU(s):                                  20
+On-line CPU(s) list:                     0-19
+Vendor ID:                               ARM
+Model name:                              Cortex-X925
+Model:                                   1
+Thread(s) per core:                      1
+Core(s) per socket:                      10
+Socket(s):                               1
+Stepping:                                r0p1
+Frequency boost:                         disabled
+CPU(s) scaling MHz:                      100%
+CPU max MHz:                             3900.0000
+CPU min MHz:                             1378.0000
+BogoMIPS:                                2000.00
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt
+NVIDIA GB10, 580.178.04, [N/A]
+Copyright (c) 2005-2025 NVIDIA Corporation
+Built on Wed_Aug_20_01:57:39_PM_PDT_2025
+Cuda compilation tools, release 13.0, V13.0.88
+Build cuda_13.0.r13.0/compiler.36424714_0
+	linux-vdso.so.1 (0x0000eb1dabf2c000)
+	libstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000eb1dab330000)
+	libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000eb1dab280000)
+	libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000eb1dab240000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000eb1dab080000)
+	/lib/ld-linux-aarch64.so.1 (0x0000eb1dabee0000)
+	linux-vdso.so.1 (0x0000e33e79d4c000)
+	libcudart.so.13 => /usr/local/cuda-13.0/targets/sbsa-linux/lib/libcudart.so.13 (0x0000e33e75cf0000)
+	libcublas.so.13 => /usr/local/cuda-13.0/targets/sbsa-linux/lib/libcublas.so.13 (0x0000e33e721b0000)
+	libcuda.so.1 => /lib/aarch64-linux-gnu/libcuda.so.1 (0x0000e33e6c520000)
+	libstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e33e6c290000)
+	libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e33e6c1e0000)
+	libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e33e6c1a0000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e33e6bfe0000)
+	/lib/ld-linux-aarch64.so.1 (0x0000e33e79d00000)
+	libdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000e33e6bfb0000)
+	libpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000e33e6bf80000)
+	librt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000e33e6bf50000)
+	libcublasLt.so.13 => /usr/local/cuda-13.0/targets/sbsa-linux/lib/libcublasLt.so.13 (0x0000e33e41250000)

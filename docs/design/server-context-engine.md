@@ -1,8 +1,14 @@
 # Tool Calling via In-Process `server_context` — Architecture
 
 > **Status:** Active
-> **Version:** v0.6.0
+> **Version:** v0.7.5 candidate
 > **Supersedes:** [c-shim-tool-calling.md](c-shim-tool-calling.md)
+
+The diagram below describes the **server** orchestration path. The direct Dart
+API retains its separate media-capable worker and now owns resident weights;
+it does not automatically route through this text-only engine. Current ownership,
+worker isolation, cancellation, bounded queues, exact budgets and native-context
+acceptance are specified in [desktop-lifecycle-context.md](desktop-lifecycle-context.md).
 
 ## Why the Pivot
 
@@ -57,15 +63,17 @@ internal data structures, managed via compile-time canaries and tagged releases.
 
 ## ABI: `llcs.h`
 
-Seven entry points, all `extern "C"`:
+Engine entry points use `extern "C"`; existing signatures remain compatible:
 
 | Function | Signature | Semantics |
 |---|---|---|
 | `llcs_engine_create` | `(const char* params_json, char** error_out) → llcs_engine*` | Load model, start processing loop |
 | `llcs_engine_destroy` | `(llcs_engine*)` | Terminate loop, free resources |
 | `llcs_engine_caps` | `(const llcs_engine*) → char*` | JSON capabilities (tools, reasoning, vision) |
+| `llcs_engine_prepare` | `(engine, request_json, error_out) → char*` | Exact template/token budget without prefill |
+| `llcs_engine_stats` | `(const llcs_engine*) → char*` | Request resources, phases, upstream metrics |
 | `llcs_engine_submit` | `(engine, const char* oai_json, char** err) → llcs_task_id` | Post OAI chat completion request |
-| `llcs_engine_poll` | `(engine, task_id, timeout_ms) → char*` | Block for next event; NULL = drained |
+| `llcs_engine_poll` | `(engine, task_id, timeout_ms) → char*` | Object event; empty string = timeout; NULL = drained (delta arrays flattened) |
 | `llcs_engine_cancel` | `(engine, task_id)` | Cancel running task |
 | `llcs_string_free` | `(char*)` | Free heap-allocated strings |
 

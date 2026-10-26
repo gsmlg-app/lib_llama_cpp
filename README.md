@@ -56,7 +56,7 @@ package:
 ```dart
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
 
-final server = LlamaHttpServer.open(
+final server = await LlamaHttpServer.openAsync(
   config: LlamaServerConfig(
     model: 'local',
     modelPath: '/path/to/model.gguf',
@@ -83,6 +83,8 @@ The same server can be started from the CLI:
 dart run lib_llama_cpp_server \
   --model local \
   --model-path /path/to/model.gguf \
+  --gpu-layers 0 --backend cpu \
+  --batch-size 256 --ubatch-size 128 \
   --host 127.0.0.1 \
   --port 8080
 ```
@@ -149,6 +151,13 @@ Tool calling is model-generated only: the package streams structured tool-call
 events, and host apps execute tools externally before sending follow-up tool
 result messages.
 
+The default direct client keeps its model resident and serializes requests.
+Call `await client.close()` after the final request; injected engines retain their
+caller-owned lifetime. Each direct request rebuilds context from complete messages.
+Server slots use upstream prefix/checkpoint reuse. Both Chat and Responses apply
+the model template once; only the low-level raw completion command accepts a raw
+prompt.
+
 The lower-level `LibLlamaCpp.transform(...)` command stream remains available
 for lifecycle control and engine tests.
 
@@ -198,3 +207,13 @@ melos run ffigen
 - Native state is represented as opaque Dart references.
 - Cross-language native allocations must be tied to `NativeFinalizer`.
 - Platform packages own native build side effects; pure Dart packages do not.
+
+## Desktop lifecycle and long context
+
+See [desktop lifecycle and context review](docs/design/desktop-lifecycle-context.md)
+for ownership, cancellation/backpressure, exact token budgets, SWA limitations,
+requested/effective capabilities, and reproducible Linux/Windows commands.
+[Validation evidence](docs/validation/gemma4-2026-10-27/README.md) distinguishes
+actual near-window model inference from context initialization and artifact builds.
+Use `await LlamaHttpServer.openAsync(...)` to keep blocking native operations off
+the Flutter/HTTP event loop. The synchronous constructor remains available.

@@ -1,3 +1,15 @@
+## 0.7.5
+
+- Template all ordinary Chat/Responses messages once, including system/history.
+- Own resident direct weights and serialize requests; rebuild each direct context
+  safely for compact SWA. Add explicit asynchronous client/engine close.
+- Cooperatively cancel native work, bound output buffering and decode UTF-8 across
+  token boundaries. Report actual usage, output-limit finish and structured errors.
+- Validate context/batch/thread/cache/FA settings and required desktop backends;
+  preserve existing media/tool APIs and test projector overflow/recovery.
+- Recommend worker-isolated `LlamaHttpServer.openAsync` and document native-window
+  acceptance evidence separately from unsupported/unverified hardware.
+
 ## Unreleased
 
 - Exported `lib_llama_cpp_server` from the app-facing facade and documented

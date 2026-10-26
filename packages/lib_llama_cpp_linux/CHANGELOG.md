@@ -1,3 +1,8 @@
+## 0.7.5
+
+- Keep explicit backend requirements separate from CPU library capabilities;
+  validate actual native support before offloading.
+
 ## 0.7.4
 
 - Include native ARM64 CPU prebuilts alongside x64 in pub.dev packages, and

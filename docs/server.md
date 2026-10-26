@@ -14,9 +14,12 @@ Linux examples this is usually a `.so` such as:
 /absolute/path/to/liblib_llama_cpp_linux.so
 ```
 
-If `--library` is omitted, the server uses the platform default dynamic-library
-lookup path from `lib_llama_cpp_ffi`. Passing an explicit `--library` is
-recommended while developing.
+If `--library` is omitted, Linux loads `liblib_llama_cpp_linux.so` and Windows
+loads `lib_llama_cpp_windows.dll` through the system search path. For example,
+set `LD_LIBRARY_PATH=/path/to/linux/arm64` before launching Dart, or put the Windows
+x64 DLL and required runtimes on PATH/in the application DLL directory. Explicit
+paths are useful for separate CUDA/Vulkan artifacts. Both modes validate required
+shim symbols and reject a plain upstream llama library.
 
 ## Run
 
@@ -26,8 +29,10 @@ dart run lib_llama_cpp_server \
   --model local \
   --model-path /models/model.gguf \
   --ctx-size 32768 \
-  --gpu-layers 99 \
-  --parallel 4 \
+  --gpu-layers 0 \
+  --backend cpu \
+  --batch-size 256 --ubatch-size 128 \
+  --parallel 1 \
   --host 127.0.0.1 \
   --port 8080
 ```
@@ -140,3 +145,20 @@ Without the library and model variables, the native server tests are skipped.
   `unsupported_model_capability`, that is expected for v1 server mode. The
   `mtmd` server path is intentionally disabled until it is complete and tested.
 - Full prompts, headers, and API keys are not logged by default.
+
+## Lifecycle and context
+
+The CLI uses an owning worker isolate. Embedded callers should use
+`await LlamaHttpServer.openAsync(config: ...)` and `await server.close()`;
+blocking FFI work stays off the caller's event loop. The synchronous constructor
+remains for compatibility. Full messages are templated once and upstream slots
+own token/KV/checkpoint history. Cancellation reaches native work and completed
+result buffers expire independently of polling.
+
+`GET /healthz` returns `capabilities`, including requested/effective/unsupported
+settings, devices and explicit degradation. Use `--help` for all batch, thread,
+KV, FA, SWA and backend options. `--parallel` divides the total context among
+slots; prompt plus output reservation must fit that slot's usable window.
+See [desktop lifecycle/context review](design/desktop-lifecycle-context.md) and
+[measured validation](validation/gemma4-2026-10-27/README.md) for exact behavior,
+backend deployment requirements and 32K/64K/128K evidence.

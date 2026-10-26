@@ -1,0 +1,23 @@
+.
+----------------------------------------------------------------------
+Ran 1 test in 35.403s
+
+OK
+{"case": "invalid_config", "status": "passed"}
+{"case": "missing_model", "status": "passed"}
+{"case": "shared_abi", "status": "passed"}
+{"case": "wrapper_errors", "status": "passed"}
+{"case": "native_ceiling", "status": "passed"}
+{"case": "invalid_request", "status": "passed"}
+{"case": "budget_boundary", "status": "passed"}
+{"case": "queued_cancel", "status": "passed"}
+{"case": "prefill_state", "observed_partial_prefill": true}
+{"case": "prefill_state", "status": "passed"}
+{"case": "terminal_cancel", "completed": 2, "cancelled": 0, "retained_tasks": 0}
+{"case": "terminal_cancel", "status": "passed"}
+{"case": "expiry", "status": "passed"}
+{"case": "stream", "status": "passed"}
+{"case": "nonstream", "status": "passed"}
+{"case": "cancel", "warmup_50": [6, 3782612], "repeat_100": [6, 3782612], "active_tasks": 0, "retained_tasks": 0, "pending_cancellations": 0, "collector_threads": 1}
+{"case": "cancel", "status": "passed"}
+{"case": "two_engines", "status": "passed"}

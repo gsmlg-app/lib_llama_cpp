@@ -1,3 +1,9 @@
+## 0.7.5
+
+- Keep explicit backend requirements separate from CPU library capabilities;
+  validate actual native support before offloading. Align default server lookup
+  with the packaged DLL name.
+
 ## Unreleased
 
 - Added unsupported-capability errors for bundled CPU-only Windows libraries and

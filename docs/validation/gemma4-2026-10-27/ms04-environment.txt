@@ -1,0 +1,55 @@
+Linux 6.18.48 x86_64
+ANSI_COLOR="0;38;2;126;186;228"
+BUG_REPORT_URL="https://github.com/NixOS/nixpkgs/issues"
+BUILD_ID="26.05.20260831.5dfba62"
+CPE_NAME="cpe:/o:nixos:nixos:26.05"
+DEFAULT_HOSTNAME=nixos
+DOCUMENTATION_URL="https://nixos.org/learn.html"
+HOME_URL="https://nixos.org/"
+ID=nixos
+ID_LIKE=""
+IMAGE_ID=""
+IMAGE_VERSION=""
+LOGO="nix-snowflake"
+NAME=NixOS
+PRETTY_NAME="NixOS 26.05 (Yarara)"
+SUPPORT_END="2026-12-31"
+SUPPORT_URL="https://nixos.org/community.html"
+VARIANT=""
+VARIANT_ID=""
+VENDOR_NAME=NixOS
+VENDOR_URL="https://nixos.org/"
+VERSION="26.05 (Yarara)"
+VERSION_CODENAME=yarara
+VERSION_ID="26.05"
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           39 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  16
+On-line CPU(s) list:                     0-15
+Vendor ID:                               GenuineIntel
+Model name:                              12th Gen Intel(R) Core(TM) i5-12600KF
+CPU family:                              6
+Model:                                   151
+Thread(s) per core:                      2
+Core(s) per socket:                      10
+Socket(s):                               1
+Stepping:                                2
+Microcode version:                       0x3e
+CPU(s) scaling MHz:                      67%
+CPU max MHz:                             4900.0000
+CPU min MHz:                             800.0000
+BogoMIPS:                                7372.80
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req hfi vnmi umip pku ospke waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize arch_lbr ibt flush_l1d arch_capabilities
+               total        used        free      shared  buff/cache   available
+Mem:            62Gi        11Gi       1.2Gi       568Mi        50Gi        50Gi
+Swap:           68Gi       5.7Gi        63Gi
+749838e605aa0e702266031aae00367b6e82a3da79dfd765ec7a68d148946a30  /tmp/libllama-20261027-validation/build-cpu/liblib_llama_cpp_linux.so
+	linux-vdso.so.1 (0x0000795172088000)
+	libdl.so.2 => /nix/store/m07h00fl6538s4gavrp66a20ka4hg7fy-glibc-2.42-67/lib/libdl.so.2 (0x000079517207b000)
+	libstdc++.so.6 => /nix/store/z0n70pxyzi87why1bcq81zgd7b924nfj-gcc-15.2.0-lib/lib/libstdc++.so.6 (0x0000795171200000)
+	libm.so.6 => /nix/store/m07h00fl6538s4gavrp66a20ka4hg7fy-glibc-2.42-67/lib/libm.so.6 (0x0000795171508000)
+	libgcc_s.so.1 => /nix/store/z0n70pxyzi87why1bcq81zgd7b924nfj-gcc-15.2.0-lib/lib/libgcc_s.so.1 (0x000079517204e000)
+	libc.so.6 => /nix/store/m07h00fl6538s4gavrp66a20ka4hg7fy-glibc-2.42-67/lib/libc.so.6 (0x0000795170e00000)
+	/nix/store/m07h00fl6538s4gavrp66a20ka4hg7fy-glibc-2.42-67/lib64/ld-linux-x86-64.so.2 (0x000079517208a000)

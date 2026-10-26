@@ -29,7 +29,7 @@ import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interfac
 ```dart
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
 
-final server = LlamaHttpServer.open(
+final server = await LlamaHttpServer.openAsync(
   config: LlamaServerConfig(
     model: 'local',
     modelPath: '/path/to/model.gguf',
@@ -126,6 +126,13 @@ final completion = await client.chat.completions.create(
 
 print(completion.choices.first.message.content);
 ```
+
+The default client owns a resident worker and serializes requests. Close it with
+`await client.close()` after the last request (including failure/cancellation).
+An injected engine remains caller-owned. Full history is supplied in each request;
+direct context is rebuilt safely while weights stay resident. Direct KV prefix
+reuse is not currently implemented. Chat/Responses always apply the model template;
+`LlamaGenerateCommand` alone retains raw prompt semantics.
 
 ## Multimodal Input
 
@@ -370,3 +377,17 @@ provided through the process environment, along with
 `LIB_LLAMA_CPP_TEST_LIBRARY` and `LIB_LLAMA_CPP_TEST_MMPROJ` for native e2e
 tests. CI should keep model download and checksum verification in the runner
 before invoking package or example tests.
+
+## Desktop context and diagnostics
+
+Linux/Windows direct and server APIs use the same shim-symbol validation. Bundled
+CPU names are `liblib_llama_cpp_linux.so` and `lib_llama_cpp_windows.dll`; explicit
+accelerator paths must match the package release. Requested capabilities are
+requirements to check against native registrations/devices, not advertised support.
+
+Use `LlamaModelConfig` for context, batch/micro-batch, decode/prefill threads, GPU
+layers, FA/cache enums and SWA mode. The native Gemma-4-E2B ceiling is 131072;
+rendered history, media, template/special tokens and output reservation share it.
+The server additionally exposes per-slot effective windows and upstream cache
+reuse. See the repository's desktop lifecycle/context review and validation matrix
+for actual tested backends and limits. Always close resident owners explicitly.

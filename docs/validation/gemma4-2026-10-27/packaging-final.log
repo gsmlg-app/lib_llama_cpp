@@ -1,0 +1,10 @@
+test_install_preserves_macos_symlinks_in_swiftpm_archive (__main__.NativePackagingTest.test_install_preserves_macos_symlinks_in_swiftpm_archive) ... ok
+test_install_rejects_flattened_macos_framework (__main__.NativePackagingTest.test_install_rejects_flattened_macos_framework) ... ok
+test_install_rejects_missing_linux_arm64 (__main__.NativePackagingTest.test_install_rejects_missing_linux_arm64) ... ok
+test_linux_build_uses_host_architecture (__main__.NativePackagingTest.test_linux_build_uses_host_architecture) ... ok
+test_standalone_linux_consumers_select_both_prebuilts (__main__.NativePackagingTest.test_standalone_linux_consumers_select_both_prebuilts) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.461s
+
+OK
