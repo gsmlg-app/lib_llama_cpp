@@ -15,6 +15,16 @@ final class LlamaServerConfig {
     this.logLevel,
     this.pollTimeout = const Duration(milliseconds: 100),
     this.maxRequestBytes = 1024 * 1024,
+    this.batchSize,
+    this.microBatchSize,
+    this.threads,
+    this.threadsBatch,
+    this.flashAttention,
+    this.cacheTypeK,
+    this.cacheTypeV,
+    this.swaFull,
+    this.backend,
+    this.requireBackend,
   });
 
   factory LlamaServerConfig.fromArgs(List<String> arguments) {
@@ -40,6 +50,19 @@ final class LlamaServerConfig {
       chatTemplate: parsed.option('chat-template'),
       reasoningFormat: parsed.option('reasoning-format'),
       logLevel: parsed.option('log-level'),
+      batchSize: _parseInt(parsed.option('batch-size'), 'batch-size'),
+      microBatchSize: _parseInt(parsed.option('ubatch-size'), 'ubatch-size'),
+      threads: _parseInt(parsed.option('threads'), 'threads'),
+      threadsBatch: _parseInt(parsed.option('threads-batch'), 'threads-batch'),
+      flashAttention: parsed.option('flash-attn'),
+      cacheTypeK: parsed.option('cache-type-k'),
+      cacheTypeV: parsed.option('cache-type-v'),
+      swaFull: _parseBool(parsed.option('swa-full'), 'swa-full'),
+      backend: parsed.option('backend'),
+      requireBackend: _parseBool(
+        parsed.option('require-backend'),
+        'require-backend',
+      ),
     );
   }
 
@@ -56,6 +79,16 @@ final class LlamaServerConfig {
   final String? logLevel;
   final Duration pollTimeout;
   final int maxRequestBytes;
+  final int? batchSize;
+  final int? microBatchSize;
+  final int? threads;
+  final int? threadsBatch;
+  final String? flashAttention;
+  final String? cacheTypeK;
+  final String? cacheTypeV;
+  final bool? swaFull;
+  final String? backend;
+  final bool? requireBackend;
 
   LlcsEngineConfig toLlcsEngineConfig() {
     return LlcsEngineConfig(
@@ -65,6 +98,16 @@ final class LlamaServerConfig {
       nParallel: parallel,
       chatTemplate: chatTemplate,
       reasoningFormat: reasoningFormat,
+      nBatch: batchSize,
+      nUbatch: microBatchSize,
+      nThreads: threads,
+      nThreadsBatch: threadsBatch,
+      flashAttention: flashAttention,
+      cacheTypeK: cacheTypeK,
+      cacheTypeV: cacheTypeV,
+      swaFull: swaFull,
+      backend: backend,
+      requireBackend: requireBackend,
     );
   }
 
@@ -81,6 +124,16 @@ Options:
   --ctx-size <tokens>           Optional context size.
   --gpu-layers <count>          Optional GPU layer count.
   --parallel <count>            Parallel slot count. Default: 1
+  --batch-size <tokens>         Logical prefill batch.
+  --ubatch-size <tokens>        Physical prefill micro-batch.
+  --threads <count>             Decode CPU threads.
+  --threads-batch <count>       Prefill CPU threads.
+  --flash-attn <auto|on|off>     Flash Attention mode.
+  --cache-type-k <type>         Key cache type (baseline: f16).
+  --cache-type-v <type>         Value cache type (baseline: f16).
+  --swa-full <true|false>       Full SWA cache. Baseline: false.
+  --backend <cpu|cuda|vulkan>   Required backend unless fallback is explicit.
+  --require-backend <bool>      Fail if the requested backend is unavailable.
   --chat-template <template>    Optional chat template.
   --reasoning-format <format>   Optional reasoning format.
   --log-level <level>           Optional CLI log level.
@@ -112,12 +165,44 @@ int? _parseInt(String? value, String name) {
   return parsed;
 }
 
+bool? _parseBool(String? value, String name) {
+  if (value == null) return null;
+  return switch (value) {
+    'true' => true,
+    'false' => false,
+    _ => throw FormatException('--$name must be true or false.'),
+  };
+}
+
 final class _FlagParser {
   const _FlagParser(this._options, {required this.help});
 
   factory _FlagParser.parse(List<String> arguments) {
     final options = <String, String>{};
     var help = false;
+    const supported = {
+      'model-path',
+      'model',
+      'library',
+      'host',
+      'port',
+      'ctx-size',
+      'gpu-layers',
+      'parallel',
+      'chat-template',
+      'reasoning-format',
+      'log-level',
+      'batch-size',
+      'ubatch-size',
+      'threads',
+      'threads-batch',
+      'flash-attn',
+      'cache-type-k',
+      'cache-type-v',
+      'swa-full',
+      'backend',
+      'require-backend',
+    };
 
     for (var index = 0; index < arguments.length; index += 1) {
       final argument = arguments[index];
@@ -131,6 +216,12 @@ final class _FlagParser {
 
       final withoutPrefix = argument.substring(2);
       final equalsIndex = withoutPrefix.indexOf('=');
+      final name = equalsIndex >= 0
+          ? withoutPrefix.substring(0, equalsIndex)
+          : withoutPrefix;
+      if (!supported.contains(name)) {
+        throw FormatException('Unknown option: --$name');
+      }
       if (equalsIndex >= 0) {
         options[withoutPrefix.substring(0, equalsIndex)] = withoutPrefix
             .substring(equalsIndex + 1);

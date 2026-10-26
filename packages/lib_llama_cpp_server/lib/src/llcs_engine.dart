@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:ffi';
 
@@ -14,6 +15,16 @@ final class LlcsEngineConfig {
     this.chatTemplate,
     this.reasoningFormat,
     this.useJinja = true,
+    this.nBatch,
+    this.nUbatch,
+    this.nThreads,
+    this.nThreadsBatch,
+    this.flashAttention,
+    this.cacheTypeK,
+    this.cacheTypeV,
+    this.swaFull,
+    this.backend,
+    this.requireBackend,
   });
 
   final String modelPath;
@@ -23,6 +34,16 @@ final class LlcsEngineConfig {
   final String? chatTemplate;
   final String? reasoningFormat;
   final bool useJinja;
+  final int? nBatch;
+  final int? nUbatch;
+  final int? nThreads;
+  final int? nThreadsBatch;
+  final String? flashAttention;
+  final String? cacheTypeK;
+  final String? cacheTypeV;
+  final bool? swaFull;
+  final String? backend;
+  final bool? requireBackend;
 
   Map<String, Object?> toJson() {
     return {
@@ -33,6 +54,16 @@ final class LlcsEngineConfig {
       if (chatTemplate != null) 'chat_template': chatTemplate,
       if (reasoningFormat != null) 'reasoning_format': reasoningFormat,
       'use_jinja': useJinja,
+      if (nBatch != null) 'n_batch': nBatch,
+      if (nUbatch != null) 'n_ubatch': nUbatch,
+      if (nThreads != null) 'n_threads': nThreads,
+      if (nThreadsBatch != null) 'n_threads_batch': nThreadsBatch,
+      if (flashAttention != null) 'flash_attn': flashAttention,
+      if (cacheTypeK != null) 'cache_type_k': cacheTypeK,
+      if (cacheTypeV != null) 'cache_type_v': cacheTypeV,
+      if (swaFull != null) 'swa_full': swaFull,
+      if (backend != null) 'backend': backend,
+      if (requireBackend != null) 'require_backend': requireBackend,
     };
   }
 }
@@ -136,12 +167,23 @@ final class LlcsEngine {
   final LlcsNativeBindings _bindings;
   Pointer<llcs_engine>? _engine;
   var _closed = false;
+  final _bufferedEvents = <int, Queue<Map<String, Object?>>>{};
 
   Map<String, Object?> caps() {
     final pointer = _requireOpen();
     final raw = _readNativeString(_bindings.caps(pointer));
     if (raw == null || raw.isEmpty) {
       return const {};
+    }
+    return _decodeObject(raw);
+  }
+
+  Map<String, Object?> readStats(
+    Pointer<Char> Function(Pointer<llcs_engine>) read,
+  ) {
+    final raw = _readNativeString(read(_requireOpen()));
+    if (raw == null || raw.isEmpty) {
+      throw StateError('Native stats unavailable.');
     }
     return _decodeObject(raw);
   }
@@ -172,6 +214,13 @@ final class LlcsEngine {
     Duration timeout = const Duration(milliseconds: 100),
   }) {
     final pointer = _requireOpen();
+    final buffered = _bufferedEvents[taskId];
+    if (buffered != null && buffered.isNotEmpty) {
+      final event = buffered.removeFirst();
+      if (buffered.isEmpty) _bufferedEvents.remove(taskId);
+      if (event.containsKey('error')) throw LlcsEngineException.fromJson(event);
+      return event;
+    }
     final native = _bindings.poll(pointer, taskId, timeout.inMilliseconds);
     final raw = _readNativeString(native);
     if (raw == null) {
@@ -180,7 +229,14 @@ final class LlcsEngine {
     if (raw.isEmpty) {
       return const {};
     }
-    return _decodePollEvent(raw);
+    final events = _decodePollEvent(raw);
+    if (events.isEmpty) return const {};
+    if (events.length > 1) {
+      _bufferedEvents.putIfAbsent(taskId, Queue.new).addAll(events.skip(1));
+    }
+    final event = events.first;
+    if (event.containsKey('error')) throw LlcsEngineException.fromJson(event);
+    return event;
   }
 
   Stream<Map<String, Object?>> stream(
@@ -214,6 +270,7 @@ final class LlcsEngine {
     if (_closed || pointer == null) {
       return;
     }
+    _bufferedEvents.remove(taskId);
     _bindings.cancel(pointer, taskId);
   }
 
@@ -281,10 +338,10 @@ final class LlcsEngine {
           nativeJson['message'] as String? ??
           nativeJson['error'] as String? ??
           fallbackMessage;
-      return LlcsEngineException(
-        message,
-        nativeJson: nativeJson,
-        nativeJsonText: raw,
+      return LlcsEngineException.fromJson(
+        nativeJson,
+        fallbackMessage: message,
+        raw: raw,
       );
     } on FormatException {
       return LlcsEngineException(fallbackMessage, nativeJsonText: raw);
@@ -301,6 +358,36 @@ final class LlcsEngineException implements Exception {
     this.nativeJson,
     this.nativeJsonText,
   });
+
+  factory LlcsEngineException.fromJson(
+    Map<String, Object?> json, {
+    String fallbackMessage = 'Native inference failed.',
+    String? raw,
+  }) {
+    final error = json['error'];
+    final body = error is Map ? Map<String, Object?>.from(error) : json;
+    return LlcsEngineException(
+      body['message'] is String
+          ? body['message'] as String
+          : error is String
+          ? error
+          : fallbackMessage,
+      code: body['code'] is String ? body['code'] as String : 'native_error',
+      type: body['type'] is String ? body['type'] as String : 'server_error',
+      param: body['param'] is String ? body['param'] as String : null,
+      nativeJson: json,
+      nativeJsonText: raw,
+    );
+  }
+
+  int get httpStatus => switch (code) {
+    'invalid_request' ||
+    'context_overflow' ||
+    'unsupported_model_capability' => 400,
+    'queue_full' || 'backpressure' => 429,
+    'cancelled' => 499,
+    _ => type == 'invalid_request_error' ? 400 : 500,
+  };
 
   final String message;
   final String code;
@@ -324,13 +411,26 @@ Map<String, Object?> _decodeObject(String raw) {
   throw const FormatException('Expected JSON object from llcs.');
 }
 
-Map<String, Object?> _decodePollEvent(String raw) {
+List<Map<String, Object?>> _decodePollEvent(String raw) {
   final decoded = jsonDecode(raw);
-  if (decoded is Map<String, Object?>) {
-    return decoded;
+  final events = <Map<String, Object?>>[];
+  void collect(Object? value) {
+    if (value == null) return; // upstream begin marker
+    if (value is List) {
+      for (final item in value) {
+        collect(item);
+      }
+      return;
+    }
+    if (value is Map) {
+      events.add(value.map((k, v) => MapEntry(k.toString(), v)));
+      return;
+    }
+    throw FormatException(
+      'Unrecognized llcs event shape: ${value.runtimeType}',
+    );
   }
-  if (decoded is Map) {
-    return decoded.map((key, value) => MapEntry(key.toString(), value));
-  }
-  return const {};
+
+  collect(decoded);
+  return events;
 }

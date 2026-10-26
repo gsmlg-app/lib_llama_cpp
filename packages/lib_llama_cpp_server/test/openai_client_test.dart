@@ -68,6 +68,26 @@ void main() {
         {'delta': 'b'},
       ]);
     });
+
+    test('reads a delayed body before releasing the HTTP connection', () async {
+      final fixture = await ClientServerFixture.start((request) async {
+        await request.drain<void>();
+        request.response.headers.contentType = ContentType.json;
+        request.response.write('{"value":');
+        await request.response.flush();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        request.response.write('"complete"}');
+        await request.response.close();
+      });
+      addTearDown(fixture.close);
+      final response = await fixture.client.createChatCompletion(
+        model: 'local',
+        messages: [
+          {'role': 'user', 'content': 'hello'},
+        ],
+      );
+      expect(response['value'], 'complete');
+    });
   });
 }
 

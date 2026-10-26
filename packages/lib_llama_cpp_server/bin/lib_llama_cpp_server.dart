@@ -30,7 +30,7 @@ Future<void> main(List<String> arguments) async {
 
   late final LlamaHttpServer llamaServer;
   try {
-    llamaServer = LlamaHttpServer.open(config: config);
+    llamaServer = await LlamaHttpServer.openAsync(config: config);
   } on Object catch (error) {
     stderr.writeln('Failed to start llcs engine: $error');
     exitCode = 70;
@@ -46,7 +46,7 @@ Future<void> main(List<String> arguments) async {
 
   final shutdown = Completer<void>();
   late final StreamSubscription<ProcessSignal> sigint;
-  late final StreamSubscription<ProcessSignal> sigterm;
+  StreamSubscription<ProcessSignal>? sigterm;
 
   Future<void> stop() async {
     if (shutdown.isCompleted) {
@@ -55,15 +55,17 @@ Future<void> main(List<String> arguments) async {
     shutdown.complete();
     await llamaServer.close();
     await sigint.cancel();
-    await sigterm.cancel();
+    await sigterm?.cancel();
   }
 
   sigint = ProcessSignal.sigint.watch().listen((_) {
     unawaited(stop());
   });
-  sigterm = ProcessSignal.sigterm.watch().listen((_) {
-    unawaited(stop());
-  });
+  if (!Platform.isWindows) {
+    sigterm = ProcessSignal.sigterm.watch().listen((_) {
+      unawaited(stop());
+    });
+  }
 
   await shutdown.future;
 }

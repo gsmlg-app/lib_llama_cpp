@@ -7,6 +7,52 @@ import 'package:test/test.dart';
 
 void main() {
   group('LlamaHttpServer', () {
+    test('concurrent close calls wait for backend cleanup', () async {
+      final backend = DelayedCloseBackend();
+      final server = LlamaHttpServer(
+        config: const LlamaServerConfig(model: 'local', modelPath: '/fixture'),
+        backend: backend,
+      );
+      final first = server.close();
+      await backend.started.future;
+      var secondCompleted = false;
+      final second = server.close().then((_) => secondCompleted = true);
+      try {
+        await Future<void>.delayed(Duration.zero);
+        expect(secondCompleted, isFalse);
+        expect(backend.closeCalls, 1);
+      } finally {
+        backend.release.complete();
+        await Future.wait([first, second]);
+      }
+      await server.close();
+      expect(backend.closeCalls, 1);
+    });
+
+    test('client disconnect during prefill cancels the backend', () async {
+      final cancelled = Completer<void>();
+      final backend = WaitingChatCompletionBackend(cancelled);
+      final fixture = await ServerFixture.start(backend);
+      addTearDown(fixture.close);
+      final client = HttpClient();
+      addTearDown(() => client.close(force: true));
+      final request = await client.postUrl(
+        fixture.baseUri.resolve('/v1/chat/completions'),
+      );
+      request.headers.contentType = ContentType.json;
+      request.write(
+        jsonEncode({
+          'messages': [
+            {'role': 'user', 'content': 'Long prefill'},
+          ],
+          'stream': true,
+        }),
+      );
+      await request.close().timeout(const Duration(seconds: 5));
+      client.close(force: true);
+      await cancelled.future.timeout(const Duration(seconds: 5));
+    });
+
     test('GET /healthz reports loaded model', () async {
       final fixture = await ServerFixture.start(FakeChatCompletionBackend());
       addTearDown(fixture.close);
@@ -18,6 +64,7 @@ void main() {
         'status': 'ok',
         'model': 'local',
         'loaded': true,
+        'capabilities': <String, Object?>{},
       });
     });
 
@@ -220,7 +267,82 @@ void main() {
         'internal_error',
       );
     });
+
+    test('native request errors map to HTTP 400 with their code', () async {
+      final fixture = await ServerFixture.start(
+        FakeChatCompletionBackend(
+          error: LlcsEngineException(
+            'budget exceeded',
+            code: 'context_overflow',
+            type: 'invalid_request_error',
+          ),
+        ),
+      );
+      addTearDown(fixture.close);
+      final response = await fixture.postJson('/v1/chat/completions', {
+        'messages': [
+          {'role': 'user', 'content': 'hello'},
+        ],
+      });
+      expect(response.statusCode, 400);
+      expect((response.jsonBody['error'] as Map)['code'], 'context_overflow');
+    });
+
+    test('an empty stream fails instead of returning only DONE', () async {
+      final fixture = await ServerFixture.start(FakeChatCompletionBackend());
+      addTearDown(fixture.close);
+      final response = await fixture.postJson('/v1/chat/completions', {
+        'messages': [
+          {'role': 'user', 'content': 'hello'},
+        ],
+        'stream': true,
+      });
+      expect(response.body, isNot(contains('data: [DONE]')));
+      expect(response.body, contains('empty_response'));
+    });
   });
+}
+
+final class DelayedCloseBackend implements AsyncChatCompletionBackend {
+  final started = Completer<void>();
+  final release = Completer<void>();
+  var closeCalls = 0;
+
+  @override
+  Map<String, Object?> caps() => const {};
+
+  @override
+  Stream<Map<String, Object?>> complete(Map<String, Object?> request) =>
+      const Stream.empty();
+
+  @override
+  Future<void> closeAsync() async {
+    closeCalls++;
+    started.complete();
+    await release.future;
+  }
+
+  @override
+  void close() => throw StateError('Expected asynchronous close.');
+}
+
+final class WaitingChatCompletionBackend implements ChatCompletionBackend {
+  WaitingChatCompletionBackend(this.cancelled);
+  final Completer<void> cancelled;
+
+  @override
+  Map<String, Object?> caps() => const {};
+
+  @override
+  Stream<Map<String, Object?>> complete(Map<String, Object?> request) =>
+      StreamController<Map<String, Object?>>(
+        onCancel: () {
+          if (!cancelled.isCompleted) cancelled.complete();
+        },
+      ).stream;
+
+  @override
+  void close() {}
 }
 
 final class FakeChatCompletionBackend implements ChatCompletionBackend {

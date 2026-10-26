@@ -23,7 +23,7 @@ void main() {
         return;
       }
 
-      server = LlamaHttpServer.open(
+      server = await LlamaHttpServer.openAsync(
         libraryPath: libraryPath,
         config: LlamaServerConfig(
           model: modelAlias,
@@ -93,6 +93,27 @@ void main() {
       expect(response.statusCode, 200);
       expect(response.body, contains('data: '));
       expect(response.body, contains('data: [DONE]'));
+      final events = response.body
+          .split('\n')
+          .where((line) => line.startsWith('data: {'))
+          .map((line) => jsonDecode(line.substring(6)) as Map<String, Object?>)
+          .toList();
+      expect(events, isNotEmpty);
+      final choices = events
+          .expand((event) => event['choices'] as List? ?? const [])
+          .whereType<Map<Object?, Object?>>();
+      expect(choices.any((c) => c['finish_reason'] != null), isTrue);
+      expect(
+        choices.any((c) {
+          final delta = c['delta'];
+          return delta is Map &&
+              ((delta['content'] as String? ?? '').isNotEmpty ||
+                  (delta['reasoning_content'] as String? ?? '').isNotEmpty ||
+                  (delta['tool_calls'] as List? ?? const []).isNotEmpty);
+        }),
+        isTrue,
+        reason: 'A DONE-only or role-only response must fail.',
+      );
     }, skip: !hasRuntime);
   });
 }

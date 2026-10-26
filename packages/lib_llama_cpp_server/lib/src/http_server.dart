@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:lib_llama_cpp_ffi/lib_llama_cpp_ffi.dart';
@@ -8,6 +7,7 @@ import 'package:lib_llama_cpp_ffi/lib_llama_cpp_ffi.dart';
 import 'backend.dart';
 import 'config.dart';
 import 'llcs_engine.dart';
+import 'llcs_worker_engine.dart';
 
 final class LlamaHttpServer {
   LlamaHttpServer({
@@ -20,9 +20,7 @@ final class LlamaHttpServer {
     String? libraryPath,
   }) {
     final library = libraryPath ?? config.libraryPath;
-    final dynamicLibrary = library == null
-        ? LlamaCppDynamicLibraryLoader().open()
-        : DynamicLibrary.open(library);
+    final dynamicLibrary = LlamaCppDynamicLibraryLoader().open(library);
     final engine = LlcsEngine.open(
       library: dynamicLibrary,
       config: config.toLlcsEngineConfig(),
@@ -33,11 +31,24 @@ final class LlamaHttpServer {
     );
   }
 
+  /// Loads and runs native work off the HTTP/Flutter event loop.
+  static Future<LlamaHttpServer> openAsync({
+    required LlamaServerConfig config,
+    String? libraryPath,
+  }) async {
+    final engine = await LlcsWorkerEngine.open(
+      libraryPath: libraryPath ?? config.libraryPath,
+      config: config.toLlcsEngineConfig(),
+    );
+    return LlamaHttpServer(config: config, backend: LlcsWorkerBackend(engine));
+  }
+
   final LlamaServerConfig config;
   final ChatCompletionBackend _backend;
   HttpServer? _server;
   StreamSubscription<HttpRequest>? _subscription;
   var _closed = false;
+  Future<void>? _closeFuture;
 
   Future<LlamaServerAddress> start({String? host, int? port}) async {
     if (_closed) {
@@ -55,7 +66,9 @@ final class LlamaHttpServer {
     return LlamaServerAddress(server.address.host, server.port);
   }
 
-  Future<void> close() async {
+  Future<void> close() => _closeFuture ??= _close();
+
+  Future<void> _close() async {
     if (_closed) {
       return;
     }
@@ -64,7 +77,12 @@ final class LlamaHttpServer {
     _subscription = null;
     await _server?.close(force: true);
     _server = null;
-    _backend.close();
+    final backend = _backend;
+    if (backend is AsyncChatCompletionBackend) {
+      await backend.closeAsync();
+    } else {
+      backend.close();
+    }
   }
 
   Future<void> _handle(HttpRequest request) async {
@@ -74,6 +92,7 @@ final class LlamaHttpServer {
           'status': 'ok',
           'model': config.model,
           'loaded': true,
+          'capabilities': _backend.caps(),
         });
         return;
       }
@@ -122,10 +141,13 @@ final class LlamaHttpServer {
     } catch (error) {
       await _writeError(
         request.response,
-        statusCode: HttpStatus.internalServerError,
+        statusCode: error is LlcsEngineException
+            ? error.httpStatus
+            : HttpStatus.internalServerError,
         message: error.toString(),
-        type: 'server_error',
-        code: 'internal_error',
+        type: error is LlcsEngineException ? error.type : 'server_error',
+        param: error is LlcsEngineException ? error.param : null,
+        code: error is LlcsEngineException ? error.code : 'internal_error',
       );
     }
   }
@@ -180,12 +202,15 @@ final class LlamaHttpServer {
     } catch (error) {
       await _writeError(
         request.response,
-        statusCode: HttpStatus.internalServerError,
+        statusCode: error is LlcsEngineException
+            ? error.httpStatus
+            : HttpStatus.internalServerError,
         message: error is LlcsEngineException
             ? error.message
             : error.toString(),
-        type: 'server_error',
-        code: 'internal_error',
+        type: error is LlcsEngineException ? error.type : 'server_error',
+        param: error is LlcsEngineException ? error.param : null,
+        code: error is LlcsEngineException ? error.code : 'internal_error',
       );
     }
   }
@@ -201,22 +226,106 @@ final class LlamaHttpServer {
       charset: 'utf-8',
     );
     response.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
+    response.bufferOutput = false;
+
+    var headersSent = false;
+    var hasContent = false;
+    var hasFinish = false;
+    final iterator = StreamIterator(_backend.complete(request));
+    var pending = iterator.moveNext();
+    Future<bool?> nextOrHeartbeat() => Future.any<bool?>([
+      pending,
+      Future<bool?>.delayed(const Duration(seconds: 1), () => null),
+    ]);
+
+    Stream<List<int>> chunks(bool? next) async* {
+      try {
+        while (true) {
+          if (next == null) {
+            yield utf8.encode(': keep-alive\n\n');
+          } else if (!next) {
+            break;
+          } else {
+            final event = iterator.current;
+            if (event.containsKey('error')) {
+              throw LlcsEngineException.fromJson(event);
+            }
+            for (final choice in event['choices'] as List? ?? const []) {
+              if (choice is! Map) continue;
+              hasFinish |= choice['finish_reason'] != null;
+              final delta = choice['delta'];
+              if (delta is Map) {
+                hasContent |=
+                    (delta['content'] is String &&
+                        (delta['content'] as String).isNotEmpty) ||
+                    (delta['reasoning_content'] is String &&
+                        (delta['reasoning_content'] as String).isNotEmpty) ||
+                    (delta['tool_calls'] is List &&
+                        (delta['tool_calls'] as List).isNotEmpty);
+              }
+            }
+            if (event.isNotEmpty) {
+              yield utf8.encode('data: ${jsonEncode(event)}\n\n');
+            }
+            pending = iterator.moveNext();
+          }
+          next = await nextOrHeartbeat();
+        }
+        if (!hasContent || !hasFinish) {
+          throw LlcsEngineException(
+            'Backend stream completed without content and a finish reason.',
+            code: 'empty_response',
+          );
+        }
+        yield utf8.encode('data: [DONE]\n\n');
+      } catch (error) {
+        final native = error is LlcsEngineException ? error : null;
+        yield utf8.encode(
+          'data: ${jsonEncode(_errorBody(native?.message ?? error.toString(), type: native?.type ?? 'server_error', code: native?.code ?? 'internal_error', param: native?.param))}\n\n',
+        );
+      } finally {
+        await iterator.cancel();
+      }
+    }
 
     try {
-      await for (final event in _backend.complete(request)) {
-        if (event.isEmpty) {
-          continue;
-        }
-        response.write('data: ${jsonEncode(event)}\n\n');
-        await response.flush();
+      // Keep fast parameter failures as HTTP 4xx before starting the body.
+      final first = await nextOrHeartbeat();
+      if (first == true && iterator.current.containsKey('error')) {
+        throw LlcsEngineException.fromJson(iterator.current);
       }
-      response.write('data: [DONE]\n\n');
+      if (first == false) {
+        throw LlcsEngineException(
+          'Backend stream completed without content and a finish reason.',
+          code: 'empty_response',
+        );
+      }
+      headersSent = true;
+      // One continuous addStream forwards socket cancellation to the producer.
+      // Repeated write/flush calls can hide HttpResponse socket errors and leave
+      // an idle prefill iterator alive after the peer has disconnected.
+      await response.addStream(chunks(first));
       await response.close();
     } catch (error) {
-      response.write(
-        'data: ${jsonEncode(_errorBody(error.toString(), type: 'server_error', code: 'internal_error'))}\n\n',
-      );
-      await response.close();
+      try {
+        if (!headersSent) {
+          final native = error is LlcsEngineException ? error : null;
+          await _writeError(
+            response,
+            statusCode: native?.httpStatus ?? 500,
+            message: native?.message ?? error.toString(),
+            type: native?.type ?? 'server_error',
+            code: native?.code ?? 'internal_error',
+            param: native?.param,
+          );
+        } else {
+          await response.close();
+        }
+      } on Object {
+        // The socket may already be closed by the consumer.
+      }
+    } finally {
+      await iterator.cancel();
     }
   }
 

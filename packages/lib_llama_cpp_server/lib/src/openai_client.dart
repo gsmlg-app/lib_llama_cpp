@@ -74,7 +74,7 @@ final class LlamaServerClient {
       _configureHeaders(request);
       request.write(jsonEncode(body));
       final response = await request.close();
-      return utf8.decodeStream(response);
+      return await utf8.decodeStream(response);
     } finally {
       client.close(force: true);
     }

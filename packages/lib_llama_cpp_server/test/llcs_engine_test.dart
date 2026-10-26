@@ -129,7 +129,7 @@ void main() {
       expect(bindings.freedStrings, hasLength(2));
     });
 
-    test('poll treats non-object native JSON as no event', () {
+    test('poll rejects unknown event shapes instead of losing data', () {
       final bindings = FakeLlcsNativeBindings(
         pollResults: [
           jsonEncode(<Object?>['unexpected']),
@@ -141,9 +141,107 @@ void main() {
         config: const LlcsEngineConfig(modelPath: '/models/local.gguf'),
       );
 
-      expect(engine.poll(1), isEmpty);
+      expect(() => engine.poll(1), throwsFormatException);
       expect(engine.poll(1), isNull);
       expect(bindings.freedStrings, hasLength(1));
+    });
+
+    test(
+      'poll flattens upstream delta arrays and ignores null begin markers',
+      () {
+        final bindings = FakeLlcsNativeBindings(
+          pollResults: [
+            'null',
+            jsonEncode([
+              {
+                'id': 'chat-7',
+                'choices': [
+                  {
+                    'delta': {'reasoning_content': 'think'},
+                  },
+                ],
+              },
+              {
+                'id': 'chat-7',
+                'choices': [
+                  {
+                    'delta': {'content': 'answer'},
+                  },
+                ],
+              },
+              {
+                'id': 'chat-7',
+                'choices': [
+                  {
+                    'delta': {
+                      'tool_calls': [
+                        {
+                          'index': 0,
+                          'function': {'arguments': '{'},
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+              {
+                'id': 'chat-7',
+                'choices': [
+                  {'finish_reason': 'tool_calls'},
+                ],
+                'usage': {'total_tokens': 12},
+              },
+            ]),
+            null,
+          ],
+        );
+        final engine = LlcsEngine.withBindings(
+          bindings: bindings,
+          config: const LlcsEngineConfig(modelPath: '/models/local.gguf'),
+        );
+        expect(engine.poll(7), isEmpty);
+        final events = List.generate(4, (_) => engine.poll(7)!);
+        expect(events.map((e) => e['id']), everyElement('chat-7'));
+        expect(
+          (events[0]['choices'] as List).first['delta']['reasoning_content'],
+          'think',
+        );
+        expect(
+          (events[1]['choices'] as List).first['delta']['content'],
+          'answer',
+        );
+        expect(
+          (events[2]['choices'] as List).first['delta']['tool_calls'],
+          isNotEmpty,
+        );
+        expect(events.last['usage'], {'total_tokens': 12});
+        expect(engine.poll(7), isNull);
+        engine.close();
+      },
+    );
+
+    test('native errors retain their stable code and parameter', () {
+      final engine = LlcsEngine.withBindings(
+        bindings: FakeLlcsNativeBindings(
+          submitResult: -1,
+          submitError: {
+            'message': 'budget exceeded',
+            'code': 'context_overflow',
+            'type': 'invalid_request_error',
+            'param': 'max_tokens',
+          },
+        ),
+        config: const LlcsEngineConfig(modelPath: '/models/local.gguf'),
+      );
+      expect(
+        () => engine.submit({}),
+        throwsA(
+          isA<LlcsEngineException>()
+              .having((e) => e.code, 'code', 'context_overflow')
+              .having((e) => e.param, 'param', 'max_tokens'),
+        ),
+      );
+      engine.close();
     });
 
     test(
