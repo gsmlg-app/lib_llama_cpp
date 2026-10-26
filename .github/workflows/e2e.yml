@@ -422,6 +422,20 @@ jobs:
           echo "LIB_LLAMA_CPP_TEST_MODEL=$model_path" >> "$GITHUB_ENV"
           echo "LIB_LLAMA_CPP_TEST_MMPROJ=$mmproj_path" >> "$GITHUB_ENV"
 
+      - name: Check embedded backend enumeration exports
+        shell: bash
+        run: |
+          python - <<'PY'
+          import ctypes, os
+          library = ctypes.CDLL(os.environ['LIB_LLAMA_CPP_TEST_LIBRARY'])
+          for name in ('ggml_backend_reg_count', 'ggml_backend_reg_get',
+                       'ggml_backend_reg_name', 'ggml_backend_dev_count',
+                       'ggml_backend_dev_get', 'ggml_backend_dev_name',
+                       'ggml_backend_dev_type', 'ggml_backend_dev_backend_reg'):
+              getattr(library, name)
+          print('All direct FFI backend enumeration exports resolved')
+          PY
+
       - name: Run Gemma 4 E2B multimodal and tool E2E
         timeout-minutes: 45
         run: dart test packages/lib_llama_cpp/test/real_model_e2e_test.dart -r expanded
@@ -444,6 +458,15 @@ jobs:
         run: |
           library_dir="$(dirname "$LIB_LLAMA_CPP_TEST_LIBRARY")"
           python tools/desktop_server_smoke.py --model "$LIB_LLAMA_CPP_TEST_MODEL" --library-directory "$library_dir" --log "$RUNNER_TEMP/server-smoke.log" --output "$RUNNER_TEMP/server-smoke.json"
+
+      - name: Preserve native and default-name consumer diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemma-desktop-${{ matrix.platform }}
+          path: |
+            ${{ runner.temp }}/server-smoke.log
+            ${{ runner.temp }}/server-smoke.json
 
   android-real-model-smoke:
     name: Real model smoke (android)

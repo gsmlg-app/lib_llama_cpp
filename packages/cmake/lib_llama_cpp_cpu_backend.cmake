@@ -130,6 +130,14 @@ function(lib_llama_cpp_add_cpu_backend target_name wrapper_source)
   endforeach()
 
   target_compile_definitions(llama PRIVATE LLAMA_BUILD LLAMA_SHARED)
+  if(MSVC)
+    # The wrapper DLL embeds static ggml libraries. WINDOWS_EXPORT_ALL_SYMBOLS
+    # scans wrapper objects, not their static dependencies; retain the public
+    # ggml declarations as DLL exports for direct FFI device enumeration.
+    foreach(_target ggml ggml-base)
+      target_compile_definitions(${_target} PRIVATE GGML_BUILD GGML_SHARED)
+    endforeach()
+  endif()
 
   set(_lib_llama_cpp_ffi_dir "${_repo_root}/packages/lib_llama_cpp_ffi")
   set(_lib_llama_cpp_wrapper_source "${_lib_llama_cpp_ffi_dir}/src/lib_llama_cpp_wrapper.cc")
