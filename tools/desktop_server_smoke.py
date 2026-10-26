@@ -20,14 +20,18 @@ def main(args):
     key = 'PATH' if os.name == 'nt' else 'LD_LIBRARY_PATH'
     env[key] = directory + os.pathsep + env.get(key, '')
     log = open(args.log, 'w')
+    available_cpus = (len(os.sched_getaffinity(0)) if hasattr(os, 'sched_getaffinity')
+        else (os.cpu_count() or 1))
+    threads = str(max(1, min(8, available_cpus)))
     command = [args.dart, 'run', 'lib_llama_cpp_server', '--model-path', args.model,
-        '--ctx-size', '4096', '--gpu-layers', '0', '--backend', 'cpu', '--threads', '8',
-        '--threads-batch', '8', '--batch-size', '256', '--ubatch-size', '128', '--port', '0']
+        '--ctx-size', '4096', '--gpu-layers', '0', '--backend', 'cpu', '--threads', threads,
+        '--threads-batch', threads, '--batch-size', '32', '--ubatch-size', '32', '--port', '0']
     # CPU cancellation is serviced between logical prefill batches. Use the
-    # documented interactive CPU configuration; keep the 15s recovery deadline.
+    # interactive smoke batch; keep the 15s recovery deadline on small CI runners.
     process = subprocess.Popen(command, cwd=args.package_root, env=env,
         stdout=log, stderr=log, text=True)
-    result = {'command': command, 'library_lookup': 'platform default name', 'checks': []}
+    result = {'command': command, 'library_lookup': 'platform default name',
+        'available_cpus': available_cpus, 'checks': []}
     try:
         address = None
         deadline = time.monotonic() + 120
@@ -67,15 +71,32 @@ def main(args):
         # A fresh long prefix ensures this request spends time in prefill on CPU.
         uri = urllib.parse.urlparse(address)
         connection = http.client.HTTPConnection(uri.hostname, uri.port, timeout=15)
-        long_body = dict(body, stream=True, messages=[{'role': 'user', 'content': 'New prefill probe. ' + 'ordinary notes ' * 1500}])
+        long_body = dict(body, stream=True, return_progress=True, messages=[{'role': 'user', 'content': 'New prefill probe. ' + 'ordinary notes ' * 1500}])
         connection.request('POST', '/v1/chat/completions', json.dumps(long_body), {'Content-Type': 'application/json'})
-        stream = connection.getresponse()  # Receives the heartbeat during prefill.
+        stream = connection.getresponse()
+        prefill_deadline = time.monotonic() + 60
+        while time.monotonic() < prefill_deadline:
+            line = stream.readline().decode()
+            assert line and line.strip() != 'data: [DONE]', 'disconnect probe ended before observed prefill'
+            if not line.startswith('data: {'):
+                continue
+            event = json.loads(line[6:])
+            assert 'error' not in event, event
+            progress = event.get('prompt_progress')
+            if progress:
+                assert progress['processed'] < progress['total'], ('disconnect probe finished prefill', progress)
+                if progress['processed'] > progress['cache']:
+                    result['disconnect_prefill_progress'] = progress
+                    break
+        else:
+            raise AssertionError('no fresh partial prefill observed within 60 seconds')
         stream.close()
         connection.close()
         started = time.monotonic()
         response = json.load(post(body, timeout=15))
         assert response['choices'][0]['message']['content'].strip(), response
         result['disconnect_recovery_seconds'] = time.monotonic() - started
+        assert result['disconnect_recovery_seconds'] < 15, result['disconnect_recovery_seconds']
         result['checks'].append('prefill client disconnect followed immediately by valid inference')
         result['status'] = 'passed'
     except BaseException as error:
