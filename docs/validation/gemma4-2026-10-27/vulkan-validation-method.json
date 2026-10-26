@@ -1,0 +1,38 @@
+{
+  "original_harness_sha256": "cf105abe9a27165f435517310a607a643d9a5fbba4f307c0e8a116b3f1ecb644",
+  "wrapper_sha256": "24a1f8224356563400cc91f6d855ce79c7418c2376cc2fabd8016f67896aaa18",
+  "effective_harness_sha256": "156f74bb20a9c1548b7ad011304ed9f8c416ce15012b5e30944a207967a37ff3",
+  "original_assertions_preserved": true,
+  "changes": [
+    "Three n_gpu_layers0 config entries changed to n_gpu_layers99/backend vulkan/require_backend true",
+    "Add selected_backend/require_backend/n_gpu_layers/degradation/nonCPU Vulkan device assertions",
+    "Print strict capabilities per model case"
+  ],
+  "original_test_config": "CPU n_gpu_layers0",
+  "strict_test_config": "Vulkan n_gpu_layers99/require_backend true; VK_DRIVER_FILES NVIDIA ICD only",
+  "build_command": "cmake -S /task/source/packages/lib_llama_cpp_linux/src -B /task/build-vulkan -G Ninja -DCMAKE_BUILD_TYPE=Release -DLIB_LLAMA_CPP_ENABLE_VULKAN=ON; cmake --build /task/build-vulkan --target lib_llama_cpp_linux -j12",
+  "build_dependencies": [
+    "build-essential",
+    "cmake",
+    "ninja-build",
+    "pkg-config",
+    "libvulkan-dev",
+    "glslc",
+    "spirv-headers",
+    "ca-certificates"
+  ],
+  "driver": "NVIDIA580.178.04",
+  "loader_api": "1.4.328",
+  "NVIDIA_device_api": "1.4.312",
+  "device": "NVIDIA GB10",
+  "vendor_id": "0x10de",
+  "device_id": "0x2e12",
+  "device_queue_compute": true,
+  "build_tool_versions": {
+    "GCC": "13.3.0-6ubuntu2~24.04.1",
+    "cmake": "3.28.3-1build7",
+    "libvulkan-dev": "1.3.275.0-1build1",
+    "glslc": "2023.8-1build1",
+    "spirv-headers": "1.6.1+1.4.309.0-1~ubuntu0.24.04.2"
+  }
+}

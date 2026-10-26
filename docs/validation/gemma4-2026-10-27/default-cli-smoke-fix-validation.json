@@ -1,0 +1,141 @@
+{
+  "status": "passed",
+  "script_sha256": "f7f2cbe0834b0d1e4cdee0c4d970d07321f4618d010fffb07a459acb67275556",
+  "safe_cpu_library_sha256": "96466afe22916a71c3fd2e16ebe1e6e6c6a3a565d7214d4ddd797d6f22a14342",
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "baseline_failure_preserved": "results/default-cli-two-thread-correct.{log,json}",
+  "results": {
+    "default-cli-affinity2-b64-probe": {
+      "seconds": 8.236932349973358,
+      "progress": {
+        "total": 3014,
+        "cache": 4,
+        "processed": 68,
+        "time_ms": 7293
+      },
+      "available_cpus": 2,
+      "command": [
+        "/tmp/libllama-20261027-validation/flutter/bin/dart",
+        "run",
+        "lib_llama_cpp_server",
+        "--model-path",
+        "/tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+        "--ctx-size",
+        "4096",
+        "--gpu-layers",
+        "0",
+        "--backend",
+        "cpu",
+        "--threads",
+        "2",
+        "--threads-batch",
+        "2",
+        "--batch-size",
+        "64",
+        "--ubatch-size",
+        "32",
+        "--port",
+        "0"
+      ]
+    },
+    "default-cli-affinity2-b32-probe": {
+      "seconds": 4.453524317010306,
+      "progress": {
+        "total": 3014,
+        "cache": 4,
+        "processed": 36,
+        "time_ms": 3624
+      },
+      "available_cpus": 2,
+      "command": [
+        "/tmp/libllama-20261027-validation/flutter/bin/dart",
+        "run",
+        "lib_llama_cpp_server",
+        "--model-path",
+        "/tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+        "--ctx-size",
+        "4096",
+        "--gpu-layers",
+        "0",
+        "--backend",
+        "cpu",
+        "--threads",
+        "2",
+        "--threads-batch",
+        "2",
+        "--batch-size",
+        "32",
+        "--ubatch-size",
+        "32",
+        "--port",
+        "0"
+      ]
+    },
+    "default-cli-safe-affinity2-final": {
+      "seconds": 4.462307784007862,
+      "progress": {
+        "total": 3014,
+        "cache": 4,
+        "processed": 36,
+        "time_ms": 3628
+      },
+      "available_cpus": 2,
+      "command": [
+        "/tmp/libllama-20261027-validation/flutter/bin/dart",
+        "run",
+        "lib_llama_cpp_server",
+        "--model-path",
+        "/tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+        "--ctx-size",
+        "4096",
+        "--gpu-layers",
+        "0",
+        "--backend",
+        "cpu",
+        "--threads",
+        "2",
+        "--threads-batch",
+        "2",
+        "--batch-size",
+        "32",
+        "--ubatch-size",
+        "32",
+        "--port",
+        "0"
+      ]
+    },
+    "default-cli-safe-unrestricted-final": {
+      "seconds": 0.7954861859907396,
+      "progress": {
+        "total": 3014,
+        "cache": 4,
+        "processed": 36,
+        "time_ms": 311
+      },
+      "available_cpus": 20,
+      "command": [
+        "/tmp/libllama-20261027-validation/flutter/bin/dart",
+        "run",
+        "lib_llama_cpp_server",
+        "--model-path",
+        "/tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+        "--ctx-size",
+        "4096",
+        "--gpu-layers",
+        "0",
+        "--backend",
+        "cpu",
+        "--threads",
+        "8",
+        "--threads-batch",
+        "8",
+        "--batch-size",
+        "32",
+        "--ubatch-size",
+        "32",
+        "--port",
+        "0"
+      ]
+    }
+  }
+}

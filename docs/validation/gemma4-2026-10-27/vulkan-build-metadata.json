@@ -1,0 +1,12 @@
+{
+  "llama_cpp_pin": "95b8b8ec1a9e77bcc7b3fb04da82c9f35cb12a79",
+  "hashes": {
+    "source/packages/lib_llama_cpp_ffi/src/shim/llcs_engine.cpp": "4a63588fe15e63ab866b3413fffada3383cc232b5417858be0b1e2bc38b885da",
+    "source/third_party/llama.cpp/ggml/src/ggml-vulkan/ggml-vulkan.cpp": "40213782f2d75fbf6e9f88cf9589d4341c45c25f7943e1a148567a929a1346dc",
+    "build-vulkan/liblib_llama_cpp_linux.so": "a3184abb6e0b893986f72943c2e3fe3c901e083ef8c8971c4b0fe9cf5e6dac3d",
+    "source/tools/desktop_context_benchmark.py": "bf83c057f95bcba7aa2153803f2ebf309a1eadd7aaad364e3e10bd4940467f3f"
+  },
+  "container_name": "libllama-20261027-vulkan-build",
+  "container_removed": true,
+  "ldd": "\tlinux-vdso.so.1 (0x0000e61397f5a000)\n\tlibvulkan.so.1 => /lib/aarch64-linux-gnu/libvulkan.so.1 (0x0000e61394970000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e613946e0000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e61394630000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e613945f0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e61394430000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000e61397f10000)\n"
+}

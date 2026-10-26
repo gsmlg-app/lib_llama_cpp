@@ -1,0 +1,42 @@
+{
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "chat_template_sha256": "55572b8d3c8342044e25874c73fe5234b661fa0a57a57f6ef75b58e03d7d959a",
+  "gguf_metadata_unchanged": true,
+  "model_sha256_matches_all": true,
+  "prepare_budget": {
+    "cpu-32k.json": {
+      "prompt_tokens": 31741,
+      "reserved_output_tokens": 512,
+      "effective_context": 32768,
+      "usable_context": 32767,
+      "fits": true
+    },
+    "cuda-32768-final.json": {
+      "prompt_tokens": 31741,
+      "reserved_output_tokens": 512,
+      "effective_context": 32768,
+      "usable_context": 32767,
+      "fits": true
+    },
+    "vulkan-32768-final.json": {
+      "prompt_tokens": 31741,
+      "reserved_output_tokens": 512,
+      "effective_context": 32768,
+      "usable_context": 32767,
+      "fits": true
+    }
+  },
+  "prepare_budgets_identical": true,
+  "current_cuda_vulkan_template_caps_identical": true,
+  "current_template_caps": {
+    "supports_object_arguments": true,
+    "supports_parallel_tool_calls": true,
+    "supports_preserve_reasoning": false,
+    "supports_string_content": true,
+    "supports_system_role": true,
+    "supports_tool_calls": true,
+    "supports_tools": true,
+    "supports_typed_content": false
+  },
+  "note": "Same GGUF and embedded chat template; pinned upstream compatibility normalization warning is present. No external template override supplied. Historical CPU32K evidence predates capability fixes, so only its model SHA and prepare budget are compared."
+}

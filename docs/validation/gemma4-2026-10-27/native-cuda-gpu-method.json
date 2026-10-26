@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "case_count": 15,
+  "assignment": "strict GPU rerun of original CPU-configured cases; no rebuild or library overwrite",
+  "library_sha256": "25d2924794b76c72fb0e68b1b72f735599024fed805d991e48e71d004ddc3f98",
+  "library_matches_prior_cuda_long_context_artifact": true,
+  "original_harness_sha256": "cf105abe9a27165f435517310a607a643d9a5fbba4f307c0e8a116b3f1ecb644",
+  "wrapper_sha256": "c4d66d93626458954eb04a12ba40fd03831c17917961e56a9861c96cec1388cf",
+  "effective_harness_sha256": "ba0bc9e720590f3de7f4e20ff879bb2cc407ba0b64c8520554c4c9c24b72afab",
+  "shim_sha256": "4a63588fe15e63ab866b3413fffada3383cc232b5417858be0b1e2bc38b885da",
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "backend": "cuda",
+  "require_backend": true,
+  "n_gpu_layers": 99,
+  "original_assertions_preserved": true,
+  "extra_evidence": "strict backend/caps and positive actual GPU layer offload; cancellation50/100 resources and native counters",
+  "cancel_trends": [
+    {
+      "phase": "after_50",
+      "threads": 6,
+      "rss_kib": 2952836,
+      "submitted": 52,
+      "completed": 1,
+      "cancelled": 51,
+      "failed": 0,
+      "active_tasks": 0,
+      "retained_tasks": 0,
+      "pending_cancellations": 0,
+      "buffered_bytes": 0,
+      "buffered_events": 0,
+      "collector_threads": 1
+    },
+    {
+      "phase": "after_100",
+      "threads": 6,
+      "rss_kib": 2952852,
+      "submitted": 102,
+      "completed": 1,
+      "cancelled": 101,
+      "failed": 0,
+      "active_tasks": 0,
+      "retained_tasks": 0,
+      "pending_cancellations": 0,
+      "buffered_bytes": 0,
+      "buffered_events": 0,
+      "collector_threads": 1
+    }
+  ],
+  "rss_delta_kib": 16,
+  "commands": "python3 /tmp/libllama-20261027-validation/run_cuda_gpu_native.py"
+}

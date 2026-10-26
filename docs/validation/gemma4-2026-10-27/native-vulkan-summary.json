@@ -1,0 +1,158 @@
+{
+  "cases": [
+    {
+      "case": "invalid_config",
+      "returncode": 0,
+      "seconds": 0.0470940429950133,
+      "offloads": []
+    },
+    {
+      "case": "missing_model",
+      "returncode": 0,
+      "seconds": 0.028664842015132308,
+      "offloads": []
+    },
+    {
+      "case": "shared_abi",
+      "returncode": 0,
+      "seconds": 0.262584415031597,
+      "offloads": []
+    },
+    {
+      "case": "wrapper_errors",
+      "returncode": 0,
+      "seconds": 0.04239737702300772,
+      "offloads": []
+    },
+    {
+      "case": "native_ceiling",
+      "returncode": 0,
+      "seconds": 0.07565409399103373,
+      "offloads": []
+    },
+    {
+      "case": "invalid_request",
+      "returncode": 0,
+      "seconds": 9.486853203969076,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "budget_boundary",
+      "returncode": 0,
+      "seconds": 3.1722584959934466,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "queued_cancel",
+      "returncode": 0,
+      "seconds": 2.5304185849963687,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "prefill_state",
+      "returncode": 0,
+      "seconds": 3.756201106007211,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "terminal_cancel",
+      "returncode": 0,
+      "seconds": 2.205196553026326,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "expiry",
+      "returncode": 0,
+      "seconds": 2.6006621529813856,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "stream",
+      "returncode": 0,
+      "seconds": 1.9644866510061547,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "nonstream",
+      "returncode": 0,
+      "seconds": 2.2324373119627126,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "cancel",
+      "returncode": 0,
+      "seconds": 3.3372666659997776,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    },
+    {
+      "case": "two_engines",
+      "returncode": 0,
+      "seconds": 3.9563560130191036,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ],
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true
+    }
+  ]
+}

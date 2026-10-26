@@ -1,0 +1,53 @@
+{
+  "loader_library": "libvulkan.so.1",
+  "loader_api_version": [
+    1,
+    4,
+    328
+  ],
+  "enumerate_instance_version_result": 0,
+  "create_instance_result": 0,
+  "enumerate_physical_devices_result": 0,
+  "VK_DRIVER_FILES": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+  "devices": [
+    {
+      "name": "NVIDIA GB10",
+      "api_version": [
+        1,
+        4,
+        312
+      ],
+      "vendor_id": "0x10de",
+      "device_id": "0x2e12",
+      "device_type": 1,
+      "queue_families": [
+        {
+          "flags": 15,
+          "queue_count": 16,
+          "compute": true
+        },
+        {
+          "flags": 12,
+          "queue_count": 1,
+          "compute": false
+        },
+        {
+          "flags": 14,
+          "queue_count": 8,
+          "compute": true
+        },
+        {
+          "flags": 44,
+          "queue_count": 1,
+          "compute": false
+        },
+        {
+          "flags": 76,
+          "queue_count": 1,
+          "compute": false
+        }
+      ]
+    }
+  ],
+  "nvidia_smi": "NVIDIA GB10, 580.178.04, 0000000F:01:00.0"
+}

@@ -1,0 +1,43 @@
+{
+  "command": [
+    "/tmp/libllama-20261027-validation/flutter/bin/dart",
+    "run",
+    "lib_llama_cpp_server",
+    "--model-path",
+    "/tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+    "--ctx-size",
+    "4096",
+    "--gpu-layers",
+    "0",
+    "--backend",
+    "cpu",
+    "--threads",
+    "8",
+    "--threads-batch",
+    "8",
+    "--batch-size",
+    "32",
+    "--ubatch-size",
+    "32",
+    "--port",
+    "0"
+  ],
+  "library_lookup": "platform default name",
+  "available_cpus": 20,
+  "checks": [
+    "default-name load and non-stream inference",
+    "stream actual payload, finish reason, DONE",
+    "invalid request and overflow return HTTP 400",
+    "prefill client disconnect followed immediately by valid inference"
+  ],
+  "disconnect_prefill_progress": {
+    "total": 3014,
+    "cache": 4,
+    "processed": 36,
+    "time_ms": 311
+  },
+  "disconnect_recovery_seconds": 0.7954861859907396,
+  "status": "passed",
+  "shutdown": "SIGINT graceful shutdown",
+  "exit_code": 0
+}

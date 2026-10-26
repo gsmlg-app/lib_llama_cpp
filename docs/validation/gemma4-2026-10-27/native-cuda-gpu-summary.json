@@ -1,0 +1,421 @@
+{
+  "cases": [
+    {
+      "case": "invalid_config",
+      "returncode": 0,
+      "seconds": 0.08441168401623145,
+      "offloads": [],
+      "resource_records": []
+    },
+    {
+      "case": "missing_model",
+      "returncode": 0,
+      "seconds": 0.08009343896992505,
+      "offloads": [],
+      "resource_records": []
+    },
+    {
+      "case": "shared_abi",
+      "returncode": 0,
+      "seconds": 0.5781988510279916,
+      "offloads": [],
+      "resource_records": []
+    },
+    {
+      "case": "wrapper_errors",
+      "returncode": 0,
+      "seconds": 0.07045890198787674,
+      "offloads": [],
+      "resource_records": []
+    },
+    {
+      "case": "native_ceiling",
+      "returncode": 0,
+      "seconds": 0.10980873595690355,
+      "offloads": [],
+      "resource_records": []
+    },
+    {
+      "case": "invalid_request",
+      "returncode": 0,
+      "seconds": 4.416863412945531,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "budget_boundary",
+      "returncode": 0,
+      "seconds": 3.225229351024609,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "queued_cancel",
+      "returncode": 0,
+      "seconds": 2.3084114759694785,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "prefill_state",
+      "returncode": 0,
+      "seconds": 3.6274304230464622,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "terminal_cancel",
+      "returncode": 0,
+      "seconds": 2.6723823189968243,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "expiry",
+      "returncode": 0,
+      "seconds": 2.8087438350194134,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "stream",
+      "returncode": 0,
+      "seconds": 2.330284188967198,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "nonstream",
+      "returncode": 0,
+      "seconds": 2.4172014049836434,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    },
+    {
+      "case": "cancel",
+      "returncode": 0,
+      "seconds": 4.5371803780435584,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": [
+        {
+          "case": "cancel",
+          "phase": "after_50",
+          "resources": [
+            6,
+            2952836
+          ],
+          "stats": {
+            "active_tasks": 0,
+            "retained_tasks": 0,
+            "tasks": [],
+            "pending_cancellations": 0,
+            "buffered_bytes": 0,
+            "buffered_events": 0,
+            "expired_results": 0,
+            "expiry_tombstones": 0,
+            "result_retention_ms": 30000,
+            "max_tasks": 64,
+            "max_event_bytes_per_task": 1048576,
+            "collector_threads": 1,
+            "submitted": 52,
+            "completed": 1,
+            "cancelled": 51,
+            "failed": 0,
+            "running": true,
+            "upstream_metrics": {
+              "idle": 1,
+              "processing": 0,
+              "deferred": 0,
+              "t_start": 282144881568,
+              "n_prompt_tokens_processed_total": 21,
+              "t_tokens_generation_total": 144,
+              "n_tokens_predicted_total": 16,
+              "t_prompt_processing_total": 211,
+              "n_tokens_max": 36,
+              "n_prompt_tokens_processed": 21,
+              "t_prompt_processing": 211,
+              "n_tokens_predicted": 16,
+              "t_tokens_generation": 144,
+              "n_decode_total": 18,
+              "n_busy_slots_total": 18,
+              "slots": [
+                {
+                  "id": 0,
+                  "n_ctx": 512,
+                  "speculative": false,
+                  "is_processing": false,
+                  "id_task": 164,
+                  "n_prompt_tokens": 17,
+                  "n_prompt_tokens_processed": 1,
+                  "n_prompt_tokens_cache": 0,
+                  "params": {
+                    "seed": 4294967295,
+                    "temperature": 0.0,
+                    "dynatemp_range": 0.0,
+                    "dynatemp_exponent": 1.0,
+                    "top_k": 64,
+                    "top_p": 0.949999988079071,
+                    "min_p": 0.05000000074505806,
+                    "top_n_sigma": -1.0,
+                    "xtc_probability": 0.0,
+                    "xtc_threshold": 0.10000000149011612,
+                    "typical_p": 1.0,
+                    "repeat_last_n": 64,
+                    "repeat_penalty": 1.0,
+                    "presence_penalty": 0.0,
+                    "frequency_penalty": 0.0,
+                    "dry_multiplier": 0.0,
+                    "dry_base": 1.75,
+                    "dry_allowed_length": 2,
+                    "dry_penalty_last_n": 512,
+                    "mirostat": 0,
+                    "mirostat_tau": 5.0,
+                    "mirostat_eta": 0.10000000149011612,
+                    "max_tokens": 16,
+                    "n_predict": 16,
+                    "n_keep": 0,
+                    "n_discard": 0,
+                    "ignore_eos": false,
+                    "stream": true,
+                    "n_probs": 0,
+                    "min_keep": 0,
+                    "chat_format": "peg-gemma4",
+                    "reasoning_format": "deepseek",
+                    "reasoning_in_content": false,
+                    "generation_prompt": "<|turn>model\n",
+                    "samplers": [
+                      "penalties",
+                      "dry",
+                      "top_n_sigma",
+                      "top_k",
+                      "typ_p",
+                      "top_p",
+                      "min_p",
+                      "xtc",
+                      "temperature"
+                    ],
+                    "speculative.types": "none",
+                    "timings_per_token": false,
+                    "post_sampling_probs": false,
+                    "backend_sampling": false,
+                    "lora": []
+                  },
+                  "next_token": [
+                    {
+                      "has_next_token": false,
+                      "has_new_line": false,
+                      "n_remain": 0,
+                      "n_decoded": 16
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "cancel",
+          "phase": "after_100",
+          "resources": [
+            6,
+            2952852
+          ],
+          "stats": {
+            "active_tasks": 0,
+            "retained_tasks": 0,
+            "tasks": [],
+            "pending_cancellations": 0,
+            "buffered_bytes": 0,
+            "buffered_events": 0,
+            "expired_results": 0,
+            "expiry_tombstones": 0,
+            "result_retention_ms": 30000,
+            "max_tasks": 64,
+            "max_event_bytes_per_task": 1048576,
+            "collector_threads": 1,
+            "submitted": 102,
+            "completed": 1,
+            "cancelled": 101,
+            "failed": 0,
+            "running": true,
+            "upstream_metrics": {
+              "idle": 1,
+              "processing": 0,
+              "deferred": 0,
+              "t_start": 282144881568,
+              "n_prompt_tokens_processed_total": 21,
+              "t_tokens_generation_total": 144,
+              "n_tokens_predicted_total": 16,
+              "t_prompt_processing_total": 211,
+              "n_tokens_max": 36,
+              "n_prompt_tokens_processed": 21,
+              "t_prompt_processing": 211,
+              "n_tokens_predicted": 16,
+              "t_tokens_generation": 144,
+              "n_decode_total": 24,
+              "n_busy_slots_total": 24,
+              "slots": [
+                {
+                  "id": 0,
+                  "n_ctx": 512,
+                  "speculative": false,
+                  "is_processing": false,
+                  "id_task": 317,
+                  "n_prompt_tokens": 17,
+                  "n_prompt_tokens_processed": 1,
+                  "n_prompt_tokens_cache": 0,
+                  "params": {
+                    "seed": 4294967295,
+                    "temperature": 0.0,
+                    "dynatemp_range": 0.0,
+                    "dynatemp_exponent": 1.0,
+                    "top_k": 64,
+                    "top_p": 0.949999988079071,
+                    "min_p": 0.05000000074505806,
+                    "top_n_sigma": -1.0,
+                    "xtc_probability": 0.0,
+                    "xtc_threshold": 0.10000000149011612,
+                    "typical_p": 1.0,
+                    "repeat_last_n": 64,
+                    "repeat_penalty": 1.0,
+                    "presence_penalty": 0.0,
+                    "frequency_penalty": 0.0,
+                    "dry_multiplier": 0.0,
+                    "dry_base": 1.75,
+                    "dry_allowed_length": 2,
+                    "dry_penalty_last_n": 512,
+                    "mirostat": 0,
+                    "mirostat_tau": 5.0,
+                    "mirostat_eta": 0.10000000149011612,
+                    "max_tokens": 16,
+                    "n_predict": 16,
+                    "n_keep": 0,
+                    "n_discard": 0,
+                    "ignore_eos": false,
+                    "stream": true,
+                    "n_probs": 0,
+                    "min_keep": 0,
+                    "chat_format": "peg-gemma4",
+                    "reasoning_format": "deepseek",
+                    "reasoning_in_content": false,
+                    "generation_prompt": "<|turn>model\n",
+                    "samplers": [
+                      "penalties",
+                      "dry",
+                      "top_n_sigma",
+                      "top_k",
+                      "typ_p",
+                      "top_p",
+                      "min_p",
+                      "xtc",
+                      "temperature"
+                    ],
+                    "speculative.types": "none",
+                    "timings_per_token": false,
+                    "post_sampling_probs": false,
+                    "backend_sampling": false,
+                    "lora": []
+                  },
+                  "next_token": [
+                    {
+                      "has_next_token": false,
+                      "has_new_line": false,
+                      "n_remain": 0,
+                      "n_decoded": 16
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "cancel",
+          "warmup_50": [
+            6,
+            2952836
+          ],
+          "repeat_100": [
+            6,
+            2952852
+          ],
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "pending_cancellations": 0,
+          "collector_threads": 1
+        }
+      ]
+    },
+    {
+      "case": "two_engines",
+      "returncode": 0,
+      "seconds": 3.8631310969940387,
+      "offloads": [
+        [
+          "36",
+          "36"
+        ],
+        [
+          "36",
+          "36"
+        ]
+      ],
+      "gpu_offload_confirmed": true,
+      "resource_records": []
+    }
+  ]
+}

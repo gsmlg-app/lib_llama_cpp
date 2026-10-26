@@ -1,0 +1,72 @@
+direct-safe-final.log
+00:00 +0: loading packages/lib_llama_cpp/test/real_model_e2e_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: Gemma 4 E2B real model e2e handles text input
+00:01 +1: Gemma 4 E2B real model e2e handles prompts longer than one decode batch
+00:18 +2: Gemma 4 E2B real model e2e streams text deltas and completes
+00:19 +3: Gemma 4 E2B real model e2e cancels an active stream
+00:21 +4: Gemma 4 E2B real model e2e rejects rendered prompt plus output beyond context and recovers
+00:22 +5: Gemma 4 E2B real model e2e emits a forced structured tool call
+00:25 +6: Gemma 4 E2B real model e2e handles image input
+01:15 +7: Gemma 4 E2B real model e2e rejects media plus reserved output overflow and recovers
+02:06 +8: Gemma 4 E2B real model e2e handles audio input
+02:08 +9: Gemma 4 E2B real model e2e direct and server workers survive closing either native owner
+02:14 +10: streams structured tool-use events
+02:14 +11: (tearDownAll)
+02:14 +11: All tests passed!
+server-safe-final.log
+00:00 +0: loading packages/lib_llama_cpp_server/test/openai_client_test.dart
+00:00 +0: packages/lib_llama_cpp_server/test/openai_client_test.dart: LlamaServerClient builds non-stream chat completion requests
+00:00 +1: packages/lib_llama_cpp_server/test/openai_client_test.dart: LlamaServerClient parses streaming SSE chat completion events
+00:00 +2: packages/lib_llama_cpp_server/test/openai_client_test.dart: LlamaServerClient reads a delayed body before releasing the HTTP connection
+00:00 +3: loading packages/lib_llama_cpp_server/test/http_server_test.dart
+00:00 +3: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer concurrent close calls wait for backend cleanup
+00:00 +4: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer client disconnect during prefill cancels the backend
+00:02 +5: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer GET /healthz reports loaded model
+00:02 +6: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer GET /v1/models returns OpenAI-shaped model list
+00:02 +7: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer POST /v1/chat/completions returns final non-stream JSON
+00:02 +8: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer POST /v1/chat/completions streams SSE chunks and done sentinel
+00:02 +9: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer invalid model returns OpenAI-shaped 404 error
+00:02 +10: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer invalid messages returns OpenAI-shaped 400 error
+00:02 +11: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer invalid JSON request returns OpenAI-shaped 400 error
+00:02 +12: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer unsupported media content is rejected before backend submit
+00:02 +13: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer backend error returns OpenAI-shaped 500 error
+00:02 +14: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer native request errors map to HTTP 400 with their code
+00:02 +15: packages/lib_llama_cpp_server/test/http_server_test.dart: LlamaHttpServer an empty stream fails instead of returning only DONE
+00:02 +16: loading packages/lib_llama_cpp_server/test/llcs_worker_engine_test.dart
+00:02 +16: packages/lib_llama_cpp_server/test/llcs_worker_engine_test.dart: immediate cancellation waits for submit and native cancel acknowledgment
+00:02 +17: packages/lib_llama_cpp_server/test/llcs_worker_engine_test.dart: blocking native lifecycle stays off event loop; prefill cancellation recovers
+00:03 +18: loading packages/lib_llama_cpp_server/test/llcs_engine_test.dart
+00:03 +18: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngineConfig maps Dart config to llcs JSON
+00:03 +19: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine create failure accepts message-shaped native error JSON
+00:03 +20: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine create failure accepts legacy error-shaped native JSON
+00:03 +21: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine caps frees returned native strings
+00:03 +22: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine submit failure throws typed exception and frees native error
+00:03 +23: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine poll distinguishes timeout, event, and drained states
+00:03 +24: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine poll rejects unknown event shapes instead of losing data
+00:03 +25: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine poll flattens upstream delta arrays and ignores null begin markers
+00:03 +26: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine native errors retain their stable code and parameter
+00:03 +27: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine stream skips poll timeouts and cancels on listener cancellation
+00:03 +28: packages/lib_llama_cpp_server/test/llcs_engine_test.dart: LlcsEngine close is idempotent
+00:03 +29: loading packages/lib_llama_cpp_server/test/config_test.dart
+00:03 +29: packages/lib_llama_cpp_server/test/config_test.dart: CLI preserves long context configuration
+00:03 +30: packages/lib_llama_cpp_server/test/config_test.dart: unknown options fail instead of silently using defaults
+00:03 +31: loading packages/lib_llama_cpp_server/test/native_server_e2e_test.dart
+00:03 +31: packages/lib_llama_cpp_server/test/native_server_e2e_test.dart: Gemma 4 E2B native server API e2e (setUpAll)
+00:04 +31: packages/lib_llama_cpp_server/test/native_server_e2e_test.dart: Gemma 4 E2B native server API e2e GET /healthz
+00:04 +32: packages/lib_llama_cpp_server/test/native_server_e2e_test.dart: Gemma 4 E2B native server API e2e GET /v1/models
+00:04 +33: packages/lib_llama_cpp_server/test/native_server_e2e_test.dart: Gemma 4 E2B native server API e2e POST /v1/chat/completions non-streaming
+00:04 +34: packages/lib_llama_cpp_server/test/native_server_e2e_test.dart: Gemma 4 E2B native server API e2e POST /v1/chat/completions streaming
+00:06 +35: packages/lib_llama_cpp_server/test/native_server_e2e_test.dart: Gemma 4 E2B native server API e2e (tearDownAll)
+00:06 +35: All tests passed!
+real grammar probe --safe: successful sample and cleanup
+sched_reserve: reserve took 2.21 ms, sched copies = 1
+sample accepted token=236746; now cleanup
+~llama_context:        CPU compute buffer size is  32.4390 MiB, matches expectation of  32.4390 MiB
+direct safe isolated regression
+......
+----------------------------------------------------------------------
+Ran 6 tests in 8.699s
+
+OK
+

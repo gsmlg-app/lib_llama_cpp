@@ -1,0 +1,35 @@
+--- source/packages/lib_llama_cpp_ffi/test/native/test_engine.py
++++ task-only effective strict Vulkan harness
+@@ -153,17 +153,21 @@
+         assert engine.read(engine.error)["code"] == "backend"
+         return
+     if name == "native_ceiling":
+-        engine = Engine({"model_path": MODEL, "n_ctx": 2147483647, "n_gpu_layers": 0})
++        engine = Engine({"model_path": MODEL, "n_ctx": 2147483647, "n_gpu_layers": 99, "backend": "vulkan", "require_backend": True})
+         assert not engine.ptr
+         assert engine.read(engine.error)["code"] == "context_overflow"
+         return
+     engine = Engine({"model_path": MODEL, "n_ctx": 512, "n_batch": 64, "n_ubatch": 64,
+-                     "n_parallel": 1, "n_gpu_layers": 0,
++                     "n_parallel": 1, "n_gpu_layers": 99, "backend": "vulkan", "require_backend": True,
+                      "result_retention_ms": 100 if name == "expiry" else 30000})
+     assert engine.ptr, engine.read(engine.error)
+     engine.lib.llcs_engine_caps.argtypes = [ctypes.c_void_p]
+     engine.lib.llcs_engine_caps.restype = ctypes.c_void_p
+     caps = engine.read(engine.lib.llcs_engine_caps(engine.ptr))
++    assert caps["selected_backend"] == "vulkan" and caps["require_backend"] is True, caps
++    assert caps["requested"]["n_gpu_layers"] == 99 and caps["degradation"] == "", caps
++    assert any(d["backend"].lower() == "vulkan" and d["type"] != "cpu" for d in caps["device_info"]), caps
++    print(json.dumps({"case": name, "strict_vulkan_caps": caps}), flush=True)
+     assert caps["effective"]["n_batch"] == 64, caps
+     assert caps["effective"]["cache_type_k"] == "f16", caps
+     assert caps["effective"]["swa_full"] is False, caps
+@@ -310,7 +314,7 @@
+             assert engine.read(engine.lib.llcs_engine_poll(engine.ptr, task, 100)) is None
+         elif name in ["stream", "two_engines"]:
+             if name == "two_engines":
+-                other = Engine({"model_path": MODEL, "n_ctx": 512, "n_gpu_layers": 0})
++                other = Engine({"model_path": MODEL, "n_ctx": 512, "n_gpu_layers": 99, "backend": "vulkan", "require_backend": True})
+                 assert other.ptr, other.read(other.error)
+                 other.close()
+             engine.complete(body)

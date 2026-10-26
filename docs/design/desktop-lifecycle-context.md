@@ -24,6 +24,16 @@ Additional integration regressions cover delayed HTTP response bodies, DONE-only
 streams, missing terminal events, queued direct cancellation behind a paused
 request, and requested versus advertised accelerator support.
 
+The final ABI audit also reproduced a direct sampling abort with a real GGUF:
+upstream `llama_sampler_sample` already accepts the sampled token; the former
+second `llama_sampler_accept` advanced a grammar twice and threw. Direct calls
+now use thin exception-safe adapters for load/context, tokenization, piece
+conversion, decode and sampler operations, and accept each sampled token once.
+Sampler construction owns both the chain and each child until insertion succeeds.
+Six isolated native tests include actual upstream grammar/sampler execution and
+injected allocation failures, including chain insertion, followed by recovery.
+These adapters do not introduce a second generation loop or modify the vendor pin.
+
 ## Ownership and execution paths
 
 | Resource | Direct Dart API | HTTP/native server API |
@@ -35,6 +45,11 @@ request, and requested versus advertised accelerator support.
 
 Direct and server paths remain separate because this pinned server path rejects
 images/audio. Direct `mtmd` image/audio and tool entry points remain available.
+The pre-existing direct `peg-gemma4` policy still omits the generated sampling
+grammar. Tool templates and output parsing are active and real tool requests
+are tested, but this path does not guarantee schema-constrained token generation.
+The safe ABI and once-only acceptance repair do not by themselves validate all
+Gemma4 lazy/non-lazy generated grammars. Server grammar handling remains upstream.
 There is no automatic fallback that loads a second model or context. Opening two
 engines explicitly creates two owners and requires memory for both. A shared,
 reference-counted backend lease prevents one owner from freeing process-global
@@ -80,6 +95,11 @@ the cancellation barrier cleared and task/buffer counters returned to zero.
 Both FIN and RST disconnects were tested. This is a measured configuration, not
 a universal latency guarantee. Native upstream defaults remain available;
 the long-window throughput measurements explicitly use 1024/256.
+The default-name consumer smoke uses 32/32 and at most eight available CPU
+threads so small CI runners can meet its unchanged 15-second recovery limit.
+It waits for fresh partial-prefill progress before disconnecting; receiving only
+an initial heartbeat cannot satisfy this check. The tested two-core CPU recovered
+in 4.462 seconds; the unrestricted host recovered in 0.795 seconds.
 
 ### Slow consumers and bounded retention
 
@@ -175,6 +195,7 @@ The immutable fixture remains the repository's Gemma Q4_K_M model:
 
 ```sh
 python3 tools/gguf_metadata.py "$MODEL" > model-metadata.json
+python3 packages/lib_llama_cpp_ffi/test/native/test_direct_safe.py
 python3 packages/lib_llama_cpp_ffi/test/native/test_engine.py "$LIBRARY" "$MODEL"
 LIB_LLAMA_CPP_TEST_LIBRARY="$LIBRARY" \
 LIB_LLAMA_CPP_TEST_CPU_LIBRARY="$CPU_LIBRARY" \
@@ -213,7 +234,7 @@ GB10 unified memory means RSS and GPU allocation can overlap; do not sum them.
 
 Acceptance results and exact tested build identities are maintained in
 [the validation record](../validation/gemma4-2026-10-27/README.md). Initial CPU/GPU
-measurements are not a claim about unexecuted Windows/Vulkan combinations. Q8 KV
+measurements are not a claim about unexecuted Windows/backend combinations. Q8 KV
 has not replaced the measured F16 baseline.
 
 ## Deployment and release evidence
@@ -226,6 +247,9 @@ DLL directory on Windows). The default-name consumer smoke deliberately omits
 `--library`. Explicit accelerator paths use the same shim-symbol validation and
 must come from the matching package release. A plain upstream `libllama.so` or
 `llama.dll` is not a substitute.
+MSVC builds explicitly export the embedded static ggml device/registration API;
+exporting only wrapper object symbols missed these functions. Desktop E2E now
+checks all eight enumeration symbols before exercising direct inference.
 
 Separate CUDA/Vulkan GitHub assets require their dependent runtime libraries.
 CUDA builds link to the toolkit selected by the build workflow, plus the host
