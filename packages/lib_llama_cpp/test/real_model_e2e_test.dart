@@ -19,13 +19,15 @@ void main() {
   final hasRuntime = libraryPath.isNotEmpty && modelPath.isNotEmpty;
   final hasMultimodalRuntime = hasRuntime && mmprojPath.isNotEmpty;
 
-  late final LlamaOpenAIClient client;
+  late LlamaOpenAIClient client;
+  late ResidentLlamaEngine engine;
 
-  setUpAll(() {
+  void configureClient() {
     if (!hasRuntime) {
       return;
     }
 
+    engine = ResidentLlamaEngine(platform: _FixedLibraryPlatform(libraryPath));
     client = LlamaOpenAIClient(
       models: {
         _modelName: LlamaModelConfig(
@@ -34,15 +36,21 @@ void main() {
           contextSize: 4096,
         ),
       },
-      engine: LibLlamaCpp(platform: _FixedLibraryPlatform(libraryPath)),
+      engine: engine,
     );
+  }
+
+  setUpAll(configureClient);
+
+  tearDownAll(() async {
+    if (hasRuntime) await engine.close();
   });
 
   group('Gemma 4 E2B real model e2e', () {
     test('handles text input', () async {
       final response = await client.responses.create(
         model: _modelName,
-        input: _gemmaUserPrompt('Reply with one short greeting.'),
+        input: 'Reply with one short greeting.',
         maxOutputTokens: 24,
         temperature: 0,
       );
@@ -51,54 +59,40 @@ void main() {
       expect(response.outputText.trim(), isNotEmpty);
     }, timeout: const Timeout(Duration(minutes: 4)));
 
-    test(
-      'handles prompts longer than one decode batch',
-      () async {
-        final response = await client.responses.create(
-          model: _modelName,
-          input: _gemmaUserPrompt(
-            'Reply with OK after reading this list: '
-            '${List.filled(2300, 'word').join(' ')}',
-          ),
-          maxOutputTokens: 8,
-          temperature: 0,
-        );
+    test('handles prompts longer than one decode batch', () async {
+      final response = await client.responses.create(
+        model: _modelName,
+        input:
+            'Reply with OK after reading this list: ${List.filled(2300, 'word').join(' ')}',
+        maxOutputTokens: 8,
+        temperature: 0,
+      );
 
-        expect(response.status, 'completed');
-        expect(response.outputText.trim(), isNotEmpty);
-      },
-      timeout: const Timeout(Duration(minutes: 5)),
-    );
+      expect(response.status, 'completed');
+      expect(response.outputText.trim(), isNotEmpty);
+    }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test(
-      'streams text deltas and completes',
-      () async {
-        final events = await client.responses
-            .stream(
-              model: _modelName,
-              input: _gemmaUserPrompt(
-                'Reply with one short sentence about local inference.',
-              ),
-              maxOutputTokens: 32,
-              temperature: 0,
-            )
-            .toList();
+    test('streams text deltas and completes', () async {
+      final events = await client.responses
+          .stream(
+            model: _modelName,
+            input: 'Reply with one short sentence about local inference.',
+            maxOutputTokens: 32,
+            temperature: 0,
+          )
+          .toList();
 
-        expect(events.first, isA<LlamaResponseCreated>());
-        expect(events.whereType<LlamaResponseOutputTextDelta>(), isNotEmpty);
-        expect(events.whereType<LlamaResponseCompleted>(), hasLength(1));
-        expect(events.last, isA<LlamaResponseCompleted>());
-      },
-      timeout: const Timeout(Duration(minutes: 4)),
-    );
+      expect(events.first, isA<LlamaResponseCreated>());
+      expect(events.whereType<LlamaResponseOutputTextDelta>(), isNotEmpty);
+      expect(events.whereType<LlamaResponseCompleted>(), hasLength(1));
+      expect(events.last, isA<LlamaResponseCompleted>());
+    }, timeout: const Timeout(Duration(minutes: 4)));
 
     test('cancels an active stream', () async {
       final iterator = StreamIterator(
         client.responses.stream(
           model: _modelName,
-          input: _gemmaUserPrompt(
-            'Count upward from one, one number per line.',
-          ),
+          input: 'Count upward from one, one number per line.',
           maxOutputTokens: 256,
           temperature: 0,
         ),
@@ -125,47 +119,81 @@ void main() {
 
       expect(sawDelta, isTrue);
       await iterator.cancel().timeout(const Duration(seconds: 10));
+      final next = await client.responses.create(
+        model: _modelName,
+        input: 'Reply with a short greeting.',
+        maxOutputTokens: 64,
+        temperature: 0,
+      );
+      expect(next.outputText.trim(), isNotEmpty);
+      expect(next.usage?.inputTokens, greaterThan(0));
     }, timeout: const Timeout(Duration(minutes: 4)));
 
     test(
-      'emits a forced structured tool call',
+      'rejects rendered prompt plus output beyond context and recovers',
       () async {
-        final events = await client.responses
-            .stream(
-              model: _modelName,
-              input:
-                  'Use the lookup_weather tool for Paris. Do not answer directly.',
-              maxOutputTokens: 96,
-              temperature: 0,
-              tools: const [
-                LlamaTool(
-                  name: 'lookup_weather',
-                  description: 'Look up current weather for a city.',
-                  parameters: {
-                    'type': 'object',
-                    'properties': {
-                      'city': {'type': 'string', 'description': 'City name.'},
-                    },
-                    'required': ['city'],
-                  },
-                ),
-              ],
-              toolChoice: const LlamaToolChoice.tool('lookup_weather'),
-            )
-            .toList();
-
-        expect(events.first, isA<LlamaResponseCreated>());
-        expect(events.whereType<LlamaResponseFailed>(), isEmpty);
-        final toolCall = events
-            .whereType<LlamaResponseToolCallDone>()
-            .single
-            .toolCall;
-        expect(toolCall.name, 'lookup_weather');
-        expect(jsonDecode(toolCall.arguments), containsPair('city', 'Paris'));
-        expect(events.last, isA<LlamaResponseRequiresAction>());
+        await expectLater(
+          client.responses.create(
+            model: _modelName,
+            input: 'Hello',
+            maxOutputTokens: 4096,
+          ),
+          throwsA(
+            isA<LlamaOpenAIException>().having(
+              (error) => error.message,
+              'message',
+              contains('Context budget exceeded'),
+            ),
+          ),
+        );
+        final response = await client.responses.create(
+          model: _modelName,
+          input: 'Reply with a short greeting.',
+          maxOutputTokens: 64,
+          temperature: 0,
+        );
+        expect(response.outputText.trim(), isNotEmpty);
+        expect(response.usage?.inputTokens, greaterThan(0));
+        expect(response.usage?.outputTokens, lessThanOrEqualTo(64));
       },
-      timeout: const Timeout(Duration(minutes: 5)),
+      timeout: const Timeout(Duration(minutes: 4)),
     );
+
+    test('emits a forced structured tool call', () async {
+      final events = await client.responses
+          .stream(
+            model: _modelName,
+            input:
+                'Use the lookup_weather tool for Paris. Do not answer directly.',
+            maxOutputTokens: 96,
+            temperature: 0,
+            tools: const [
+              LlamaTool(
+                name: 'lookup_weather',
+                description: 'Look up current weather for a city.',
+                parameters: {
+                  'type': 'object',
+                  'properties': {
+                    'city': {'type': 'string', 'description': 'City name.'},
+                  },
+                  'required': ['city'],
+                },
+              ),
+            ],
+            toolChoice: const LlamaToolChoice.tool('lookup_weather'),
+          )
+          .toList();
+
+      expect(events.first, isA<LlamaResponseCreated>());
+      expect(events.whereType<LlamaResponseFailed>(), isEmpty);
+      final toolCall = events
+          .whereType<LlamaResponseToolCallDone>()
+          .single
+          .toolCall;
+      expect(toolCall.name, 'lookup_weather');
+      expect(jsonDecode(toolCall.arguments), containsPair('city', 'Paris'));
+      expect(events.last, isA<LlamaResponseRequiresAction>());
+    }, timeout: const Timeout(Duration(minutes: 5)));
 
     test(
       'handles image input',
@@ -195,6 +223,55 @@ void main() {
     );
 
     test(
+      'rejects media plus reserved output overflow and recovers',
+      () async {
+        final input = [
+          LlamaResponseInputItem(
+            role: 'user',
+            content: [
+              const LlamaTextPart('Briefly describe this image.'),
+              LlamaImageBytesPart(bytes: _redPixelPng(), mimeType: 'image/png'),
+            ],
+          ),
+        ];
+        await expectLater(
+          client.responses.create(
+            model: _modelName,
+            input: input,
+            maxOutputTokens: 4096,
+          ),
+          throwsA(
+            isA<LlamaOpenAIException>()
+                .having((error) => error.code, 'code', 'context_overflow')
+                .having(
+                  (error) => error.details?['prompt_tokens'],
+                  'prompt_tokens',
+                  greaterThan(0),
+                ),
+          ),
+        );
+        final media = await client.responses.create(
+          model: _modelName,
+          input: input,
+          maxOutputTokens: 48,
+          temperature: 0,
+        );
+        expect(media.status, 'completed');
+        expect(media.usage?.inputTokens, greaterThan(0));
+        expect(media.usage?.outputTokens, lessThanOrEqualTo(48));
+        final text = await client.responses.create(
+          model: _modelName,
+          input: 'Reply with a short greeting.',
+          maxOutputTokens: 64,
+          temperature: 0,
+        );
+        expect(text.outputText.trim(), isNotEmpty);
+      },
+      skip: !hasMultimodalRuntime,
+      timeout: const Timeout(Duration(minutes: 8)),
+    );
+
+    test(
       'handles audio input',
       () async {
         final response = await client.responses.create(
@@ -219,6 +296,51 @@ void main() {
       },
       skip: !hasMultimodalRuntime,
       timeout: const Timeout(Duration(minutes: 5)),
+    );
+    test(
+      'direct and server workers survive closing either native owner',
+      () async {
+        LlcsWorkerEngine? peer;
+        Future<LlcsWorkerEngine> openPeer() => LlcsWorkerEngine.open(
+          libraryPath: libraryPath,
+          config: LlcsEngineConfig(
+            modelPath: modelPath,
+            nCtx: 4096,
+            nGpuLayers: 0,
+            backend: 'cpu',
+            nThreads: 2,
+            nThreadsBatch: 2,
+          ),
+        );
+        try {
+          final first = await client.responses.create(
+            model: _modelName,
+            input: 'Reply with a short greeting.',
+            maxOutputTokens: 64,
+            temperature: 0,
+          );
+          expect(first.outputText.trim(), isNotEmpty);
+          peer = await openPeer();
+          await _expectWorkerCompletion(peer);
+          await peer.close();
+          final afterServerClose = await client.responses.create(
+            model: _modelName,
+            input: 'Reply with a short greeting.',
+            maxOutputTokens: 64,
+            temperature: 0,
+          );
+          expect(afterServerClose.outputText.trim(), isNotEmpty);
+          peer = await openPeer();
+          await engine.close();
+          await _expectWorkerCompletion(peer);
+        } finally {
+          await peer?.close();
+          await engine.close();
+          // Restore the fixture so this regression remains independent of order.
+          configureClient();
+        }
+      },
+      timeout: const Timeout(Duration(minutes: 10)),
     );
   }, skip: !hasRuntime);
 
@@ -269,10 +391,6 @@ void main() {
     expect(requiresAction.response.status, 'requires_action');
     expect(events.last, isA<LlamaResponseRequiresAction>());
   });
-}
-
-String _gemmaUserPrompt(String text) {
-  return '<|turn>user\n$text<turn|>\n<|turn>model\n';
 }
 
 final class _FixedLibraryPlatform extends LibLlamaCppPlatform {
@@ -347,4 +465,28 @@ Uint8List _sineWaveWav() {
   }
 
   return bytes.buffer.asUint8List();
+}
+
+Future<void> _expectWorkerCompletion(LlcsWorkerEngine worker) async {
+  final events = await worker.stream({
+    'messages': [
+      {'role': 'user', 'content': 'Reply with a short greeting.'},
+    ],
+    'stream': true,
+    'max_tokens': 128,
+    'temperature': 0,
+    'chat_template_kwargs': {'enable_thinking': false},
+  }).toList();
+  expect(events.where((event) => event.containsKey('error')), isEmpty);
+  final choices = events
+      .expand((event) => event['choices'] as List? ?? const [])
+      .whereType<Map<Object?, Object?>>();
+  expect(choices.any((choice) => choice['finish_reason'] != null), isTrue);
+  final text = choices.map((choice) {
+    final delta = choice['delta'];
+    return delta is Map && delta['content'] is String
+        ? delta['content'] as String
+        : '';
+  }).join();
+  expect(text.trim(), isNotEmpty);
 }

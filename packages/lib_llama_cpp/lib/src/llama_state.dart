@@ -5,20 +5,42 @@ final class LlamaModelCapabilities {
     this.image = false,
     this.audio = false,
     this.tools = false,
+    this.reasoning,
   });
+
+  factory LlamaModelCapabilities.fromTemplateCapabilities(
+    Map<String, Object?> templateCapabilities, {
+    bool hasChatTemplate = false,
+    bool image = false,
+    bool audio = false,
+  }) {
+    return LlamaModelCapabilities(
+      chatTemplate: hasChatTemplate,
+      image: image,
+      audio: audio,
+      tools:
+          templateCapabilities['supports_tools'] == true &&
+          templateCapabilities['supports_tool_calls'] == true,
+      reasoning: templateCapabilities['supports_reasoning'] as bool?,
+    );
+  }
 
   const LlamaModelCapabilities.empty()
     : text = false,
       chatTemplate = false,
       image = false,
       audio = false,
-      tools = false;
+      tools = false,
+      reasoning = false;
 
   final bool text;
   final bool chatTemplate;
   final bool image;
   final bool audio;
   final bool tools;
+
+  /// Null means the native template probe could not determine reasoning support.
+  final bool? reasoning;
 
   @override
   bool operator ==(Object other) {
@@ -28,11 +50,13 @@ final class LlamaModelCapabilities {
             other.chatTemplate == chatTemplate &&
             other.image == image &&
             other.audio == audio &&
-            other.tools == tools;
+            other.tools == tools &&
+            other.reasoning == reasoning;
   }
 
   @override
-  int get hashCode => Object.hash(text, chatTemplate, image, audio, tools);
+  int get hashCode =>
+      Object.hash(text, chatTemplate, image, audio, tools, reasoning);
 
   @override
   String toString() {
@@ -41,7 +65,8 @@ final class LlamaModelCapabilities {
         'chatTemplate: $chatTemplate, '
         'image: $image, '
         'audio: $audio, '
-        'tools: $tools'
+        'tools: $tools, '
+        'reasoning: $reasoning'
         ')';
   }
 }

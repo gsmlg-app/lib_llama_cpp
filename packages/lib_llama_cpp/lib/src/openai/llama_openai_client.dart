@@ -7,16 +7,25 @@ import 'responses.dart';
 final class LlamaOpenAIClient {
   LlamaOpenAIClient({
     required Map<String, LlamaModelConfig> models,
-    LlamaEngine engine = const LibLlamaCpp(),
-  }) : _models = Map.unmodifiable(models) {
+    LlamaEngine? engine,
+  }) : _models = Map.unmodifiable(models),
+       _ownedEngine = engine == null ? ResidentLlamaEngine() : null {
+    final effectiveEngine = engine ?? _ownedEngine!;
     responses = LlamaResponsesResource(
       resolveModel: _resolveModel,
-      engine: engine,
+      engine: effectiveEngine,
     );
     chat = LlamaChatResource(responses: responses);
   }
 
   final Map<String, LlamaModelConfig> _models;
+  final ResidentLlamaEngine? _ownedEngine;
+
+  /// Releases the default resident engine; injected engines retain their owner.
+  Future<void> close() async {
+    await _ownedEngine?.close();
+  }
+
   late final LlamaResponsesResource responses;
   late final LlamaChatResource chat;
 

@@ -83,9 +83,11 @@ final class LlamaToolCallResponse extends LlamaResponse {
 }
 
 final class LlamaErrorResponse extends LlamaResponse {
-  const LlamaErrorResponse({required this.message});
+  const LlamaErrorResponse({required this.message, this.code, this.details});
 
   final String message;
+  final String? code;
+  final Map<String, Object?>? details;
 
   @override
   bool operator ==(Object other) {
@@ -101,7 +103,15 @@ final class LlamaErrorResponse extends LlamaResponse {
 }
 
 final class LlamaDoneResponse extends LlamaResponse {
-  const LlamaDoneResponse();
+  const LlamaDoneResponse({
+    this.inputTokens,
+    this.outputTokens,
+    this.finishReason,
+  });
+
+  final int? inputTokens;
+  final int? outputTokens;
+  final String? finishReason;
 
   @override
   bool operator ==(Object other) {

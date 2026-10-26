@@ -4,12 +4,14 @@ final class LlamaOpenAIException implements Exception {
     required this.message,
     this.param,
     this.type = 'invalid_request_error',
+    this.details,
   });
 
   final String code;
   final String message;
   final String? param;
   final String type;
+  final Map<String, Object?>? details;
 
   @override
   String toString() {

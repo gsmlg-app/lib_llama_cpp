@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
@@ -101,16 +102,72 @@ void main() {
       expect(
         engine.commands,
         contains(
-          const LlamaGenerateCommand(
-            prompt: 'Write one sentence.',
-            maxTokens: 16,
-            temperature: 0.7,
-            topP: 0.9,
-            stop: ['</s>'],
-          ),
+          isA<LlamaGenerateMessagesCommand>()
+              .having(
+                (c) => c.messages.single.content,
+                'content',
+                'Write one sentence.',
+              )
+              .having((c) => c.maxTokens, 'maxTokens', 16)
+              .having((c) => c.temperature, 'temperature', 0.7)
+              .having((c) => c.topP, 'topP', 0.9)
+              .having((c) => c.stop, 'stop', ['</s>']),
         ),
       );
     });
+
+    test(
+      'preserves instructions and ordinary message history without manual template text',
+      () async {
+        final engine = ScriptedLlamaEngine([
+          const LlamaTokenResponse(text: '你好😀𠮷', index: 0),
+          const LlamaDoneResponse(
+            inputTokens: 21,
+            outputTokens: 5,
+            finishReason: 'length',
+          ),
+          const LlamaDoneResponse(),
+        ]);
+        final client = LlamaOpenAIClient(
+          models: {
+            'local': const LlamaModelConfig(modelPath: '/models/local.gguf'),
+          },
+          engine: engine,
+        );
+        final response = await client.responses.create(
+          model: 'local',
+          instructions: 'Be concise.',
+          input:
+              jsonDecode(
+                    jsonEncode([
+                      {'role': 'user', 'content': '你好'},
+                      {'role': 'assistant', 'content': 'Hello'},
+                      {'role': 'user', 'content': 'Continue 😀'},
+                    ]),
+                  )
+                  as Object,
+        );
+        final command = engine.commands
+            .whereType<LlamaGenerateMessagesCommand>()
+            .single;
+        expect(command.messages.map((m) => m.role), [
+          'system',
+          'user',
+          'assistant',
+          'user',
+        ]);
+        expect(command.messages.map((m) => m.content), [
+          'Be concise.',
+          '你好',
+          'Hello',
+          'Continue 😀',
+        ]);
+        expect(response.usage?.inputTokens, 21);
+        expect(response.usage?.outputTokens, 5);
+        expect(response.usage?.totalTokens, 26);
+        expect(response.finishReason, 'length');
+      },
+    );
 
     test('store true fails explicitly', () async {
       final client = LlamaOpenAIClient(
@@ -151,6 +208,48 @@ void main() {
       );
     });
 
+    test('preserves structured native errors in responses and chat', () async {
+      final client = LlamaOpenAIClient(
+        models: {
+          'local': const LlamaModelConfig(modelPath: '/models/local.gguf'),
+        },
+        engine: ScriptedLlamaEngine([
+          const LlamaErrorResponse(
+            message: 'media prompt plus requested output exceeds context',
+            code: 'context_overflow',
+            details: {'prompt_tokens': 271, 'max_tokens': 4096, 'n_ctx': 4096},
+          ),
+        ]),
+      );
+      final matcher = isA<LlamaOpenAIException>()
+          .having((error) => error.code, 'code', 'context_overflow')
+          .having(
+            (error) => error.details?['prompt_tokens'],
+            'prompt_tokens',
+            271,
+          )
+          .having(
+            (error) => error.message,
+            'message',
+            'media prompt plus requested output exceeds context',
+          );
+      await expectLater(
+        client.responses.create(model: 'local', input: 'Hello'),
+        throwsA(matcher),
+      );
+      await expectLater(
+        client.chat.completions.create(
+          model: 'local',
+          messages: const [LlamaChatMessage(role: 'user', content: 'Hello')],
+        ),
+        throwsA(matcher),
+      );
+      final events = await client.responses
+          .stream(model: 'local', input: 'Hello')
+          .toList();
+      expect(events.whereType<LlamaResponseFailed>().single.error, matcher);
+    });
+
     test('unsupported input shape fails explicitly', () async {
       final client = LlamaOpenAIClient(
         models: {
@@ -186,10 +285,11 @@ void main() {
       );
 
       expect(response.outputText, 'Hello back');
-      expect(
-        engine.commands,
-        contains(const LlamaGenerateCommand(prompt: 'Hello')),
-      );
+      final generation = engine.commands
+          .whereType<LlamaGenerateMessagesCommand>()
+          .single;
+      expect(generation.messages.single.content, 'Hello');
+      expect(engine.commands.whereType<LlamaGenerateCommand>(), isEmpty);
     });
   });
 
@@ -269,7 +369,11 @@ void main() {
       expect(completion.choices.single.message.content, 'Hello from llama.cpp');
       expect(
         engine.commands,
-        contains(const LlamaGenerateCommand(prompt: 'Hello', maxTokens: 4)),
+        contains(
+          isA<LlamaGenerateMessagesCommand>()
+              .having((c) => c.messages.single.content, 'content', 'Hello')
+              .having((c) => c.maxTokens, 'maxTokens', 4),
+        ),
       );
     });
   });

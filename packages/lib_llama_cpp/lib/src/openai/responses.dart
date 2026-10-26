@@ -1,6 +1,5 @@
 import '../lib_llama_cpp.dart';
 import '../llama_command.dart';
-import '../llama_content.dart';
 import '../llama_response.dart';
 import '../llama_tool.dart';
 import 'errors.dart';
@@ -19,6 +18,7 @@ final class LlamaResponseObject {
     this.error,
     this.metadata = const {},
     this.usage,
+    this.finishReason,
     this.toolCalls = const [],
   });
 
@@ -31,6 +31,7 @@ final class LlamaResponseObject {
   final LlamaOpenAIException? error;
   final Map<String, String> metadata;
   final LlamaResponseUsage? usage;
+  final String? finishReason;
   final List<LlamaToolCall> toolCalls;
 }
 
@@ -186,6 +187,7 @@ final class LlamaResponsesResource {
     _validateCapabilities(config: config, messages: messages);
     final output = StringBuffer();
     final toolCalls = <LlamaToolCall>[];
+    LlamaDoneResponse? completion;
 
     final commands = Stream<LlamaCommand>.fromIterable(
       _commandsForRequest(
@@ -198,7 +200,6 @@ final class LlamaResponsesResource {
         tools: tools,
         toolChoice: toolChoice,
         parallelToolCalls: parallelToolCalls,
-        forceMessages: tools.isNotEmpty || _requiresMessageGeneration(messages),
       ),
     );
 
@@ -208,19 +209,21 @@ final class LlamaResponsesResource {
           output.write(text);
         case LlamaToolCallResponse(:final toolCall):
           toolCalls.add(toolCall);
-        case LlamaErrorResponse(:final message):
+        case LlamaErrorResponse(:final message, :final code, :final details):
           throw LlamaOpenAIException(
-            code: 'generation_failed',
+            code: code ?? 'generation_failed',
             message: message,
+            details: details,
             type: 'server_error',
           );
-        case LlamaReadyResponse() ||
-            LlamaStateChangedResponse() ||
-            LlamaDoneResponse():
+        case LlamaDoneResponse():
+          if (response.inputTokens != null) completion = response;
+        case LlamaReadyResponse() || LlamaStateChangedResponse():
           break;
       }
     }
 
+    _ensureEngineOpen();
     final now = DateTime.now().toUtc();
     final outputText = output.toString();
 
@@ -237,11 +240,8 @@ final class LlamaResponsesResource {
       outputText: outputText,
       metadata: metadata,
       toolCalls: toolCalls,
-      usage: const LlamaResponseUsage(
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-      ),
+      usage: _usage(completion),
+      finishReason: completion?.finishReason,
     );
   }
 
@@ -276,6 +276,7 @@ final class LlamaResponsesResource {
 
     final output = StringBuffer();
     final toolCalls = <LlamaToolCall>[];
+    LlamaDoneResponse? completion;
 
     try {
       if (store) {
@@ -300,8 +301,6 @@ final class LlamaResponsesResource {
           tools: tools,
           toolChoice: toolChoice,
           parallelToolCalls: parallelToolCalls,
-          forceMessages:
-              tools.isNotEmpty || _requiresMessageGeneration(messages),
         ),
       );
 
@@ -313,21 +312,23 @@ final class LlamaResponsesResource {
           case LlamaToolCallResponse(:final toolCall):
             toolCalls.add(toolCall);
             yield LlamaResponseToolCallDone(toolCall: toolCall);
-          case LlamaErrorResponse(:final message):
+          case LlamaErrorResponse(:final message, :final code, :final details):
             yield LlamaResponseFailed(
               error: LlamaOpenAIException(
-                code: 'generation_failed',
+                code: code ?? 'generation_failed',
                 message: message,
+                details: details,
                 type: 'server_error',
               ),
             );
             return;
-          case LlamaReadyResponse() ||
-              LlamaStateChangedResponse() ||
-              LlamaDoneResponse():
+          case LlamaDoneResponse():
+            if (response.inputTokens != null) completion = response;
+          case LlamaReadyResponse() || LlamaStateChangedResponse():
             break;
         }
       }
+      _ensureEngineOpen();
     } on LlamaOpenAIException catch (error) {
       yield LlamaResponseFailed(error: error);
       return;
@@ -351,6 +352,8 @@ final class LlamaResponsesResource {
           outputText: outputText,
           metadata: metadata,
           toolCalls: toolCalls,
+          usage: _usage(completion),
+          finishReason: completion?.finishReason,
         ),
       );
       return;
@@ -366,13 +369,20 @@ final class LlamaResponsesResource {
         output: [LlamaResponseOutputItem(text: outputText)],
         outputText: outputText,
         metadata: metadata,
-        usage: const LlamaResponseUsage(
-          inputTokens: 0,
-          outputTokens: 0,
-          totalTokens: 0,
-        ),
+        usage: _usage(completion),
+        finishReason: completion?.finishReason,
       ),
     );
+  }
+
+  void _ensureEngineOpen() {
+    final engine = _engine;
+    if (engine is ResidentLlamaEngine && engine.isClosed) {
+      throw const LlamaOpenAIException(
+        code: 'generation_cancelled',
+        message: 'The inference session was closed during generation.',
+      );
+    }
   }
 
   List<LlamaMessage> _messagesFromInput(Object input, {String? instructions}) {
@@ -387,6 +397,9 @@ final class LlamaResponsesResource {
             toolCallId: item.toolCallId,
             name: item.name,
           ),
+      ],
+      final List<Object?> items => [
+        for (final item in items) _messageFromObject(item),
       ],
       _ => throw const LlamaOpenAIException(
         code: 'unsupported_parameter',
@@ -413,52 +426,37 @@ final class LlamaResponsesResource {
     required List<LlamaTool> tools,
     required LlamaToolChoice toolChoice,
     required bool parallelToolCalls,
-    required bool forceMessages,
   }) sync* {
     yield LlamaLoadModelCommand(
       modelPath: config.modelPath,
       contextSize: config.contextSize,
       gpuLayerCount: config.gpuLayerCount,
+      batchSize: config.batchSize,
+      microBatchSize: config.microBatchSize,
+      threadCount: config.threadCount,
+      batchThreadCount: config.batchThreadCount,
+      flashAttention: config.flashAttention,
+      cacheTypeK: config.cacheTypeK,
+      cacheTypeV: config.cacheTypeV,
+      swaFull: config.swaFull,
       mmprojPath: config.mmprojPath,
       mmprojUseGpu: config.mmprojUseGpu,
       imageMinTokens: config.imageMinTokens,
       imageMaxTokens: config.imageMaxTokens,
     );
 
-    if (forceMessages) {
-      yield LlamaGenerateMessagesCommand(
-        messages: messages,
-        maxTokens: maxOutputTokens,
-        temperature: temperature,
-        topP: topP,
-        stop: stop,
-        tools: tools,
-        toolChoice: toolChoice,
-        parallelToolCalls: parallelToolCalls,
-      );
-    } else {
-      yield LlamaGenerateCommand(
-        prompt: _promptFromMessages(messages),
-        maxTokens: maxOutputTokens,
-        temperature: temperature,
-        topP: topP,
-        stop: stop,
-      );
-    }
+    yield LlamaGenerateMessagesCommand(
+      messages: messages,
+      maxTokens: maxOutputTokens,
+      temperature: temperature,
+      topP: topP,
+      stop: stop,
+      tools: tools,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
+    );
 
     yield const LlamaDisposeCommand();
-  }
-
-  String _promptFromMessages(List<LlamaMessage> messages) {
-    if (messages.length == 1 && messages.single.role == 'user') {
-      return llamaContentToPlainText(messages.single.content);
-    }
-    return messages
-        .map(
-          (message) =>
-              '${message.role}: ${llamaContentToPlainText(message.content)}',
-        )
-        .join('\n');
   }
 
   void _validateCapabilities({
@@ -474,14 +472,26 @@ final class LlamaResponsesResource {
       );
     }
   }
+}
 
-  bool _requiresMessageGeneration(List<LlamaMessage> messages) {
-    return messages.any(
-      (message) =>
-          message.hasMedia ||
-          message.toolCalls.isNotEmpty ||
-          message.toolCallId != null ||
-          message.name != null,
+LlamaResponseUsage? _usage(LlamaDoneResponse? completion) {
+  final input = completion?.inputTokens;
+  final output = completion?.outputTokens;
+  if (input == null || output == null) return null;
+  return LlamaResponseUsage(
+    inputTokens: input,
+    outputTokens: output,
+    totalTokens: input + output,
+  );
+}
+
+LlamaMessage _messageFromObject(Object? value) {
+  if (value is! Map || value.keys.any((key) => key is! String)) {
+    throw const LlamaOpenAIException(
+      code: 'unsupported_parameter',
+      message: 'Expected response input message objects.',
+      param: 'input',
     );
   }
+  return LlamaMessage.fromJson(value.cast<String, Object?>());
 }

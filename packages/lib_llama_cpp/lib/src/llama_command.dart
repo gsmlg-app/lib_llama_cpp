@@ -10,6 +10,14 @@ final class LlamaLoadModelCommand extends LlamaCommand {
     required this.modelPath,
     this.contextSize,
     this.gpuLayerCount,
+    this.batchSize,
+    this.microBatchSize,
+    this.threadCount,
+    this.batchThreadCount,
+    this.flashAttention,
+    this.cacheTypeK,
+    this.cacheTypeV,
+    this.swaFull = false,
     this.mmprojPath,
     this.mmprojUseGpu = false,
     this.imageMinTokens,
@@ -19,6 +27,14 @@ final class LlamaLoadModelCommand extends LlamaCommand {
   final String modelPath;
   final int? contextSize;
   final int? gpuLayerCount;
+  final int? batchSize;
+  final int? microBatchSize;
+  final int? threadCount;
+  final int? batchThreadCount;
+  final int? flashAttention;
+  final int? cacheTypeK;
+  final int? cacheTypeV;
+  final bool swaFull;
   final String? mmprojPath;
   final bool mmprojUseGpu;
   final int? imageMinTokens;
@@ -31,6 +47,14 @@ final class LlamaLoadModelCommand extends LlamaCommand {
             other.modelPath == modelPath &&
             other.contextSize == contextSize &&
             other.gpuLayerCount == gpuLayerCount &&
+            other.batchSize == batchSize &&
+            other.microBatchSize == microBatchSize &&
+            other.threadCount == threadCount &&
+            other.batchThreadCount == batchThreadCount &&
+            other.flashAttention == flashAttention &&
+            other.cacheTypeK == cacheTypeK &&
+            other.cacheTypeV == cacheTypeV &&
+            other.swaFull == swaFull &&
             other.mmprojPath == mmprojPath &&
             other.mmprojUseGpu == mmprojUseGpu &&
             other.imageMinTokens == imageMinTokens &&
@@ -42,6 +66,14 @@ final class LlamaLoadModelCommand extends LlamaCommand {
     modelPath,
     contextSize,
     gpuLayerCount,
+    batchSize,
+    microBatchSize,
+    threadCount,
+    batchThreadCount,
+    flashAttention,
+    cacheTypeK,
+    cacheTypeV,
+    swaFull,
     mmprojPath,
     mmprojUseGpu,
     imageMinTokens,

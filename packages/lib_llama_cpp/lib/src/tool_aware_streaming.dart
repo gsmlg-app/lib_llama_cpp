@@ -15,12 +15,18 @@ Iterable<LlamaResponse> streamToolAwareMessageResponses({
 }) sync* {
   final generated = StringBuffer();
   var emittedText = '';
+  LlamaDoneResponse? completion;
   final canStreamText =
       command.toolChoice == LlamaToolChoice.auto ||
       command.toolChoice == LlamaToolChoice.none;
 
   for (final response in sampled) {
+    if (response is LlamaDoneResponse) {
+      completion = response;
+      continue;
+    }
     if (response is! LlamaTokenResponse) {
+      yield response;
       continue;
     }
 
@@ -54,6 +60,7 @@ Iterable<LlamaResponse> streamToolAwareMessageResponses({
     );
     if (fallbackToolCall != null && emittedText.isEmpty) {
       yield LlamaToolCallResponse(toolCall: fallbackToolCall);
+      if (completion != null) yield completion;
       return;
     }
 
@@ -62,12 +69,14 @@ Iterable<LlamaResponse> streamToolAwareMessageResponses({
     if (delta != null && delta.isNotEmpty) {
       yield LlamaTokenResponse(text: delta, index: emittedText.length);
     }
+    if (completion != null) yield completion;
     return;
   }
 
   for (final toolCall in parsedToolCalls) {
     yield LlamaToolCallResponse(toolCall: toolCall);
   }
+  if (completion != null) yield completion;
 }
 
 List<LlamaToolCall> toolCallsFromParsedMessage(Map<String, Object?> parsed) {

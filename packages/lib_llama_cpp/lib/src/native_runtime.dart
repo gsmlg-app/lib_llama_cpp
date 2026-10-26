@@ -13,24 +13,244 @@ import 'llama_response.dart';
 import 'llama_state.dart';
 import 'llama_tool.dart';
 import 'tool_aware_streaming.dart';
+import 'token_text_decoder.dart';
+import 'native_cancellation.dart';
 
 final class NativeLlamaRuntime {
   NativeLlamaRuntime({required LlamaCppLibraryDescriptor library})
-    : this._fromDynamicLibrary(_openDynamicLibrary(library));
+    : this._fromDynamicLibrary(
+        _openDynamicLibrary(library),
+        requiredCapabilities: library.requestedCapabilities,
+      );
 
-  NativeLlamaRuntime._fromDynamicLibrary(DynamicLibrary library)
-    : _bindings = LlamaCppBindings(library),
-      _wrapper = _LibLlamaCppWrapper(library) {
-    _bindings.llama_backend_init();
+  NativeLlamaRuntime._fromDynamicLibrary(
+    DynamicLibrary library, {
+    required Set<LlamaCppLibraryCapability> requiredCapabilities,
+  }) : _bindings = LlamaCppBindings(library),
+       _wrapper = _LibLlamaCppWrapper(library),
+       _library = library,
+       _requiredCapabilities = requiredCapabilities {
+    final error = calloc<Pointer<Char>>();
+    try {
+      final acquire = library
+          .lookupFunction<
+            Int32 Function(Pointer<Pointer<Char>>),
+            int Function(Pointer<Pointer<Char>>)
+          >('llcs_backend_acquire');
+      if (acquire(error) != 0) {
+        throw const NativeLlamaException(
+          'Failed to acquire llama.cpp backend.',
+        );
+      }
+      _backendOwned = true;
+      if (Platform.isLinux ||
+          Platform.isWindows ||
+          _requiredCapabilities.isNotEmpty) {
+        _inspectBackends();
+      }
+      final create = library
+          .lookupFunction<Pointer<Void> Function(), Pointer<Void> Function()>(
+            'llcs_cancel_create',
+          );
+      final flag = create();
+      if (flag == nullptr) {
+        throw const NativeLlamaException(
+          'Failed to allocate cancellation flag.',
+        );
+      }
+      cancellation = NativeCancellation(library, flag.address);
+    } catch (_) {
+      if (_backendOwned) _releaseBackend();
+      rethrow;
+    } finally {
+      if (error.value != nullptr) {
+        library.lookupFunction<
+          Void Function(Pointer<Char>),
+          void Function(Pointer<Char>)
+        >('llcs_string_free')(error.value);
+      }
+      calloc.free(error);
+    }
   }
 
   final LlamaCppBindings _bindings;
   final _LibLlamaCppWrapper _wrapper;
+  final DynamicLibrary _library;
+  final Set<LlamaCppLibraryCapability> _requiredCapabilities;
+  final Set<LlamaCppLibraryCapability> _compiledCapabilities = {};
+  final Map<LlamaCppLibraryCapability, List<ggml_backend_dev_t>> _gpuDevices =
+      {};
+  var _backendsInspected = false;
+  late final NativeCancellation cancellation;
+  var _backendOwned = false;
+  var _closed = false;
+  LlamaLoadModelCommand? _configuration;
+  LlamaState? _loadedState;
+
+  void _inspectBackends() {
+    _backendsInspected = true;
+    final regCount = _library.lookupFunction<Size Function(), int Function()>(
+      'ggml_backend_reg_count',
+    );
+    final regGet = _library
+        .lookupFunction<
+          ggml_backend_reg_t Function(Size),
+          ggml_backend_reg_t Function(int)
+        >('ggml_backend_reg_get');
+    final regName = _library
+        .lookupFunction<
+          Pointer<Char> Function(ggml_backend_reg_t),
+          Pointer<Char> Function(ggml_backend_reg_t)
+        >('ggml_backend_reg_name');
+    final devCount = _library.lookupFunction<Size Function(), int Function()>(
+      'ggml_backend_dev_count',
+    );
+    final devGet = _library
+        .lookupFunction<
+          ggml_backend_dev_t Function(Size),
+          ggml_backend_dev_t Function(int)
+        >('ggml_backend_dev_get');
+    final devType = _library
+        .lookupFunction<
+          Int32 Function(ggml_backend_dev_t),
+          int Function(ggml_backend_dev_t)
+        >('ggml_backend_dev_type');
+    final devReg = _library
+        .lookupFunction<
+          ggml_backend_reg_t Function(ggml_backend_dev_t),
+          ggml_backend_reg_t Function(ggml_backend_dev_t)
+        >('ggml_backend_dev_backend_reg');
+    for (var index = 0; index < regCount(); index++) {
+      final capability = _backendCapability(
+        regName(regGet(index)).cast<Utf8>().toDartString(),
+      );
+      if (capability != null) _compiledCapabilities.add(capability);
+    }
+    for (var index = 0; index < devCount(); index++) {
+      final device = devGet(index);
+      final type = devType(device);
+      if (type != 1 && type != 2 && type != 4) continue;
+      final capability = _backendCapability(
+        regName(devReg(device)).cast<Utf8>().toDartString(),
+      );
+      if (capability != null) {
+        _gpuDevices.putIfAbsent(capability, () => []).add(device);
+      }
+    }
+    for (final capability in _requiredCapabilities) {
+      if (!_compiledCapabilities.contains(capability) ||
+          (_isGpuCapability(capability) &&
+              (_gpuDevices[capability]?.isEmpty ?? true))) {
+        throw NativeLlamaException(
+          'Required backend ${capability.name} is unavailable: no compiled registration or usable device.',
+        );
+      }
+    }
+  }
+
+  List<ggml_backend_dev_t> _devicesFor(LlamaLoadModelCommand command) {
+    if (!_backendsInspected) return const [];
+    final requiredGpu = _requiredCapabilities.where(_isGpuCapability).toSet();
+    if (requiredGpu.isNotEmpty && command.gpuLayerCount == 0) {
+      throw const NativeLlamaException(
+        'A required GPU backend cannot use gpuLayerCount: 0.',
+      );
+    }
+    final devices = [
+      for (final entry in _gpuDevices.entries)
+        if (requiredGpu.isEmpty || requiredGpu.contains(entry.key))
+          ...entry.value,
+    ];
+    if ((command.gpuLayerCount ?? 0) != 0 && devices.isEmpty) {
+      throw const NativeLlamaException(
+        'GPU offload requested but no usable GPU device is available.',
+      );
+    }
+    return requiredGpu.isEmpty ? const [] : devices;
+  }
+
+  void _releaseBackend() {
+    _library.lookupFunction<Void Function(), void Function()>(
+      'llcs_backend_release',
+    )();
+    _backendOwned = false;
+  }
+
+  void _checkCancellation() {
+    if (cancellation.isRequested) {
+      throw const NativeLlamaException('Generation cancelled.');
+    }
+  }
+
+  void _installCancellation(Pointer<llama_context> context) {
+    _library.lookupFunction<
+      Void Function(Pointer<Void>, Pointer<llama_context>),
+      void Function(Pointer<Void>, Pointer<llama_context>)
+    >('llcs_cancel_install')(cancellation.pointer, context);
+  }
+
+  llama_context_params _contextParams(LlamaLoadModelCommand command) {
+    if (command.contextSize != null && command.contextSize! < 0) {
+      throw const NativeLlamaException('Context size must not be negative.');
+    }
+    for (final value in [
+      command.batchSize,
+      command.microBatchSize,
+      command.threadCount,
+      command.batchThreadCount,
+    ]) {
+      if (value != null && value <= 0) {
+        throw const NativeLlamaException(
+          'Context, batch and thread sizes must be positive.',
+        );
+      }
+    }
+    if (command.flashAttention != null) {
+      llama_flash_attn_type.fromValue(command.flashAttention!);
+    }
+    if (command.cacheTypeK != null) ggml_type.fromValue(command.cacheTypeK!);
+    if (command.cacheTypeV != null) ggml_type.fromValue(command.cacheTypeV!);
+    final params = _bindings.llama_context_default_params();
+    params.n_ctx = command.contextSize ?? 0;
+    final threads = math.max(1, Platform.numberOfProcessors - 1);
+    params.n_threads = command.threadCount ?? threads;
+    params.n_threads_batch = command.batchThreadCount ?? params.n_threads;
+    if (command.batchSize != null) params.n_batch = command.batchSize!;
+    if (command.microBatchSize != null) {
+      params.n_ubatch = command.microBatchSize!;
+    }
+    if (command.flashAttention != null) {
+      params.flash_attn_typeAsInt = command.flashAttention!;
+    }
+    if (command.cacheTypeK != null) params.type_kAsInt = command.cacheTypeK!;
+    if (command.cacheTypeV != null) params.type_vAsInt = command.cacheTypeV!;
+    params.swa_full = command.swaFull;
+    return params;
+  }
+
+  void _resetContext(_LoadedModel loaded) {
+    _checkCancellation();
+    if (loaded.context != nullptr) _bindings.llama_free(loaded.context);
+    loaded.context = nullptr;
+    final context = _bindings.llama_new_context_with_model(
+      loaded.model,
+      _contextParams(_configuration!),
+    );
+    if (context == nullptr) {
+      throw const NativeLlamaException('Failed to rebuild request context.');
+    }
+    loaded.context = context;
+    _installCancellation(context);
+  }
+
   _LoadedModel? _loaded;
 
   LlamaState loadModel(LlamaLoadModelCommand command) {
+    if (_configuration == command && _loaded != null) return _loadedState!;
     _disposeLoaded();
+    _checkCancellation();
 
+    final selectedDevices = _devicesFor(command);
     final file = File(command.modelPath);
     if (!file.existsSync()) {
       throw NativeLlamaException(
@@ -42,10 +262,19 @@ final class NativeLlamaRuntime {
     Pointer<llama_model> model = nullptr;
     Pointer<llama_context> context = nullptr;
     Pointer<Void> mediaContext = nullptr;
+    Pointer<ggml_backend_dev_t> deviceArray = nullptr;
 
     try {
       final modelParams = _bindings.llama_model_default_params();
-      modelParams.n_gpu_layers = command.gpuLayerCount ?? 0;
+      modelParams.n_gpu_layers =
+          command.gpuLayerCount ?? (selectedDevices.isEmpty ? 0 : -1);
+      if (selectedDevices.isNotEmpty) {
+        deviceArray = calloc<ggml_backend_dev_t>(selectedDevices.length + 1);
+        for (var index = 0; index < selectedDevices.length; index++) {
+          deviceArray[index] = selectedDevices[index];
+        }
+        modelParams.devices = deviceArray;
+      }
 
       model = _bindings.llama_model_load_from_file(
         path.cast<Char>(),
@@ -57,11 +286,7 @@ final class NativeLlamaRuntime {
         );
       }
 
-      final contextParams = _bindings.llama_context_default_params();
-      contextParams.n_ctx = command.contextSize ?? 0;
-      final threads = math.max(1, Platform.numberOfProcessors - 1);
-      contextParams.n_threads = threads;
-      contextParams.n_threads_batch = threads;
+      final contextParams = _contextParams(command);
 
       context = _bindings.llama_new_context_with_model(model, contextParams);
       if (context == nullptr) {
@@ -70,6 +295,8 @@ final class NativeLlamaRuntime {
         );
       }
 
+      _installCancellation(context);
+      _checkCancellation();
       final vocab = _bindings.llama_model_get_vocab(model);
       if (vocab == nullptr) {
         throw NativeLlamaException(
@@ -78,6 +305,9 @@ final class NativeLlamaRuntime {
       }
 
       final chatTemplate = _modelChatTemplate(model);
+      final templateCapabilities = chatTemplate == null
+          ? const <String, Object?>{}
+          : _wrapper.chatTemplateCapabilities(model);
       var supportsImage = false;
       var supportsAudio = false;
       if (command.mmprojPath != null) {
@@ -109,15 +339,15 @@ final class NativeLlamaRuntime {
         supportsAudio: supportsAudio,
       );
 
-      return LlamaState(
+      _configuration = command;
+      return _loadedState = LlamaState(
         modelPath: command.modelPath,
         isModelLoaded: true,
-        capabilities: LlamaModelCapabilities(
-          text: true,
-          chatTemplate: chatTemplate != null,
+        capabilities: LlamaModelCapabilities.fromTemplateCapabilities(
+          templateCapabilities,
+          hasChatTemplate: chatTemplate != null,
           image: supportsImage,
           audio: supportsAudio,
-          tools: chatTemplate != null,
         ),
       );
     } catch (_) {
@@ -132,6 +362,7 @@ final class NativeLlamaRuntime {
       }
       rethrow;
     } finally {
+      if (deviceArray != nullptr) calloc.free(deviceArray);
       calloc.free(path);
     }
   }
@@ -144,10 +375,7 @@ final class NativeLlamaRuntime {
       );
     }
 
-    if (command.maxTokens != null && command.maxTokens! <= 0) {
-      return;
-    }
-
+    _resetContext(loaded);
     final promptTokens = _tokenize(loaded.vocab, command.prompt);
     if (promptTokens.isEmpty) {
       throw const NativeLlamaException('Prompt produced no tokens.');
@@ -160,6 +388,8 @@ final class NativeLlamaRuntime {
       );
     }
 
+    _validateBudget(promptTokens.length, command.maxTokens, contextSize);
+    loaded.promptTokenCount = promptTokens.length;
     _decodeTokens(loaded.context, promptTokens);
     yield* _sampleFromEvaluatedPrompt(
       loaded: loaded,
@@ -183,6 +413,12 @@ final class NativeLlamaRuntime {
       );
     }
 
+    _resetContext(loaded);
+    _validateBudget(
+      0,
+      command.maxTokens,
+      _bindings.llama_n_ctx(loaded.context),
+    );
     final mediaInputs = <_MediaInput>[];
     final templateResult = _wrapper.applyChatTemplate(
       model: loaded.model,
@@ -200,8 +436,14 @@ final class NativeLlamaRuntime {
       loaded: loaded,
       prompt: templateResult.prompt,
       mediaInputs: mediaInputs,
+      maxOutputTokens: command.maxTokens,
     );
 
+    _validateBudget(
+      initialTokenCount,
+      command.maxTokens,
+      _bindings.llama_n_ctx(loaded.context),
+    );
     final grammar = _samplingGrammarFor(templateResult);
     yield* streamToolAwareMessageResponses(
       sampled: _sampleFromEvaluatedPrompt(
@@ -250,8 +492,14 @@ final class NativeLlamaRuntime {
     List<_GrammarTrigger> grammarTriggers = const [],
   }) sync* {
     final contextSize = _bindings.llama_n_ctx(loaded.context);
+    _validateBudget(initialTokenCount, command.maxTokens, contextSize);
     final maxTokens = command.maxTokens ?? contextSize - initialTokenCount;
-    if (maxTokens <= 0) {
+    if (maxTokens == 0) {
+      yield LlamaDoneResponse(
+        inputTokens: loaded.promptTokenCount,
+        outputTokens: 0,
+        finishReason: 'length',
+      );
       return;
     }
 
@@ -262,17 +510,21 @@ final class NativeLlamaRuntime {
       grammarLazy: grammarLazy,
       grammarTriggers: grammarTriggers,
     );
-    final stopMatcher = _StopMatcher(command.stop);
+    final stopMatcher = TokenTextDecoder(stop: command.stop);
     var generated = 0;
+    var finishReason = 'length';
 
     try {
       while (generated < maxTokens) {
+        _checkCancellation();
         final token = _bindings.llama_sampler_sample(
           sampler,
           loaded.context,
           -1,
         );
         if (_bindings.llama_vocab_is_eog(loaded.vocab, token)) {
+          generated += 1;
+          finishReason = 'stop';
           break;
         }
 
@@ -285,6 +537,7 @@ final class NativeLlamaRuntime {
         generated += 1;
 
         if (stopMatcher.isStopped) {
+          finishReason = 'stop';
           break;
         }
         if (generated >= maxTokens) {
@@ -299,10 +552,15 @@ final class NativeLlamaRuntime {
         _decodeTokens(loaded.context, [token]);
       }
 
-      final tail = stopMatcher.flush();
+      final tail = stopMatcher.close();
       if (tail.isNotEmpty) {
         yield LlamaTokenResponse(text: tail, index: generated);
       }
+      yield LlamaDoneResponse(
+        inputTokens: loaded.promptTokenCount,
+        outputTokens: generated,
+        finishReason: finishReason,
+      );
     } finally {
       _bindings.llama_sampler_free(sampler);
     }
@@ -312,6 +570,7 @@ final class NativeLlamaRuntime {
     required _LoadedModel loaded,
     required String prompt,
     required List<_MediaInput> mediaInputs,
+    required int? maxOutputTokens,
   }) {
     if (mediaInputs.isEmpty) {
       final promptTokens = _tokenize(loaded.vocab, prompt);
@@ -326,6 +585,8 @@ final class NativeLlamaRuntime {
         );
       }
 
+      _validateBudget(promptTokens.length, maxOutputTokens, contextSize);
+      loaded.promptTokenCount = promptTokens.length;
       _decodeTokens(loaded.context, promptTokens);
       return promptTokens.length;
     }
@@ -349,15 +610,21 @@ final class NativeLlamaRuntime {
     final blobs = <Pointer<Void>>[];
     try {
       for (final input in mediaInputs) {
+        _checkCancellation();
         blobs.add(_wrapper.mediaBlob(loaded.mediaContext, input));
       }
-      return _wrapper.mediaEvalPrompt(
+      _checkCancellation();
+      final evaluated = _wrapper.mediaEvalPrompt(
         mediaContext: loaded.mediaContext,
         llamaContext: loaded.context,
         prompt: prompt,
         blobs: blobs,
         nBatch: _bindings.llama_n_batch(loaded.context),
+        reservedOutputTokens: maxOutputTokens ?? 0,
       );
+      _checkCancellation();
+      loaded.promptTokenCount = evaluated.tokens;
+      return math.max(evaluated.positions, evaluated.tokens);
     } finally {
       for (final blob in blobs) {
         _wrapper.mediaBlobFree(blob);
@@ -472,7 +739,35 @@ final class NativeLlamaRuntime {
   }
 
   void close() {
-    _disposeLoaded();
+    if (_closed) return;
+    _closed = true;
+    try {
+      _disposeLoaded();
+    } finally {
+      _library.lookupFunction<
+        Void Function(Pointer<Void>),
+        void Function(Pointer<Void>)
+      >('llcs_cancel_free')(cancellation.pointer);
+      if (_backendOwned) _releaseBackend();
+    }
+  }
+
+  void _validateBudget(int inputTokens, int? outputTokens, int contextSize) {
+    if (outputTokens != null && outputTokens < 0) {
+      throw const NativeLlamaException('maxTokens must not be negative.');
+    }
+    if (inputTokens >= contextSize ||
+        inputTokens + (outputTokens ?? 0) > contextSize) {
+      throw NativeLlamaException(
+        'Context budget exceeded: $inputTokens input tokens + ${outputTokens ?? 0} requested output tokens > $contextSize context tokens.',
+        code: 'context_overflow',
+        details: {
+          'prompt_tokens': inputTokens,
+          'max_tokens': outputTokens ?? 0,
+          'n_ctx': contextSize,
+        },
+      );
+    }
   }
 
   List<int> _tokenize(Pointer<llama_vocab> vocab, String text) {
@@ -539,6 +834,7 @@ final class NativeLlamaRuntime {
     }
 
     for (var offset = 0; offset < tokens.length; offset += batchSize) {
+      _checkCancellation();
       final chunkLength = math.min(batchSize, tokens.length - offset);
       final tokenPointer = calloc<llama_token>(chunkLength);
       try {
@@ -548,6 +844,7 @@ final class NativeLlamaRuntime {
 
         final batch = _bindings.llama_batch_get_one(tokenPointer, chunkLength);
         final result = _bindings.llama_decode(context, batch);
+        _checkCancellation();
         if (result != 0) {
           throw NativeLlamaException('llama_decode failed with code $result.');
         }
@@ -728,7 +1025,7 @@ final class NativeLlamaRuntime {
     return pointer;
   }
 
-  String _tokenToPiece(Pointer<llama_vocab> vocab, int token) {
+  List<int> _tokenToPiece(Pointer<llama_vocab> vocab, int token) {
     var capacity = 32;
     Pointer<Char> buffer = calloc<Char>(capacity);
 
@@ -761,7 +1058,7 @@ final class NativeLlamaRuntime {
         );
       }
 
-      return buffer.cast<Utf8>().toDartString(length: length);
+      return List<int>.of(buffer.cast<Uint8>().asTypedList(length));
     } finally {
       calloc.free(buffer);
     }
@@ -781,17 +1078,25 @@ final class NativeLlamaRuntime {
       return;
     }
 
-    if (loaded.mediaContext != nullptr) {
-      _wrapper.mediaFree(loaded.mediaContext);
-    }
-    _bindings.llama_free(loaded.context);
-    _bindings.llama_model_free(loaded.model);
     _loaded = null;
+    _configuration = null;
+    _loadedState = null;
+    try {
+      if (loaded.mediaContext != nullptr) {
+        _wrapper.mediaFree(loaded.mediaContext);
+      }
+    } finally {
+      try {
+        if (loaded.context != nullptr) _bindings.llama_free(loaded.context);
+      } finally {
+        _bindings.llama_model_free(loaded.model);
+      }
+    }
   }
 
   static DynamicLibrary _openDynamicLibrary(LlamaCppLibraryDescriptor library) {
     try {
-      return switch (library.resolution) {
+      final opened = switch (library.resolution) {
         LlamaCppLibraryResolution.process => DynamicLibrary.process(),
         LlamaCppLibraryResolution.executable => DynamicLibrary.executable(),
         LlamaCppLibraryResolution.path => DynamicLibrary.open(library.path!),
@@ -799,6 +1104,8 @@ final class NativeLlamaRuntime {
           library.lookupName!,
         ),
       };
+      LlamaCppDynamicLibraryLoader.validateLibrary(opened);
+      return opened;
     } on Object catch (error) {
       throw NativeLlamaException('Failed to open llama.cpp library: $error');
     }
@@ -806,16 +1113,38 @@ final class NativeLlamaRuntime {
 }
 
 final class NativeLlamaException implements Exception {
-  const NativeLlamaException(this.message);
+  const NativeLlamaException(this.message, {this.code, this.details});
+
+  factory NativeLlamaException.fromNativeError(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, Object?>) {
+        final details = Map<String, Object?>.of(decoded)
+          ..remove('code')
+          ..remove('type')
+          ..remove('message');
+        return NativeLlamaException(
+          decoded['message'] is String ? decoded['message'] as String : raw,
+          code: decoded['code'] is String ? decoded['code'] as String : null,
+          details: details.isEmpty ? null : details,
+        );
+      }
+    } on FormatException {
+      // Older native wrappers can return an unstructured error string.
+    }
+    return NativeLlamaException(raw);
+  }
 
   final String message;
+  final String? code;
+  final Map<String, Object?>? details;
 
   @override
   String toString() => message;
 }
 
 final class _LoadedModel {
-  const _LoadedModel({
+  _LoadedModel({
     required this.modelPath,
     required this.model,
     required this.context,
@@ -828,83 +1157,13 @@ final class _LoadedModel {
 
   final String modelPath;
   final Pointer<llama_model> model;
-  final Pointer<llama_context> context;
+  Pointer<llama_context> context;
+  var promptTokenCount = 0;
   final Pointer<llama_vocab> vocab;
   final String? mmprojPath;
   final Pointer<Void> mediaContext;
   final bool supportsImage;
   final bool supportsAudio;
-}
-
-final class _StopMatcher {
-  _StopMatcher(List<String> stop)
-    : _stop = stop.where((item) => item.isNotEmpty).toList(),
-      _maxStopLength = stop
-          .where((item) => item.isNotEmpty)
-          .fold<int>(0, (max, item) => math.max(max, item.length));
-
-  final List<String> _stop;
-  final int _maxStopLength;
-  final StringBuffer _buffer = StringBuffer();
-  var _emittedLength = 0;
-  var isStopped = false;
-
-  String add(String text) {
-    if (isStopped) {
-      return '';
-    }
-
-    _buffer.write(text);
-    final value = _buffer.toString();
-    final stopIndex = _firstStopIndex(value);
-    if (stopIndex != null) {
-      isStopped = true;
-      final delta = value.substring(_emittedLength, stopIndex);
-      _emittedLength = stopIndex;
-      return delta;
-    }
-
-    if (_maxStopLength == 0) {
-      final delta = value.substring(_emittedLength);
-      _emittedLength = value.length;
-      return delta;
-    }
-
-    final safeEnd = math.max(0, value.length - _maxStopLength + 1);
-    if (safeEnd <= _emittedLength) {
-      return '';
-    }
-
-    final delta = value.substring(_emittedLength, safeEnd);
-    _emittedLength = safeEnd;
-    return delta;
-  }
-
-  String flush() {
-    if (isStopped) {
-      return '';
-    }
-
-    final value = _buffer.toString();
-    if (_emittedLength >= value.length) {
-      return '';
-    }
-
-    final delta = value.substring(_emittedLength);
-    _emittedLength = value.length;
-    return delta;
-  }
-
-  int? _firstStopIndex(String value) {
-    int? result;
-    for (final stop in _stop) {
-      final index = value.indexOf(stop);
-      if (index >= 0 && (result == null || index < result)) {
-        result = index;
-      }
-    }
-    return result;
-  }
 }
 
 final class _ChatTemplateResult {
@@ -997,6 +1256,41 @@ final class _LibLlamaCppWrapper {
 
   final DynamicLibrary _library;
 
+  Map<String, Object?> chatTemplateCapabilities(Pointer<llama_model> model) {
+    return _withWrapper('chat template capabilities', () {
+      final error = calloc<Pointer<Char>>();
+      Pointer<Void> handle = nullptr;
+      try {
+        handle = _chatTemplatesInit(model, nullptr, nullptr, nullptr, error);
+        if (handle == nullptr) {
+          throw _errorMessage(error, 'Failed to initialize chat templates.');
+        }
+        final caps = _library
+            .lookupFunction<
+              Pointer<Char> Function(Pointer<Void>, Pointer<Pointer<Char>>),
+              Pointer<Char> Function(Pointer<Void>, Pointer<Pointer<Char>>)
+            >('lib_llama_cpp_chat_templates_caps_json')(handle, error);
+        if (caps == nullptr) {
+          throw _errorMessage(
+            error,
+            'Failed to read chat template capabilities.',
+          );
+        }
+        final decoded = jsonDecode(_takeString(caps));
+        if (decoded is! Map<String, Object?>) {
+          throw const NativeLlamaException(
+            'Invalid native template capabilities JSON.',
+          );
+        }
+        return decoded;
+      } finally {
+        if (handle != nullptr) _chatTemplatesFree(handle);
+        _freeError(error);
+        calloc.free(error);
+      }
+    });
+  }
+
   _ChatTemplateResult applyChatTemplate({
     required Pointer<llama_model> model,
     required Map<String, Object?> request,
@@ -1013,9 +1307,7 @@ final class _LibLlamaCppWrapper {
           error,
         );
         if (handle == nullptr) {
-          throw NativeLlamaException(
-            _errorMessage(error, 'Failed to initialize chat templates.'),
-          );
+          throw _errorMessage(error, 'Failed to initialize chat templates.');
         }
 
         final requestPointer = jsonEncode(request).toNativeUtf8();
@@ -1026,9 +1318,7 @@ final class _LibLlamaCppWrapper {
             error,
           );
           if (result == nullptr) {
-            throw NativeLlamaException(
-              _errorMessage(error, 'Failed to apply chat template.'),
-            );
+            throw _errorMessage(error, 'Failed to apply chat template.');
           }
           final decoded = jsonDecode(_takeString(result));
           if (decoded is! Map<String, Object?>) {
@@ -1071,9 +1361,7 @@ final class _LibLlamaCppWrapper {
       try {
         final result = _chatParseJson(requestPointer.cast<Char>(), error);
         if (result == nullptr) {
-          throw NativeLlamaException(
-            _errorMessage(error, 'Failed to parse chat output.'),
-          );
+          throw _errorMessage(error, 'Failed to parse chat output.');
         }
         final decoded = jsonDecode(_takeString(result));
         if (decoded is! Map<String, Object?>) {
@@ -1120,9 +1408,7 @@ final class _LibLlamaCppWrapper {
           error,
         );
         if (result == nullptr) {
-          throw NativeLlamaException(
-            _errorMessage(error, 'Failed to load multimodal projector.'),
-          );
+          throw _errorMessage(error, 'Failed to load multimodal projector.');
         }
         return result;
       } finally {
@@ -1181,12 +1467,13 @@ final class _LibLlamaCppWrapper {
     });
   }
 
-  int mediaEvalPrompt({
+  ({int positions, int tokens}) mediaEvalPrompt({
     required Pointer<Void> mediaContext,
     required Pointer<llama_context> llamaContext,
     required String prompt,
     required List<Pointer<Void>> blobs,
     required int nBatch,
+    required int reservedOutputTokens,
   }) {
     return _withWrapper('multimodal prompt evaluation', () {
       final promptPointer = prompt.toNativeUtf8();
@@ -1209,18 +1496,22 @@ final class _LibLlamaCppWrapper {
           true,
           true,
           true,
+          reservedOutputTokens,
           newPast,
           error,
         );
         if (result != 0) {
-          throw NativeLlamaException(
-            _errorMessage(
-              error,
-              'Failed to evaluate multimodal prompt: mtmd returned $result.',
-            ),
+          throw _errorMessage(
+            error,
+            'Failed to evaluate multimodal prompt: mtmd returned $result.',
           );
         }
-        return newPast.value;
+        final promptTokens = _library
+            .lookupFunction<
+              Int64 Function(Pointer<Void>),
+              int Function(Pointer<Void>)
+            >('lib_llama_cpp_media_last_prompt_tokens')(mediaContext);
+        return (positions: newPast.value, tokens: promptTokens);
       } finally {
         _freeError(error);
         calloc.free(error);
@@ -1248,9 +1539,7 @@ final class _LibLlamaCppWrapper {
           error,
         );
         if (result == nullptr) {
-          throw NativeLlamaException(
-            _errorMessage(error, 'Failed to decode media file.'),
-          );
+          throw _errorMessage(error, 'Failed to decode media file.');
         }
         return result;
       } finally {
@@ -1283,9 +1572,7 @@ final class _LibLlamaCppWrapper {
           error,
         );
         if (result == nullptr) {
-          throw NativeLlamaException(
-            _errorMessage(error, 'Failed to decode encoded media bytes.'),
-          );
+          throw _errorMessage(error, 'Failed to decode encoded media bytes.');
         }
         return result;
       } finally {
@@ -1316,19 +1603,19 @@ final class _LibLlamaCppWrapper {
     }
   }
 
-  String _errorMessage(Pointer<Pointer<Char>> errorPointer, String fallback) {
+  NativeLlamaException _errorMessage(
+    Pointer<Pointer<Char>> errorPointer,
+    String fallback,
+  ) {
     final pointer = errorPointer.value;
     if (pointer == nullptr) {
-      return fallback;
+      return NativeLlamaException(fallback);
     }
 
     try {
-      final raw = pointer.cast<Utf8>().toDartString();
-      final decoded = jsonDecode(raw);
-      if (decoded is Map && decoded['message'] is String) {
-        return decoded['message'] as String;
-      }
-      return raw;
+      return NativeLlamaException.fromNativeError(
+        pointer.cast<Utf8>().toDartString(),
+      );
     } finally {
       _stringFree(pointer);
       errorPointer.value = nullptr;
@@ -1405,7 +1692,7 @@ final class _LibLlamaCppWrapper {
 
   late final _MediaEvalPromptDart _mediaEvalPrompt = _library
       .lookupFunction<_MediaEvalPromptNative, _MediaEvalPromptDart>(
-        'lib_llama_cpp_media_eval_prompt',
+        'lib_llama_cpp_media_eval_prompt_with_budget',
       );
 }
 
@@ -1519,6 +1806,7 @@ typedef _MediaEvalPromptNative =
       Bool,
       Bool,
       Bool,
+      Int32,
       Pointer<Int32>,
       Pointer<Pointer<Char>>,
     );
@@ -1535,6 +1823,36 @@ typedef _MediaEvalPromptDart =
       bool,
       bool,
       bool,
+      int,
       Pointer<Int32>,
       Pointer<Pointer<Char>>,
     );
+
+DynamicLibrary openLlamaLibrary(LlamaCppLibraryDescriptor library) =>
+    switch (library.resolution) {
+      LlamaCppLibraryResolution.process => DynamicLibrary.process(),
+      LlamaCppLibraryResolution.executable => DynamicLibrary.executable(),
+      LlamaCppLibraryResolution.path => DynamicLibrary.open(library.path!),
+      LlamaCppLibraryResolution.lookupName => DynamicLibrary.open(
+        library.lookupName!,
+      ),
+    };
+
+LlamaCppLibraryCapability? _backendCapability(String name) =>
+    switch (name.toLowerCase()) {
+      'cpu' => LlamaCppLibraryCapability.cpu,
+      'cuda' => LlamaCppLibraryCapability.cuda,
+      'vulkan' => LlamaCppLibraryCapability.vulkan,
+      'metal' => LlamaCppLibraryCapability.metal,
+      'opencl' => LlamaCppLibraryCapability.openCl,
+      'blas' || 'openblas' => LlamaCppLibraryCapability.openBlas,
+      'rpc' => LlamaCppLibraryCapability.rpc,
+      'nnapi' => LlamaCppLibraryCapability.nnapi,
+      _ => null,
+    };
+bool _isGpuCapability(LlamaCppLibraryCapability capability) => const {
+  LlamaCppLibraryCapability.cuda,
+  LlamaCppLibraryCapability.vulkan,
+  LlamaCppLibraryCapability.metal,
+  LlamaCppLibraryCapability.openCl,
+}.contains(capability);

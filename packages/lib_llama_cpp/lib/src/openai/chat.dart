@@ -52,6 +52,7 @@ final class LlamaChatCompletionsResource {
       id: 'chatcmpl_${DateTime.now().toUtc().microsecondsSinceEpoch}',
       createdAt: DateTime.now().toUtc(),
       model: model,
+      usage: response.usage,
       choices: [
         LlamaChatChoice(
           index: 0,
@@ -60,7 +61,9 @@ final class LlamaChatCompletionsResource {
             content: response.outputText,
             toolCalls: response.toolCalls,
           ),
-          finishReason: response.toolCalls.isEmpty ? 'stop' : 'tool_calls',
+          finishReason: response.toolCalls.isEmpty
+              ? (response.finishReason ?? 'stop')
+              : 'tool_calls',
         ),
       ],
     );
@@ -114,12 +117,14 @@ final class LlamaChatCompletion {
     required this.createdAt,
     required this.model,
     required this.choices,
+    this.usage,
   });
 
   final String id;
   final DateTime createdAt;
   final String model;
   final List<LlamaChatChoice> choices;
+  final LlamaResponseUsage? usage;
 }
 
 final class LlamaChatChoice {
