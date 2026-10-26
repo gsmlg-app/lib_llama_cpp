@@ -50,6 +50,9 @@ jobs:
       - name: Test native package installation
         run: python3 .github/scripts/test-native-packaging.py
 
+      - name: Test direct native exception isolation and sampler ownership
+        run: python3 packages/lib_llama_cpp_ffi/test/native/test_direct_safe.py
+
       - name: Run pure Dart tests
         run: dart test packages/lib_llama_cpp_platform_interface/test && dart test packages/lib_llama_cpp_ffi/test && dart test packages/lib_llama_cpp_server/test
 

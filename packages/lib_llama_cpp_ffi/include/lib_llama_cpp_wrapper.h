@@ -25,6 +25,38 @@ typedef struct lib_llama_cpp_media_blob lib_llama_cpp_media_blob;
 LIB_LLAMA_CPP_API int32_t lib_llama_cpp_abi_version(void);
 LIB_LLAMA_CPP_API void lib_llama_cpp_string_free(char * value);
 
+// Direct-runtime adapters. Upstream ABI remains public; these entrypoints catch
+// all C++ exceptions. Status functions return 0 only when result_out is valid;
+// token counts preserve upstream negative buffer-capacity results.
+LIB_LLAMA_CPP_API struct llama_model * lib_llama_cpp_model_load_safe(
+    const char * path, struct llama_model_params params, char ** error_json);
+LIB_LLAMA_CPP_API struct llama_context * lib_llama_cpp_context_create_safe(
+    struct llama_model * model, struct llama_context_params params, char ** error_json);
+LIB_LLAMA_CPP_API int32_t lib_llama_cpp_tokenize_safe(
+    const struct llama_vocab * vocab, const char * text, int32_t text_len,
+    llama_token * tokens, int32_t capacity, bool add_special, bool parse_special,
+    int32_t * result_out, char ** error_json);
+LIB_LLAMA_CPP_API int32_t lib_llama_cpp_token_to_piece_safe(
+    const struct llama_vocab * vocab, llama_token token, char * buffer,
+    int32_t capacity, int32_t lstrip, bool special,
+    int32_t * result_out, char ** error_json);
+LIB_LLAMA_CPP_API int32_t lib_llama_cpp_decode_safe(
+    struct llama_context * context, struct llama_batch batch,
+    int32_t * result_out, char ** error_json);
+
+// Factory owns the chain and each child until chain_add succeeds. Config uses
+// temperature/top_p, grammar/grammar_lazy and grammar_triggers(type,value,token).
+LIB_LLAMA_CPP_API struct llama_sampler * lib_llama_cpp_sampler_create_safe(
+    const struct llama_vocab * vocab, const char * config_json, char ** error_json);
+// Matches upstream sample semantics: the returned token has already been
+// accepted. Callers MUST NOT accept it a second time.
+LIB_LLAMA_CPP_API int32_t lib_llama_cpp_sampler_sample_safe(
+    struct llama_sampler * sampler, struct llama_context * context, int32_t index,
+    llama_token * token_out, char ** error_json);
+LIB_LLAMA_CPP_API int32_t lib_llama_cpp_sampler_accept_safe(
+    struct llama_sampler * sampler, llama_token token, char ** error_json);
+LIB_LLAMA_CPP_API void lib_llama_cpp_sampler_free_safe(struct llama_sampler * sampler);
+
 LIB_LLAMA_CPP_API lib_llama_cpp_chat_templates *
 lib_llama_cpp_chat_templates_init(
     const struct llama_model * model,

@@ -173,6 +173,78 @@ static void llcpp_apply_optional_inputs(common_chat_templates_inputs & inputs, c
     }
 }
 
+template <typename T, typename F>
+static T llcpp_direct_guard(char ** error_json, T failure, F && operation) noexcept {
+    if (error_json) *error_json = nullptr;
+    try {
+        return operation();
+    } catch (const std::exception & error) {
+        llcpp_exception(error_json, error);
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "unknown direct runtime exception");
+    }
+    return failure;
+}
+
+struct llcpp_sampler_deleter {
+    void operator()(llama_sampler * sampler) const noexcept {
+        try { llama_sampler_free(sampler); } catch (...) {}
+    }
+};
+using llcpp_sampler_ptr = std::unique_ptr<llama_sampler, llcpp_sampler_deleter>;
+
+static llama_sampler * llcpp_direct_sampler(const llama_vocab * vocab, const json & options) {
+    llcpp_sampler_ptr chain(llama_sampler_chain_init(llama_sampler_chain_default_params()));
+    if (!chain) throw std::runtime_error("failed to create sampler chain");
+    auto add = [&](llama_sampler * sampler) {
+        llcpp_sampler_ptr child(sampler);
+        if (!child) throw std::runtime_error("failed to create child sampler");
+        llama_sampler_chain_add(chain.get(), child.get());
+        child.release(); // chain owns the child only after successful insertion
+    };
+    const auto grammar = options.value("grammar", std::string());
+    if (!grammar.empty()) {
+        if (options.value("grammar_lazy", false)) {
+            std::vector<std::string> patterns, words;
+            std::vector<llama_token> tokens;
+            for (const auto & trigger : options.value("grammar_triggers", json::array())) {
+                const auto type = trigger.value("type", "");
+                const auto value = trigger.value("value", "");
+                if ((type == "pattern" || type == "pattern_full") && !value.empty()) patterns.push_back(value);
+                if (type == "word" && !value.empty()) words.push_back(value);
+                if (type == "token") {
+                    const auto token = trigger.value("token", LLAMA_TOKEN_NULL);
+                    if (token != LLAMA_TOKEN_NULL) tokens.push_back(token);
+                }
+            }
+            const auto & strings = patterns.empty() ? words : patterns;
+            std::vector<const char *> pointers;
+            for (const auto & value : strings) pointers.push_back(value.c_str());
+            if (!patterns.empty()) {
+                add(llama_sampler_init_grammar_lazy_patterns(vocab, grammar.c_str(), "root",
+                    pointers.data(), pointers.size(), tokens.data(), tokens.size()));
+            } else {
+                add(llama_sampler_init_grammar_lazy(vocab, grammar.c_str(), "root",
+                    pointers.data(), pointers.size(), tokens.data(), tokens.size()));
+            }
+        } else {
+            add(llama_sampler_init_grammar(vocab, grammar.c_str(), "root"));
+        }
+    }
+    const bool has_temp = options.contains("temperature") && !options["temperature"].is_null();
+    const bool has_top_p = options.contains("top_p") && !options["top_p"].is_null();
+    const double temp = has_temp ? options["temperature"].get<double>() : 0;
+    const double top_p = has_top_p ? options["top_p"].get<double>() : 0;
+    if (has_top_p && top_p > 0 && top_p < 1) add(llama_sampler_init_top_p(top_p, 1));
+    if (has_temp && temp > 0) {
+        add(llama_sampler_init_temp(temp));
+        add(llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+    } else {
+        add(llama_sampler_init_greedy());
+    }
+    return chain.release();
+}
+
 extern "C" {
 
 int32_t lib_llama_cpp_abi_version(void) {
@@ -181,6 +253,71 @@ int32_t lib_llama_cpp_abi_version(void) {
 
 void lib_llama_cpp_string_free(char * value) {
     std::free(value);
+}
+
+llama_model * lib_llama_cpp_model_load_safe(const char * path, llama_model_params params, char ** error_json) {
+    return llcpp_direct_guard<llama_model *>(error_json, nullptr, [&] {
+        auto * result = llama_model_load_from_file(path, params);
+        if (!result) throw std::runtime_error("failed to load model");
+        return result;
+    });
+}
+
+llama_context * lib_llama_cpp_context_create_safe(llama_model * model, llama_context_params params, char ** error_json) {
+    return llcpp_direct_guard<llama_context *>(error_json, nullptr, [&] {
+        auto * result = llama_init_from_model(model, params);
+        if (!result) throw std::runtime_error("failed to create context");
+        return result;
+    });
+}
+
+int32_t lib_llama_cpp_tokenize_safe(const llama_vocab * vocab, const char * text, int32_t text_len,
+        llama_token * tokens, int32_t capacity, bool add_special, bool parse_special,
+        int32_t * result_out, char ** error_json) {
+    return llcpp_direct_guard<int32_t>(error_json, -1, [&] {
+        *result_out = llama_tokenize(vocab, text, text_len, tokens, capacity, add_special, parse_special);
+        return 0;
+    });
+}
+
+int32_t lib_llama_cpp_token_to_piece_safe(const llama_vocab * vocab, llama_token token, char * buffer,
+        int32_t capacity, int32_t lstrip, bool special, int32_t * result_out, char ** error_json) {
+    return llcpp_direct_guard<int32_t>(error_json, -1, [&] {
+        *result_out = llama_token_to_piece(vocab, token, buffer, capacity, lstrip, special);
+        return 0;
+    });
+}
+
+int32_t lib_llama_cpp_decode_safe(llama_context * context, llama_batch batch, int32_t * result_out, char ** error_json) {
+    return llcpp_direct_guard<int32_t>(error_json, -1, [&] {
+        *result_out = llama_decode(context, batch);
+        return 0;
+    });
+}
+
+llama_sampler * lib_llama_cpp_sampler_create_safe(const llama_vocab * vocab, const char * config_json, char ** error_json) {
+    return llcpp_direct_guard<llama_sampler *>(error_json, nullptr, [&] {
+        return llcpp_direct_sampler(vocab, llcpp_parse_json_object(config_json, "sampler config"));
+    });
+}
+
+int32_t lib_llama_cpp_sampler_sample_safe(llama_sampler * sampler, llama_context * context,
+        int32_t index, llama_token * token_out, char ** error_json) {
+    return llcpp_direct_guard<int32_t>(error_json, -1, [&] {
+        *token_out = llama_sampler_sample(sampler, context, index);
+        return 0;
+    });
+}
+
+int32_t lib_llama_cpp_sampler_accept_safe(llama_sampler * sampler, llama_token token, char ** error_json) {
+    return llcpp_direct_guard<int32_t>(error_json, -1, [&] {
+        llama_sampler_accept(sampler, token);
+        return 0;
+    });
+}
+
+void lib_llama_cpp_sampler_free_safe(llama_sampler * sampler) {
+    llcpp_sampler_deleter{}(sampler);
 }
 
 lib_llama_cpp_chat_templates * lib_llama_cpp_chat_templates_init(

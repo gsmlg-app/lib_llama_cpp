@@ -232,7 +232,7 @@ final class NativeLlamaRuntime {
     _checkCancellation();
     if (loaded.context != nullptr) _bindings.llama_free(loaded.context);
     loaded.context = nullptr;
-    final context = _bindings.llama_new_context_with_model(
+    final context = _wrapper.contextCreate(
       loaded.model,
       _contextParams(_configuration!),
     );
@@ -276,10 +276,7 @@ final class NativeLlamaRuntime {
         modelParams.devices = deviceArray;
       }
 
-      model = _bindings.llama_model_load_from_file(
-        path.cast<Char>(),
-        modelParams,
-      );
+      model = _wrapper.modelLoad(path.cast<Char>(), modelParams);
       if (model == nullptr) {
         throw NativeLlamaException(
           'Failed to load model: ${command.modelPath}',
@@ -288,7 +285,7 @@ final class NativeLlamaRuntime {
 
       final contextParams = _contextParams(command);
 
-      context = _bindings.llama_new_context_with_model(model, contextParams);
+      context = _wrapper.contextCreate(model, contextParams);
       if (context == nullptr) {
         throw NativeLlamaException(
           'Failed to create llama.cpp context for: ${command.modelPath}',
@@ -472,10 +469,10 @@ final class NativeLlamaRuntime {
       return null;
     }
 
-    // llama.cpp's Gemma4 tool grammar sampler is currently not usable from
-    // this runtime: non-lazy grammar can throw through FFI, while lazy grammar
-    // can stay in trigger-wait mode and hide tool behavior. Keep the tool-aware
-    // prompt and output parser, but avoid installing either sampler path.
+    // Retain the existing Gemma4 sampling policy until its generated grammars
+    // are validated with this direct parser. Safe FFI and single token accept
+    // now contain grammar exceptions; that alone does not establish Gemma4
+    // constrained decoding. The tool-aware template and parser remain active.
     if (templateResult.format == 'peg-gemma4') {
       return null;
     }
@@ -517,18 +514,13 @@ final class NativeLlamaRuntime {
     try {
       while (generated < maxTokens) {
         _checkCancellation();
-        final token = _bindings.llama_sampler_sample(
-          sampler,
-          loaded.context,
-          -1,
-        );
+        final token = _wrapper.samplerSample(sampler, loaded.context, -1);
         if (_bindings.llama_vocab_is_eog(loaded.vocab, token)) {
           generated += 1;
           finishReason = 'stop';
           break;
         }
 
-        _bindings.llama_sampler_accept(sampler, token);
         final piece = _tokenToPiece(loaded.vocab, token);
         final delta = stopMatcher.add(piece);
         if (delta.isNotEmpty) {
@@ -562,7 +554,7 @@ final class NativeLlamaRuntime {
         finishReason: finishReason,
       );
     } finally {
-      _bindings.llama_sampler_free(sampler);
+      _wrapper.samplerFree(sampler);
     }
   }
 
@@ -783,7 +775,7 @@ final class NativeLlamaRuntime {
     try {
       var capacity = math.max(8, bytes.length + 8);
       tokenPointer = calloc<llama_token>(capacity);
-      var count = _bindings.llama_tokenize(
+      var count = _wrapper.tokenize(
         vocab,
         textPointer.cast<Char>(),
         bytes.length,
@@ -797,7 +789,7 @@ final class NativeLlamaRuntime {
         calloc.free(tokenPointer);
         capacity = -count;
         tokenPointer = calloc<llama_token>(capacity);
-        count = _bindings.llama_tokenize(
+        count = _wrapper.tokenize(
           vocab,
           textPointer.cast<Char>(),
           bytes.length,
@@ -843,7 +835,7 @@ final class NativeLlamaRuntime {
         }
 
         final batch = _bindings.llama_batch_get_one(tokenPointer, chunkLength);
-        final result = _bindings.llama_decode(context, batch);
+        final result = _wrapper.decode(context, batch);
         _checkCancellation();
         if (result != 0) {
           throw NativeLlamaException('llama_decode failed with code $result.');
@@ -861,168 +853,20 @@ final class NativeLlamaRuntime {
     bool grammarLazy = false,
     List<_GrammarTrigger> grammarTriggers = const [],
   }) {
-    final sampler = _bindings.llama_sampler_chain_init(
-      _bindings.llama_sampler_chain_default_params(),
-    );
-    if (sampler == nullptr) {
-      throw const NativeLlamaException('Failed to create llama.cpp sampler.');
-    }
-
-    void add(Pointer<llama_sampler> child, String name) {
-      if (child == nullptr) {
-        _bindings.llama_sampler_free(sampler);
-        throw NativeLlamaException('Failed to create llama.cpp $name sampler.');
-      }
-      _bindings.llama_sampler_chain_add(sampler, child);
-    }
-
-    if (grammar != null && grammar.isNotEmpty && grammarLazy) {
-      add(
-        _createLazyGrammarSampler(vocab, grammar, grammarTriggers),
-        'lazy grammar',
-      );
-    } else if (grammar != null && grammar.isNotEmpty) {
-      final grammarPointer = grammar.toNativeUtf8();
-      final rootPointer = 'root'.toNativeUtf8();
-      try {
-        add(
-          _bindings.llama_sampler_init_grammar(
-            vocab,
-            grammarPointer.cast<Char>(),
-            rootPointer.cast<Char>(),
-          ),
-          'grammar',
-        );
-      } finally {
-        calloc.free(rootPointer);
-        calloc.free(grammarPointer);
-      }
-    }
-
-    final temperature = command.temperature;
-    final topP = command.topP;
-    if (temperature == null && topP == null) {
-      add(_bindings.llama_sampler_init_greedy(), 'greedy');
-      return sampler;
-    }
-
-    if (topP != null && topP > 0 && topP < 1) {
-      add(_bindings.llama_sampler_init_top_p(topP, 1), 'top-p');
-    }
-    if (temperature != null && temperature > 0) {
-      add(_bindings.llama_sampler_init_temp(temperature), 'temperature');
-      add(
-        _bindings.llama_sampler_init_dist(LLAMA_DEFAULT_SEED),
-        'distribution',
-      );
-    } else {
-      add(_bindings.llama_sampler_init_greedy(), 'greedy');
-    }
-
-    return sampler;
-  }
-
-  Pointer<llama_sampler> _createLazyGrammarSampler(
-    Pointer<llama_vocab> vocab,
-    String grammar,
-    List<_GrammarTrigger> triggers,
-  ) {
-    final grammarPointer = grammar.toNativeUtf8();
-    final rootPointer = 'root'.toNativeUtf8();
-    final stringPointers = <Pointer<Utf8>>[];
-    Pointer<Pointer<Char>> triggerStrings = nullptr;
-    Pointer<llama_token> triggerTokens = nullptr;
-
-    try {
-      final patternTriggers = triggers
-          .where(
-            (trigger) =>
-                trigger.type == 'pattern' || trigger.type == 'pattern_full',
-          )
-          .map((trigger) => trigger.value)
-          .where((value) => value.isNotEmpty)
-          .toList(growable: false);
-      final wordTriggers = triggers
-          .where((trigger) => trigger.type == 'word')
-          .map((trigger) => trigger.value)
-          .where((value) => value.isNotEmpty)
-          .toList(growable: false);
-      final tokenTriggers = triggers
-          .where((trigger) => trigger.type == 'token')
-          .map((trigger) => trigger.token)
-          .where((token) => token != LLAMA_TOKEN_NULL)
-          .toList(growable: false);
-
-      if (patternTriggers.isNotEmpty) {
-        triggerStrings = _allocateNativeStringArray(
-          patternTriggers,
-          stringPointers,
-        );
-        triggerTokens = _allocateNativeTokenArray(tokenTriggers);
-        return _bindings.llama_sampler_init_grammar_lazy_patterns(
-          vocab,
-          grammarPointer.cast<Char>(),
-          rootPointer.cast<Char>(),
-          triggerStrings,
-          patternTriggers.length,
-          triggerTokens,
-          tokenTriggers.length,
-        );
-      }
-
-      triggerStrings = _allocateNativeStringArray(wordTriggers, stringPointers);
-      triggerTokens = _allocateNativeTokenArray(tokenTriggers);
-      return _bindings.llama_sampler_init_grammar_lazy(
-        vocab,
-        grammarPointer.cast<Char>(),
-        rootPointer.cast<Char>(),
-        triggerStrings,
-        wordTriggers.length,
-        triggerTokens,
-        tokenTriggers.length,
-      );
-    } finally {
-      if (triggerTokens != nullptr) {
-        calloc.free(triggerTokens);
-      }
-      if (triggerStrings != nullptr) {
-        calloc.free(triggerStrings);
-      }
-      for (final pointer in stringPointers) {
-        calloc.free(pointer);
-      }
-      calloc.free(rootPointer);
-      calloc.free(grammarPointer);
-    }
-  }
-
-  Pointer<Pointer<Char>> _allocateNativeStringArray(
-    List<String> values,
-    List<Pointer<Utf8>> stringPointers,
-  ) {
-    if (values.isEmpty) {
-      return nullptr;
-    }
-
-    final pointer = calloc<Pointer<Char>>(values.length);
-    for (var i = 0; i < values.length; i += 1) {
-      final stringPointer = values[i].toNativeUtf8();
-      stringPointers.add(stringPointer);
-      pointer[i] = stringPointer.cast<Char>();
-    }
-    return pointer;
-  }
-
-  Pointer<llama_token> _allocateNativeTokenArray(List<int> tokens) {
-    if (tokens.isEmpty) {
-      return nullptr;
-    }
-
-    final pointer = calloc<llama_token>(tokens.length);
-    for (var i = 0; i < tokens.length; i += 1) {
-      pointer[i] = tokens[i];
-    }
-    return pointer;
+    return _wrapper.samplerCreate(vocab, {
+      'temperature': command.temperature,
+      'top_p': command.topP,
+      'grammar': grammar ?? '',
+      'grammar_lazy': grammarLazy,
+      'grammar_triggers': [
+        for (final trigger in grammarTriggers)
+          {
+            'type': trigger.type,
+            'value': trigger.value,
+            'token': trigger.token,
+          },
+      ],
+    });
   }
 
   List<int> _tokenToPiece(Pointer<llama_vocab> vocab, int token) {
@@ -1030,7 +874,7 @@ final class NativeLlamaRuntime {
     Pointer<Char> buffer = calloc<Char>(capacity);
 
     try {
-      var length = _bindings.llama_token_to_piece(
+      var length = _wrapper.tokenToPiece(
         vocab,
         token,
         buffer,
@@ -1042,7 +886,7 @@ final class NativeLlamaRuntime {
         calloc.free(buffer);
         capacity = -length;
         buffer = calloc<Char>(capacity);
-        length = _bindings.llama_token_to_piece(
+        length = _wrapper.tokenToPiece(
           vocab,
           token,
           buffer,
@@ -1252,9 +1096,284 @@ final class _MediaInput {
 }
 
 final class _LibLlamaCppWrapper {
-  _LibLlamaCppWrapper(this._library);
+  _LibLlamaCppWrapper(this._library) {
+    // Resolve the new direct ABI before any model resources are allocated.
+    for (final symbol in const [
+      'lib_llama_cpp_model_load_safe',
+      'lib_llama_cpp_context_create_safe',
+      'lib_llama_cpp_tokenize_safe',
+      'lib_llama_cpp_token_to_piece_safe',
+      'lib_llama_cpp_decode_safe',
+      'lib_llama_cpp_sampler_create_safe',
+      'lib_llama_cpp_sampler_sample_safe',
+      'lib_llama_cpp_sampler_accept_safe',
+      'lib_llama_cpp_sampler_free_safe',
+    ]) {
+      if (!_library.providesSymbol(symbol)) {
+        throw NativeLlamaException(
+          'Missing required direct shim symbol: $symbol.',
+        );
+      }
+    }
+  }
 
   final DynamicLibrary _library;
+
+  Pointer<T> _pointerResult<T extends NativeType>(
+    Pointer<T> Function(Pointer<Pointer<Char>>) operation,
+    String fallback,
+  ) {
+    final error = calloc<Pointer<Char>>();
+    try {
+      final result = operation(error);
+      if (result == nullptr) throw _errorMessage(error, fallback);
+      return result;
+    } finally {
+      _freeError(error);
+      calloc.free(error);
+    }
+  }
+
+  int _integerResult(
+    int Function(Pointer<Int32>, Pointer<Pointer<Char>>) operation,
+    String fallback,
+  ) {
+    final error = calloc<Pointer<Char>>();
+    final result = calloc<Int32>();
+    try {
+      if (operation(result, error) != 0) throw _errorMessage(error, fallback);
+      return result.value;
+    } finally {
+      _freeError(error);
+      calloc.free(result);
+      calloc.free(error);
+    }
+  }
+
+  Pointer<llama_model> modelLoad(
+    Pointer<Char> path,
+    llama_model_params params,
+  ) => _pointerResult(
+    (error) => _safeModelLoad(path, params, error),
+    'Failed to load model.',
+  );
+
+  Pointer<llama_context> contextCreate(
+    Pointer<llama_model> model,
+    llama_context_params params,
+  ) => _pointerResult(
+    (error) => _safeContextCreate(model, params, error),
+    'Failed to create context.',
+  );
+
+  int tokenize(
+    Pointer<llama_vocab> vocab,
+    Pointer<Char> text,
+    int length,
+    Pointer<llama_token> tokens,
+    int capacity,
+    bool addSpecial,
+    bool parseSpecial,
+  ) => _integerResult(
+    (result, error) => _safeTokenize(
+      vocab,
+      text,
+      length,
+      tokens,
+      capacity,
+      addSpecial,
+      parseSpecial,
+      result,
+      error,
+    ),
+    'Tokenization failed.',
+  );
+
+  int tokenToPiece(
+    Pointer<llama_vocab> vocab,
+    int token,
+    Pointer<Char> buffer,
+    int capacity,
+    int lstrip,
+    bool special,
+  ) => _integerResult(
+    (result, error) => _safeTokenToPiece(
+      vocab,
+      token,
+      buffer,
+      capacity,
+      lstrip,
+      special,
+      result,
+      error,
+    ),
+    'Token conversion failed.',
+  );
+
+  int decode(Pointer<llama_context> context, llama_batch batch) =>
+      _integerResult(
+        (result, error) => _safeDecode(context, batch, result, error),
+        'Decode failed.',
+      );
+
+  Pointer<llama_sampler> samplerCreate(
+    Pointer<llama_vocab> vocab,
+    Map<String, Object?> options,
+  ) {
+    final config = jsonEncode(options).toNativeUtf8();
+    try {
+      return _pointerResult(
+        (error) => _safeSamplerCreate(vocab, config.cast<Char>(), error),
+        'Sampler creation failed.',
+      );
+    } finally {
+      calloc.free(config);
+    }
+  }
+
+  int samplerSample(
+    Pointer<llama_sampler> sampler,
+    Pointer<llama_context> context,
+    int index,
+  ) => _integerResult(
+    (result, error) =>
+        _safeSamplerSample(sampler, context, index, result, error),
+    'Sampling failed.',
+  );
+
+  void samplerFree(Pointer<llama_sampler> sampler) => _safeSamplerFree(sampler);
+
+  late final _safeModelLoad = _library
+      .lookupFunction<
+        Pointer<llama_model> Function(
+          Pointer<Char>,
+          llama_model_params,
+          Pointer<Pointer<Char>>,
+        ),
+        Pointer<llama_model> Function(
+          Pointer<Char>,
+          llama_model_params,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_model_load_safe');
+
+  late final _safeContextCreate = _library
+      .lookupFunction<
+        Pointer<llama_context> Function(
+          Pointer<llama_model>,
+          llama_context_params,
+          Pointer<Pointer<Char>>,
+        ),
+        Pointer<llama_context> Function(
+          Pointer<llama_model>,
+          llama_context_params,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_context_create_safe');
+
+  late final _safeTokenize = _library
+      .lookupFunction<
+        Int32 Function(
+          Pointer<llama_vocab>,
+          Pointer<Char>,
+          Int32,
+          Pointer<llama_token>,
+          Int32,
+          Bool,
+          Bool,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        ),
+        int Function(
+          Pointer<llama_vocab>,
+          Pointer<Char>,
+          int,
+          Pointer<llama_token>,
+          int,
+          bool,
+          bool,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_tokenize_safe');
+
+  late final _safeTokenToPiece = _library
+      .lookupFunction<
+        Int32 Function(
+          Pointer<llama_vocab>,
+          Int32,
+          Pointer<Char>,
+          Int32,
+          Int32,
+          Bool,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        ),
+        int Function(
+          Pointer<llama_vocab>,
+          int,
+          Pointer<Char>,
+          int,
+          int,
+          bool,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_token_to_piece_safe');
+
+  late final _safeDecode = _library
+      .lookupFunction<
+        Int32 Function(
+          Pointer<llama_context>,
+          llama_batch,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        ),
+        int Function(
+          Pointer<llama_context>,
+          llama_batch,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_decode_safe');
+
+  late final _safeSamplerCreate = _library
+      .lookupFunction<
+        Pointer<llama_sampler> Function(
+          Pointer<llama_vocab>,
+          Pointer<Char>,
+          Pointer<Pointer<Char>>,
+        ),
+        Pointer<llama_sampler> Function(
+          Pointer<llama_vocab>,
+          Pointer<Char>,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_sampler_create_safe');
+
+  late final _safeSamplerSample = _library
+      .lookupFunction<
+        Int32 Function(
+          Pointer<llama_sampler>,
+          Pointer<llama_context>,
+          Int32,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        ),
+        int Function(
+          Pointer<llama_sampler>,
+          Pointer<llama_context>,
+          int,
+          Pointer<Int32>,
+          Pointer<Pointer<Char>>,
+        )
+      >('lib_llama_cpp_sampler_sample_safe');
+
+  late final _safeSamplerFree = _library
+      .lookupFunction<
+        Void Function(Pointer<llama_sampler>),
+        void Function(Pointer<llama_sampler>)
+      >('lib_llama_cpp_sampler_free_safe');
 
   Map<String, Object?> chatTemplateCapabilities(Pointer<llama_model> model) {
     return _withWrapper('chat template capabilities', () {
