@@ -69,4 +69,3 @@ direct safe isolated regression
 Ran 6 tests in 8.699s
 
 OK
-
