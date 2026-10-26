@@ -423,7 +423,7 @@ jobs:
         run: dart analyze .
 
       - name: Run pure Dart tests
-        run: dart test packages/lib_llama_cpp_platform_interface/test && dart test packages/lib_llama_cpp_ffi/test
+        run: dart test packages/lib_llama_cpp_platform_interface/test && dart test packages/lib_llama_cpp_ffi/test && dart test packages/lib_llama_cpp_server/test
 
       - name: Run Flutter tests
         run: >
@@ -548,9 +548,13 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLISH_WORKFLOW_TOKEN }}
           VERSION: ${{ inputs.version }}
         run: |
+          notes=(--generate-notes)
+          if [[ -f "docs/releases/v${VERSION}.md" ]]; then
+            notes=(--notes-file "docs/releases/v${VERSION}.md")
+          fi
           gh release create "v${VERSION}" dist/release/* \
             --target "$(git rev-parse HEAD)" \
-            --generate-notes \
+            "${notes[@]}" \
             --title "v${VERSION}"
 
       - name: Dispatch accelerated native prebuilt release assets

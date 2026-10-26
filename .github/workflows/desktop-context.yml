@@ -1,0 +1,93 @@
+name: Desktop context acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner label (use a configured GPU runner for CUDA/Vulkan)
+        type: string
+        default: ubuntu-latest
+        required: true
+      platform:
+        description: Desktop OS
+        type: choice
+        options: [linux, windows]
+        default: linux
+      backend:
+        description: Required backend (no silent CPU fallback)
+        type: choice
+        options: [cpu, cuda, vulkan]
+        default: cpu
+      context:
+        description: Actual near-window prompt tier
+        type: choice
+        options: ['32768', '65536', '131072']
+        default: '32768'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Require matching OS and GPU hardware
+        shell: bash
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          BACKEND: ${{ inputs.backend }}
+        run: |
+          test "$RUNNER_OS" = "$([ "$PLATFORM" = linux ] && echo Linux || echo Windows)"
+          if [ "$BACKEND" = cuda ]; then nvidia-smi; fi
+          if [ "$BACKEND" = vulkan ]; then vulkaninfo --summary; fi
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: inputs.platform == 'windows'
+      - name: Build Linux artifact
+        if: inputs.platform == 'linux'
+        shell: bash
+        env:
+          LIB_LLAMA_CPP_ENABLE_CUDA: ${{ inputs.backend == 'cuda' && 'ON' || 'OFF' }}
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ${{ inputs.backend == 'vulkan' && 'ON' || 'OFF' }}
+        run: bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
+      - name: Build Windows artifact
+        if: inputs.platform == 'windows'
+        shell: pwsh
+        env:
+          LIB_LLAMA_CPP_ENABLE_CUDA: ${{ inputs.backend == 'cuda' && 'ON' || 'OFF' }}
+          LIB_LLAMA_CPP_ENABLE_VULKAN: ${{ inputs.backend == 'vulkan' && 'ON' || 'OFF' }}
+        run: .github/scripts/build-native-prebuilt.ps1 -OutputDir "$env:RUNNER_TEMP/prebuilt"
+      - name: Download immutable model fixture and verify hash
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/models" results
+          curl -L --fail --retry 3 'https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/a6807259ab0f1f77f666d635cfcc7d9d960bf39a/google-gemma-4-E2B-it-Q4_K_M.gguf' -o "$RUNNER_TEMP/models/model.gguf"
+          python -c 'import hashlib,os; p=os.path.join(os.environ["RUNNER_TEMP"],"models/model.gguf"); actual=hashlib.file_digest(open(p,"rb"),"sha256").hexdigest(); assert actual=="e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",actual'
+      - name: Execute ABI regression and actual context acceptance
+        shell: bash
+        env:
+          BACKEND: ${{ inputs.backend }}
+          CONTEXT: ${{ inputs.context }}
+          PLATFORM: ${{ inputs.platform }}
+        run: |
+          architecture=x64
+          case "$RUNNER_ARCH" in
+            ARM64) architecture=arm64 ;;
+            X64) ;;
+            *) echo "Unsupported runner architecture: $RUNNER_ARCH" >&2; exit 1 ;;
+          esac
+          library="$RUNNER_TEMP/prebuilt/linux/$architecture/liblib_llama_cpp_linux.so"
+          if [ "$PLATFORM" = windows ]; then library="$RUNNER_TEMP/prebuilt/windows/x64/lib_llama_cpp_windows.dll"; fi
+          python packages/lib_llama_cpp_ffi/test/native/test_engine.py "$library" "$RUNNER_TEMP/models/model.gguf"
+          gpu_layers=0
+          if [ "$BACKEND" != cpu ]; then gpu_layers=99; fi
+          python tools/gguf_metadata.py "$RUNNER_TEMP/models/model.gguf" > results/model.json
+          python tools/desktop_context_benchmark.py --library "$library" --model "$RUNNER_TEMP/models/model.gguf" --backend "$BACKEND" --gpu-layers "$gpu_layers" --context "$CONTEXT" --output results/context.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-${{ inputs.platform }}-${{ inputs.backend }}-${{ inputs.context }}
+          path: results/

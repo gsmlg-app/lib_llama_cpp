@@ -21,9 +21,9 @@ on:
 env:
   MODEL_URL: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct.Q4_0.gguf?download=true
   MODEL_SHA256: f68203bfb98b1b1e8c64fac75fab10c4e36acac081609573b4df0fcc19c90dd9
-  GEMMA4_E2B_MODEL_URL: https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/main/google-gemma-4-E2B-it-Q4_K_M.gguf
+  GEMMA4_E2B_MODEL_URL: https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/a6807259ab0f1f77f666d635cfcc7d9d960bf39a/google-gemma-4-E2B-it-Q4_K_M.gguf
   GEMMA4_E2B_MODEL_SHA256: e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64
-  GEMMA4_E2B_MMPROJ_URL: https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/main/mmproj-BF16.gguf
+  GEMMA4_E2B_MMPROJ_URL: https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/a6807259ab0f1f77f666d635cfcc7d9d960bf39a/mmproj-BF16.gguf
   GEMMA4_E2B_MMPROJ_SHA256: e8b6533e68c0e2b18c57e1cb570ded27a0d70f3421745125bdb210bf5cd4f1c6
   SMOKE_PROMPT: Say hello in one short sentence.
   SMOKE_TOKENS: '4'
@@ -362,10 +362,14 @@ jobs:
           }
 
   gemma4-e2b-api-e2e:
-    name: Gemma 4 E2B API E2E (linux)
-    if: ${{ (inputs.platform || 'all') == 'all' || (inputs.platform || 'all') == 'linux' }}
-    runs-on: ubuntu-latest
+    name: Gemma 4 E2B API E2E (${{ matrix.platform }})
+    if: ${{ (inputs.platform || 'all') == 'all' || (inputs.platform || 'all') == 'linux' || (inputs.platform || 'all') == 'windows' }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON((inputs.platform || 'all') == 'all' && '[{"platform":"linux","os":"ubuntu-latest"},{"platform":"windows","os":"windows-2022"}]' || (inputs.platform || 'all') == 'linux' && '[{"platform":"linux","os":"ubuntu-latest"}]' || '[{"platform":"windows","os":"windows-2022"}]') }}
 
     steps:
       - name: Checkout
@@ -374,6 +378,7 @@ jobs:
           submodules: recursive
 
       - name: Install Linux native build dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build
@@ -389,12 +394,20 @@ jobs:
         run: dart pub get
 
       - name: Build Linux native library
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           bash .github/scripts/build-native-prebuilt.sh linux "$RUNNER_TEMP/prebuilt"
           library_path="$RUNNER_TEMP/prebuilt/linux/x64/liblib_llama_cpp_linux.so"
           test -f "$library_path"
           echo "LIB_LLAMA_CPP_TEST_LIBRARY=$library_path" >> "$GITHUB_ENV"
+
+      - name: Build Windows native library
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .github/scripts/build-native-prebuilt.ps1 -Platform windows -OutputDir "$env:RUNNER_TEMP/prebuilt"
+          "LIB_LLAMA_CPP_TEST_LIBRARY=$env:RUNNER_TEMP/prebuilt/windows/x64/lib_llama_cpp_windows.dll" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download and verify Gemma 4 E2B model and projector
         shell: bash
@@ -414,10 +427,23 @@ jobs:
         run: dart test packages/lib_llama_cpp/test/real_model_e2e_test.dart -r expanded
 
       - name: Run Gemma 4 E2B server API E2E
+        shell: bash
         timeout-minutes: 20
         run: |
           LIB_LLAMA_CPP_TEST_MODEL_ALIAS=gemma4-e2b \
             dart test packages/lib_llama_cpp_server/test/native_server_e2e_test.dart -r expanded
+
+      - name: Verify native exception isolation and lifecycle
+        shell: bash
+        timeout-minutes: 10
+        run: python packages/lib_llama_cpp_ffi/test/native/test_engine.py "$LIB_LLAMA_CPP_TEST_LIBRARY" "$LIB_LLAMA_CPP_TEST_MODEL"
+
+      - name: Verify CLI default desktop library lookup
+        shell: bash
+        timeout-minutes: 10
+        run: |
+          library_dir="$(dirname "$LIB_LLAMA_CPP_TEST_LIBRARY")"
+          python tools/desktop_server_smoke.py --model "$LIB_LLAMA_CPP_TEST_MODEL" --library-directory "$library_dir" --log "$RUNNER_TEMP/server-smoke.log" --output "$RUNNER_TEMP/server-smoke.json"
 
   android-real-model-smoke:
     name: Real model smoke (android)
