@@ -33,6 +33,7 @@ struct lib_llama_cpp_media_context {
         : context(value) {}
 
     mtmd_context * context;
+    int64_t last_prompt_tokens = 0;
 };
 
 struct lib_llama_cpp_media_blob {
@@ -58,15 +59,32 @@ static const char * llcpp_cstr_or_empty(const char * value) {
 static json llcpp_error_json(const std::string & code, const std::string & message) {
     return json{
         {"code", code},
+        {"type", code},
         {"message", message},
     };
 }
 
-static void llcpp_set_error(char ** error_json, const std::string & code, const std::string & message) {
+static void llcpp_set_error(char ** error_json, const char * code, const char * message) noexcept {
     if (error_json == nullptr) {
         return;
     }
-    *error_json = llcpp_copy_string(llcpp_error_json(code, message).dump());
+    try {
+        *error_json = llcpp_copy_string(llcpp_error_json(code, message).dump());
+    } catch (...) {
+        static const char fallback[] = "{\"code\":\"allocation\",\"type\":\"allocation\",\"message\":\"error allocation failed\"}";
+        *error_json = static_cast<char *>(std::malloc(sizeof(fallback)));
+        if (*error_json) std::memcpy(*error_json, fallback, sizeof(fallback));
+    }
+}
+
+static void llcpp_set_error(char ** out, const char * code, const std::string & message) noexcept {
+    llcpp_set_error(out, code, message.c_str());
+}
+
+static void llcpp_exception(char ** out, const std::exception & error, const char * fallback = "backend") noexcept {
+    const char * code = dynamic_cast<const std::bad_alloc *>(&error) ? "allocation" :
+        (dynamic_cast<const std::invalid_argument *>(&error) || dynamic_cast<const json::exception *>(&error)) ? "invalid_request" : fallback;
+    llcpp_set_error(out, code, error.what());
 }
 
 static json llcpp_parse_json_object(const char * value, const char * argument_name) {
@@ -171,6 +189,7 @@ lib_llama_cpp_chat_templates * lib_llama_cpp_chat_templates_init(
     const char * bos_token_override,
     const char * eos_token_override,
     char ** error_json) {
+    if (error_json) *error_json = nullptr;
     try {
         auto templates = common_chat_templates_init(
             model,
@@ -182,19 +201,42 @@ lib_llama_cpp_chat_templates * lib_llama_cpp_chat_templates_init(
         }
         return new lib_llama_cpp_chat_templates(std::move(templates));
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "chat_template_init_failed", error.what());
+        llcpp_exception(error_json, error);
+        return nullptr;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "chat template initialization failed");
         return nullptr;
     }
 }
 
 void lib_llama_cpp_chat_templates_free(lib_llama_cpp_chat_templates * handle) {
-    delete handle;
+    try { delete handle; } catch (...) {}
+}
+
+char * lib_llama_cpp_chat_templates_caps_json(
+    const lib_llama_cpp_chat_templates * handle,
+    char ** error_json) {
+    if (error_json) *error_json = nullptr;
+    try {
+        if (!handle || !handle->templates) throw std::invalid_argument("chat template handle must not be null");
+        json caps = common_chat_templates_get_caps(handle->templates.get());
+        caps["supports_reasoning"] = nullptr;
+        try { caps["supports_reasoning"] = common_chat_templates_support_enable_thinking(handle->templates.get()); }
+        catch (...) {} // An unavailable reasoning probe must not imply support.
+        return llcpp_copy_string(caps.dump());
+    } catch (const std::exception & error) {
+        llcpp_exception(error_json, error);
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "chat template capability inspection failed");
+    }
+    return nullptr;
 }
 
 char * lib_llama_cpp_chat_templates_apply_json(
     const lib_llama_cpp_chat_templates * handle,
     const char * request_json,
     char ** error_json) {
+    if (error_json) *error_json = nullptr;
     try {
         if (handle == nullptr || !handle->templates) {
             throw std::invalid_argument("chat template handle must not be null");
@@ -241,7 +283,10 @@ char * lib_llama_cpp_chat_templates_apply_json(
 
         return llcpp_copy_string(output.dump());
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "chat_template_apply_failed", error.what());
+        llcpp_exception(error_json, error, "invalid_request");
+        return nullptr;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "chat template application failed");
         return nullptr;
     }
 }
@@ -249,6 +294,7 @@ char * lib_llama_cpp_chat_templates_apply_json(
 char * lib_llama_cpp_chat_parse_json(
     const char * parser_request_json,
     char ** error_json) {
+    if (error_json) *error_json = nullptr;
     try {
         const json request = llcpp_parse_json_object(parser_request_json, "parser_request_json");
 
@@ -277,7 +323,10 @@ char * lib_llama_cpp_chat_parse_json(
         };
         return llcpp_copy_string(output.dump());
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "chat_parse_failed", error.what());
+        llcpp_exception(error_json, error, "invalid_request");
+        return nullptr;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "chat parsing failed");
         return nullptr;
     }
 }
@@ -287,10 +336,12 @@ lib_llama_cpp_media_context * lib_llama_cpp_media_init(
     const struct llama_model * model,
     const char * options_json,
     char ** error_json) {
+    if (error_json) *error_json = nullptr;
     try {
         if (mmproj_path == nullptr || std::strlen(mmproj_path) == 0) {
             throw std::invalid_argument("mmproj_path must not be empty");
         }
+        if (!model) throw std::invalid_argument("model must not be null");
 
         mtmd_context_params params = mtmd_context_params_default();
         std::string media_marker;
@@ -307,31 +358,46 @@ lib_llama_cpp_media_context * lib_llama_cpp_media_init(
                 params.media_marker = media_marker.c_str();
             }
         }
+        if (params.n_threads <= 0) throw std::invalid_argument("media n_threads must be positive");
+        if (params.image_min_tokens < -1 || params.image_max_tokens < -1 ||
+            (params.image_min_tokens > 0 && params.image_max_tokens > 0 && params.image_min_tokens > params.image_max_tokens))
+            throw std::invalid_argument("invalid media image token bounds");
 
-        mtmd_context * context = mtmd_init_from_file(mmproj_path, model, params);
-        if (context == nullptr) {
+        std::unique_ptr<mtmd_context, decltype(&mtmd_free)> context(mtmd_init_from_file(mmproj_path, model, params), mtmd_free);
+        if (!context) {
             throw std::runtime_error("llama.cpp did not return an mtmd context");
         }
-        return new lib_llama_cpp_media_context(context);
+        auto * result = new lib_llama_cpp_media_context(context.get());
+        context.release();
+        return result;
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "media_init_failed", error.what());
+        llcpp_exception(error_json, error);
+        return nullptr;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "media initialization failed");
         return nullptr;
     }
 }
 
 void lib_llama_cpp_media_free(lib_llama_cpp_media_context * handle) {
+    try {
     if (handle != nullptr) {
         mtmd_free(handle->context);
     }
     delete handle;
+    } catch (...) {}
 }
 
 bool lib_llama_cpp_media_supports_vision(const lib_llama_cpp_media_context * handle) {
-    return handle != nullptr && mtmd_support_vision(handle->context);
+    try { return handle != nullptr && mtmd_support_vision(handle->context); } catch (...) { return false; }
 }
 
 bool lib_llama_cpp_media_supports_audio(const lib_llama_cpp_media_context * handle) {
-    return handle != nullptr && mtmd_support_audio(handle->context);
+    try { return handle != nullptr && mtmd_support_audio(handle->context); } catch (...) { return false; }
+}
+
+int64_t lib_llama_cpp_media_last_prompt_tokens(const lib_llama_cpp_media_context * handle) {
+    try { return handle ? handle->last_prompt_tokens : 0; } catch (...) { return 0; }
 }
 
 lib_llama_cpp_media_blob * lib_llama_cpp_media_blob_from_file(
@@ -339,6 +405,7 @@ lib_llama_cpp_media_blob * lib_llama_cpp_media_blob_from_file(
     const char * path,
     const char * id,
     char ** error_json) {
+    if (error_json) *error_json = nullptr;
     try {
         if (handle == nullptr) {
             throw std::invalid_argument("media handle must not be null");
@@ -346,16 +413,21 @@ lib_llama_cpp_media_blob * lib_llama_cpp_media_blob_from_file(
         if (path == nullptr || std::strlen(path) == 0) {
             throw std::invalid_argument("path must not be empty");
         }
-        mtmd_bitmap * bitmap = mtmd_helper_bitmap_init_from_file(handle->context, path);
-        if (bitmap == nullptr) {
+        std::unique_ptr<mtmd_bitmap, decltype(&mtmd_bitmap_free)> bitmap(mtmd_helper_bitmap_init_from_file(handle->context, path), mtmd_bitmap_free);
+        if (!bitmap) {
             throw std::runtime_error("failed to decode media file");
         }
         if (id != nullptr) {
-            mtmd_bitmap_set_id(bitmap, id);
+            mtmd_bitmap_set_id(bitmap.get(), id);
         }
-        return new lib_llama_cpp_media_blob(bitmap);
+        auto * result = new lib_llama_cpp_media_blob(bitmap.get());
+        bitmap.release();
+        return result;
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "media_blob_decode_failed", error.what());
+        llcpp_exception(error_json, error);
+        return nullptr;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "media file decoding failed");
         return nullptr;
     }
 }
@@ -366,6 +438,7 @@ lib_llama_cpp_media_blob * lib_llama_cpp_media_blob_from_encoded_bytes(
     size_t byte_count,
     const char * id,
     char ** error_json) {
+    if (error_json) *error_json = nullptr;
     try {
         if (handle == nullptr) {
             throw std::invalid_argument("media handle must not be null");
@@ -373,25 +446,32 @@ lib_llama_cpp_media_blob * lib_llama_cpp_media_blob_from_encoded_bytes(
         if (bytes == nullptr || byte_count == 0) {
             throw std::invalid_argument("bytes must not be empty");
         }
-        mtmd_bitmap * bitmap = mtmd_helper_bitmap_init_from_buf(handle->context, bytes, byte_count);
-        if (bitmap == nullptr) {
+        std::unique_ptr<mtmd_bitmap, decltype(&mtmd_bitmap_free)> bitmap(mtmd_helper_bitmap_init_from_buf(handle->context, bytes, byte_count), mtmd_bitmap_free);
+        if (!bitmap) {
             throw std::runtime_error("failed to decode encoded media bytes");
         }
         if (id != nullptr) {
-            mtmd_bitmap_set_id(bitmap, id);
+            mtmd_bitmap_set_id(bitmap.get(), id);
         }
-        return new lib_llama_cpp_media_blob(bitmap);
+        auto * result = new lib_llama_cpp_media_blob(bitmap.get());
+        bitmap.release();
+        return result;
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "media_blob_decode_failed", error.what());
+        llcpp_exception(error_json, error);
+        return nullptr;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "encoded media decoding failed");
         return nullptr;
     }
 }
 
 void lib_llama_cpp_media_blob_free(lib_llama_cpp_media_blob * handle) {
+    try {
     if (handle != nullptr) {
         mtmd_bitmap_free(handle->bitmap);
     }
     delete handle;
+    } catch (...) {}
 }
 
 int32_t lib_llama_cpp_media_eval_prompt(
@@ -408,6 +488,28 @@ int32_t lib_llama_cpp_media_eval_prompt(
     bool parse_special,
     int32_t * new_n_past,
     char ** error_json) {
+    return lib_llama_cpp_media_eval_prompt_with_budget(media, llama, prompt, blobs,
+        blob_count, n_past, seq_id, n_batch, logits_last, add_special,
+        parse_special, 0, new_n_past, error_json);
+}
+
+int32_t lib_llama_cpp_media_eval_prompt_with_budget(
+    lib_llama_cpp_media_context * media,
+    struct llama_context * llama,
+    const char * prompt,
+    const lib_llama_cpp_media_blob * const * blobs,
+    size_t blob_count,
+    int32_t n_past,
+    int32_t seq_id,
+    int32_t n_batch,
+    bool logits_last,
+    bool add_special,
+    bool parse_special,
+    int32_t reserved_output_tokens,
+    int32_t * new_n_past,
+    char ** error_json) {
+    if (error_json) *error_json = nullptr;
+    if (new_n_past) *new_n_past = n_past;
     try {
         if (media == nullptr) {
             throw std::invalid_argument("media handle must not be null");
@@ -421,6 +523,12 @@ int32_t lib_llama_cpp_media_eval_prompt(
         if (blob_count > 0 && blobs == nullptr) {
             throw std::invalid_argument("blobs must not be null when blob_count is non-zero");
         }
+        if (n_past < 0 || seq_id < 0 || n_batch <= 0 || reserved_output_tokens < 0)
+            throw std::invalid_argument("positions, sequence, and output budget must be nonnegative; batch must be positive");
+        if (static_cast<uint32_t>(seq_id) >= llama_n_seq_max(llama))
+            throw std::invalid_argument("sequence id exceeds configured sequence count");
+        if (static_cast<uint32_t>(n_batch) > llama_n_batch(llama))
+            throw std::invalid_argument("media batch exceeds configured llama batch size");
 
         std::vector<const mtmd_bitmap *> bitmaps;
         bitmaps.reserve(blob_count);
@@ -453,9 +561,27 @@ int32_t lib_llama_cpp_media_eval_prompt(
         if (tokenize_result != 0) {
             llcpp_set_error(
                 error_json,
-                "media_tokenize_failed",
+                "invalid_request",
                 "mtmd_tokenize failed with code " + std::to_string(tokenize_result));
             return tokenize_result;
+        }
+
+        const int64_t positions = mtmd_helper_get_n_pos(chunks.get());
+        const uint64_t tokens = mtmd_helper_get_n_tokens(chunks.get());
+        media->last_prompt_tokens = tokens > static_cast<uint64_t>(INT64_MAX) ? INT64_MAX : static_cast<int64_t>(tokens);
+        const int64_t context = llama_n_ctx_seq(llama);
+        // Count both storage tokens and positional coordinates: M-RoPE image
+        // chunks can have different counts. Never evaluate a truncated prompt.
+        if (positions < 0 || tokens > static_cast<uint64_t>(INT32_MAX) ||
+            static_cast<int64_t>(n_past) + positions >= context ||
+            static_cast<int64_t>(n_past) + positions + reserved_output_tokens > context ||
+            static_cast<uint64_t>(n_past) + tokens + static_cast<uint64_t>(reserved_output_tokens) > static_cast<uint64_t>(context)) {
+            if (error_json) *error_json = llcpp_copy_string(json({
+                {"code", "context_overflow"}, {"type", "context_overflow"},
+                {"message", "media prompt plus requested output exceeds context"},
+                {"prompt_tokens", tokens}, {"prompt_positions", positions}, {"n_past", n_past},
+                {"max_tokens", reserved_output_tokens}, {"n_ctx", context}}).dump());
+            return -1;
         }
 
         llama_pos updated_n_past = n_past;
@@ -474,12 +600,15 @@ int32_t lib_llama_cpp_media_eval_prompt(
         if (eval_result != 0) {
             llcpp_set_error(
                 error_json,
-                "media_eval_failed",
+                eval_result == 2 ? "cancelled" : "backend",
                 "mtmd_helper_eval_chunks failed with code " + std::to_string(eval_result));
         }
         return eval_result;
     } catch (const std::exception & error) {
-        llcpp_set_error(error_json, "media_eval_failed", error.what());
+        llcpp_exception(error_json, error);
+        return -1;
+    } catch (...) {
+        llcpp_set_error(error_json, "backend", "media evaluation failed");
         return -1;
     }
 }
