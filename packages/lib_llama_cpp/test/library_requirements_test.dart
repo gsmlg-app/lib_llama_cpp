@@ -25,54 +25,58 @@ void main() {
   });
   final cpuLibrary =
       Platform.environment['LIB_LLAMA_CPP_TEST_CPU_LIBRARY'] ?? '';
-  group('actual CPU-only library', () {
-    for (final backend in [
-      LlamaCppLibraryCapability.cuda,
-      LlamaCppLibraryCapability.vulkan,
-    ]) {
-      test('rejects required ${backend.name} before loading weights', () {
+  group(
+    'actual CPU-only library',
+    () {
+      for (final backend in [
+        LlamaCppLibraryCapability.cuda,
+        LlamaCppLibraryCapability.vulkan,
+      ]) {
+        test('rejects required ${backend.name} before loading weights', () {
+          expect(
+            () => NativeLlamaRuntime(
+              library: LlamaCppLibraryDescriptor(
+                resolution: LlamaCppLibraryResolution.path,
+                path: cpuLibrary,
+                capabilities: const {LlamaCppLibraryCapability.cpu},
+                requestedCapabilities: {backend},
+              ),
+            ),
+            throwsA(
+              isA<NativeLlamaException>().having(
+                (error) => error.message,
+                'message',
+                contains('Required backend ${backend.name} is unavailable'),
+              ),
+            ),
+          );
+        });
+      }
+      test('rejects GPU offload before reading a model file', () {
+        final runtime = NativeLlamaRuntime(
+          library: LlamaCppLibraryDescriptor(
+            resolution: LlamaCppLibraryResolution.path,
+            path: cpuLibrary,
+          ),
+        );
+        addTearDown(runtime.close);
         expect(
-          () => NativeLlamaRuntime(
-            library: LlamaCppLibraryDescriptor(
-              resolution: LlamaCppLibraryResolution.path,
-              path: cpuLibrary,
-              capabilities: const {LlamaCppLibraryCapability.cpu},
-              requestedCapabilities: {backend},
+          () => runtime.loadModel(
+            const LlamaLoadModelCommand(
+              modelPath: '/model-not-present.gguf',
+              gpuLayerCount: 1,
             ),
           ),
           throwsA(
             isA<NativeLlamaException>().having(
               (error) => error.message,
               'message',
-              contains('Required backend ${backend.name} is unavailable'),
+              contains('no usable GPU device'),
             ),
           ),
         );
       });
-    }
-    test('rejects GPU offload before reading a model file', () {
-      final runtime = NativeLlamaRuntime(
-        library: LlamaCppLibraryDescriptor(
-          resolution: LlamaCppLibraryResolution.path,
-          path: cpuLibrary,
-        ),
-      );
-      addTearDown(runtime.close);
-      expect(
-        () => runtime.loadModel(
-          const LlamaLoadModelCommand(
-            modelPath: '/model-not-present.gguf',
-            gpuLayerCount: 1,
-          ),
-        ),
-        throwsA(
-          isA<NativeLlamaException>().having(
-            (error) => error.message,
-            'message',
-            contains('no usable GPU device'),
-          ),
-        ),
-      );
-    });
-  }, skip: cpuLibrary.isEmpty || !(Platform.isLinux || Platform.isWindows));
+    },
+    skip: cpuLibrary.isEmpty || !(Platform.isLinux || Platform.isWindows),
+  );
 }

@@ -59,34 +59,42 @@ void main() {
       expect(response.outputText.trim(), isNotEmpty);
     }, timeout: const Timeout(Duration(minutes: 4)));
 
-    test('handles prompts longer than one decode batch', () async {
-      final response = await client.responses.create(
-        model: _modelName,
-        input:
-            'Reply with OK after reading this list: ${List.filled(2300, 'word').join(' ')}',
-        maxOutputTokens: 8,
-        temperature: 0,
-      );
+    test(
+      'handles prompts longer than one decode batch',
+      () async {
+        final response = await client.responses.create(
+          model: _modelName,
+          input:
+              'Reply with OK after reading this list: ${List.filled(2300, 'word').join(' ')}',
+          maxOutputTokens: 8,
+          temperature: 0,
+        );
 
-      expect(response.status, 'completed');
-      expect(response.outputText.trim(), isNotEmpty);
-    }, timeout: const Timeout(Duration(minutes: 5)));
+        expect(response.status, 'completed');
+        expect(response.outputText.trim(), isNotEmpty);
+      },
+      timeout: const Timeout(Duration(minutes: 5)),
+    );
 
-    test('streams text deltas and completes', () async {
-      final events = await client.responses
-          .stream(
-            model: _modelName,
-            input: 'Reply with one short sentence about local inference.',
-            maxOutputTokens: 32,
-            temperature: 0,
-          )
-          .toList();
+    test(
+      'streams text deltas and completes',
+      () async {
+        final events = await client.responses
+            .stream(
+              model: _modelName,
+              input: 'Reply with one short sentence about local inference.',
+              maxOutputTokens: 32,
+              temperature: 0,
+            )
+            .toList();
 
-      expect(events.first, isA<LlamaResponseCreated>());
-      expect(events.whereType<LlamaResponseOutputTextDelta>(), isNotEmpty);
-      expect(events.whereType<LlamaResponseCompleted>(), hasLength(1));
-      expect(events.last, isA<LlamaResponseCompleted>());
-    }, timeout: const Timeout(Duration(minutes: 4)));
+        expect(events.first, isA<LlamaResponseCreated>());
+        expect(events.whereType<LlamaResponseOutputTextDelta>(), isNotEmpty);
+        expect(events.whereType<LlamaResponseCompleted>(), hasLength(1));
+        expect(events.last, isA<LlamaResponseCompleted>());
+      },
+      timeout: const Timeout(Duration(minutes: 4)),
+    );
 
     test('cancels an active stream', () async {
       final iterator = StreamIterator(
@@ -159,41 +167,45 @@ void main() {
       timeout: const Timeout(Duration(minutes: 4)),
     );
 
-    test('emits a forced structured tool call', () async {
-      final events = await client.responses
-          .stream(
-            model: _modelName,
-            input:
-                'Use the lookup_weather tool for Paris. Do not answer directly.',
-            maxOutputTokens: 96,
-            temperature: 0,
-            tools: const [
-              LlamaTool(
-                name: 'lookup_weather',
-                description: 'Look up current weather for a city.',
-                parameters: {
-                  'type': 'object',
-                  'properties': {
-                    'city': {'type': 'string', 'description': 'City name.'},
+    test(
+      'emits a forced structured tool call',
+      () async {
+        final events = await client.responses
+            .stream(
+              model: _modelName,
+              input:
+                  'Use the lookup_weather tool for Paris. Do not answer directly.',
+              maxOutputTokens: 96,
+              temperature: 0,
+              tools: const [
+                LlamaTool(
+                  name: 'lookup_weather',
+                  description: 'Look up current weather for a city.',
+                  parameters: {
+                    'type': 'object',
+                    'properties': {
+                      'city': {'type': 'string', 'description': 'City name.'},
+                    },
+                    'required': ['city'],
                   },
-                  'required': ['city'],
-                },
-              ),
-            ],
-            toolChoice: const LlamaToolChoice.tool('lookup_weather'),
-          )
-          .toList();
+                ),
+              ],
+              toolChoice: const LlamaToolChoice.tool('lookup_weather'),
+            )
+            .toList();
 
-      expect(events.first, isA<LlamaResponseCreated>());
-      expect(events.whereType<LlamaResponseFailed>(), isEmpty);
-      final toolCall = events
-          .whereType<LlamaResponseToolCallDone>()
-          .single
-          .toolCall;
-      expect(toolCall.name, 'lookup_weather');
-      expect(jsonDecode(toolCall.arguments), containsPair('city', 'Paris'));
-      expect(events.last, isA<LlamaResponseRequiresAction>());
-    }, timeout: const Timeout(Duration(minutes: 5)));
+        expect(events.first, isA<LlamaResponseCreated>());
+        expect(events.whereType<LlamaResponseFailed>(), isEmpty);
+        final toolCall = events
+            .whereType<LlamaResponseToolCallDone>()
+            .single
+            .toolCall;
+        expect(toolCall.name, 'lookup_weather');
+        expect(jsonDecode(toolCall.arguments), containsPair('city', 'Paris'));
+        expect(events.last, isA<LlamaResponseRequiresAction>());
+      },
+      timeout: const Timeout(Duration(minutes: 5)),
+    );
 
     test(
       'handles image input',
