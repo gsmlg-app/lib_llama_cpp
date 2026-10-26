@@ -1,0 +1,32 @@
+{
+  "command": [
+    "dart",
+    "run",
+    "lib_llama_cpp_server",
+    "--model-path",
+    "D:\\a\\_temp/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+    "--ctx-size",
+    "4096",
+    "--gpu-layers",
+    "0",
+    "--backend",
+    "cpu",
+    "--threads",
+    "4",
+    "--threads-batch",
+    "4",
+    "--batch-size",
+    "32",
+    "--ubatch-size",
+    "32",
+    "--port",
+    "0"
+  ],
+  "library_lookup": "platform default name",
+  "available_cpus": 4,
+  "checks": [],
+  "status": "failed",
+  "error": "AssertionError('CLI failed readiness within 120s (66); see D:\\\\a\\\\_temp/server-smoke.log')",
+  "shutdown": "SIGTERM process termination; graceful native cleanup is tested separately",
+  "exit_code": 66
+}

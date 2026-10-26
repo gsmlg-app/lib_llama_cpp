@@ -71,6 +71,8 @@ Future<void> main(List<String> arguments) async {
 }
 
 bool _isLocalPath(String path) {
+  // URI parsing treats a Windows drive letter as a scheme.
+  if (RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(path)) return true;
   final uri = Uri.tryParse(path);
   return uri == null || !uri.hasScheme || uri.scheme == 'file';
 }

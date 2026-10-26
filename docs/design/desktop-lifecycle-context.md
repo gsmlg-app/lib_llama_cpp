@@ -34,6 +34,12 @@ Six isolated native tests include actual upstream grammar/sampler execution and
 injected allocation failures, including chain insertion, followed by recovery.
 These adapters do not introduce a second generation loop or modify the vendor pin.
 
+The real Windows default-name gate also found that the CLI mistook a drive
+letter for a URI scheme and rejected an existing `D:\\...` model before loading.
+The local-path guard now recognizes Windows drive syntax. A subprocess regression
+checks an existing native path with spaces reaches library validation, and the
+desktop gate continues through actual default-name model inference.
+
 ## Ownership and execution paths
 
 | Resource | Direct Dart API | HTTP/native server API |

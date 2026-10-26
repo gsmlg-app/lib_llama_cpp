@@ -159,8 +159,16 @@ cancellation/recovery checks. The successful retry is recorded above.
   All observed `cache=4 < processed=36 < total=3014` on the final configuration;
   all four checks and graceful SIGINT shutdown passed. Defaults in native code
   and the separate long-window throughput configuration are unchanged.
+- Windows pre-release E2E at `b51c64c` passed all eight backend export checks,
+  11 direct/media tests, four server API tests and 15 native cases. Its final
+  default-name CLI gate then rejected an existing drive path as a URI scheme;
+  [failure](windows-cli-path-failure.json). A subprocess regression reproduced
+  the same classification failure before the drive-path guard repair and passed
+  afterward. Linux's corresponding [default-name gate](ci-linux-default-cli.json)
+  passed, recovering after actual partial-prefill disconnect in 1.412 seconds.
+  Windows CLI acceptance must pass on the final source commit before release.
 - Local fast verification: 79 Flutter tests passed, 15 model/platform tests
-  skipped without local native fixtures; 43 pure Dart tests passed with five
+  skipped without local native fixtures; 44 pure Dart tests passed with five
   environment-specific skips. Analyzer over `packages example`, formatting,
   workflow actionlint and diff checks passed. Ignored `scratch/test_template.dart`
   has unrelated analyzer findings and is excluded from a clean checkout.

@@ -7,6 +7,8 @@
 - Expose long-context configuration and actual capability reports; return HTTP 400
   for invalid parameters/overflow and preserve structured native error codes.
 - Fix delayed HTTP body reads and align default Linux/Windows library names.
+- Accept native Windows drive paths in the CLI instead of treating drive letters
+  as URI schemes.
 
 ## Unreleased
 
