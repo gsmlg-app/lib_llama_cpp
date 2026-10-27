@@ -53,6 +53,11 @@ jobs:
       - name: Test direct native exception isolation and sampler ownership
         run: python3 packages/lib_llama_cpp_ffi/test/native/test_direct_safe.py
 
+      - name: Test desktop acceptance observability
+        run: |
+          python3 tools/test_desktop_context_benchmark.py
+          python3 packages/lib_llama_cpp_ffi/test/native/test_process_resources.py
+
       - name: Run pure Dart tests
         run: dart test packages/lib_llama_cpp_platform_interface/test && dart test packages/lib_llama_cpp_ffi/test && dart test packages/lib_llama_cpp_server/test
 

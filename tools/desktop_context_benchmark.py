@@ -13,6 +13,12 @@ import time
 from pathlib import Path
 
 
+class ProcessMemoryCounters(ctypes.Structure):
+    _fields_ = [('cb', ctypes.c_uint32), ('faults', ctypes.c_uint32)] + [
+        (name, ctypes.c_size_t) for name in (
+            'peak_ws', 'ws', 'qpp', 'qpc', 'qnpp', 'qnpc', 'page', 'peak_page')]
+
+
 def memory_snapshot():
     if sys.platform.startswith('linux'):
         data = Path('/proc/self/status').read_text()
@@ -20,14 +26,16 @@ def memory_snapshot():
         return {'rss_bytes': int(fields['VmRSS'].split()[0]) * 1024,
                 'threads': int(fields['Threads'].strip())}
     if sys.platform == 'win32':
-        class Counters(ctypes.Structure):
-            _fields_ = [('cb', ctypes.c_ulong), ('faults', ctypes.c_ulong)] + [
-                (n, ctypes.c_size_t) for n in ('peak_ws', 'ws', 'qpp', 'qpc', 'qnpp', 'qnpc', 'page', 'peak_page')]
-        counters = Counters()
+        counters = ProcessMemoryCounters()
         counters.cb = ctypes.sizeof(counters)
-        handle = ctypes.windll.kernel32.GetCurrentProcess()
-        if not ctypes.windll.psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
-            raise OSError('GetProcessMemoryInfo failed')
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        psapi = ctypes.WinDLL('psapi', use_last_error=True)
+        kernel.GetCurrentProcess.argtypes = []
+        kernel.GetCurrentProcess.restype = ctypes.c_void_p
+        psapi.GetProcessMemoryInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(ProcessMemoryCounters), ctypes.c_uint32]
+        psapi.GetProcessMemoryInfo.restype = ctypes.c_int
+        if not psapi.GetProcessMemoryInfo(kernel.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+            raise ctypes.WinError(ctypes.get_last_error())
         return {'rss_bytes': counters.ws, 'threads': None}
     raise RuntimeError('Acceptance targets Linux and Windows only')
 
@@ -36,30 +44,38 @@ class Peaks:
     def __init__(self):
         self.rss = 0
         self.vram = None
+        self.error = None
         self.stop = threading.Event()
         self.thread = threading.Thread(target=self.sample)
 
     def sample(self):
-        while not self.stop.is_set():
-            self.rss = max(self.rss, memory_snapshot()['rss_bytes'])
-            try:
-                proc = subprocess.run(['nvidia-smi', '--query-compute-apps=pid,used_gpu_memory',
-                    '--format=csv,noheader,nounits'], capture_output=True, text=True, timeout=2)
-                for line in proc.stdout.splitlines():
-                    pid, used = [v.strip() for v in line.split(',', 1)]
-                    if pid == str(os.getpid()) and used.isdigit():
-                        self.vram = max(self.vram or 0, int(used) * 1024 * 1024)
-            except (OSError, ValueError, subprocess.TimeoutExpired):
-                pass
-            self.stop.wait(0.25)
+        try:
+            while not self.stop.is_set():
+                self.rss = max(self.rss, memory_snapshot()['rss_bytes'])
+                try:
+                    proc = subprocess.run(['nvidia-smi', '--query-compute-apps=pid,used_gpu_memory',
+                        '--format=csv,noheader,nounits'], capture_output=True, text=True, timeout=2)
+                    for line in proc.stdout.splitlines():
+                        pid, used = [v.strip() for v in line.split(',', 1)]
+                        if pid == str(os.getpid()) and used.isdigit():
+                            self.vram = max(self.vram or 0, int(used) * 1024 * 1024)
+                except (OSError, ValueError, subprocess.TimeoutExpired):
+                    pass
+                self.stop.wait(0.25)
+        except Exception as error:
+            self.error = error
+            self.stop.set()
 
     def __enter__(self):
+        self.rss = memory_snapshot()['rss_bytes']
         self.thread.start()
         return self
 
-    def __exit__(self, *_):
+    def __exit__(self, error_type, *_):
         self.stop.set()
         self.thread.join()
+        if self.error is not None and error_type is None:
+            raise self.error
 
 
 class Native:
@@ -199,6 +215,12 @@ def verify_retrieval(result):
     assert all(value in result['text'] for value in ('amber731', 'birch482', 'cedar956')), result
 
 
+def verify_prefix_reuse(result):
+    usage = result['usage']
+    cached = usage.get('prompt_tokens_details', {}).get('cached_tokens', 0)
+    assert 0 < cached <= usage['prompt_tokens'], ('prefix reuse was not observed', usage)
+
+
 def acceptance(args):
     config = {'model_path': str(Path(args.model).resolve()), 'n_ctx': args.context,
         'n_batch': args.batch, 'n_ubatch': args.ubatch, 'n_threads': args.threads,
@@ -206,6 +228,7 @@ def acceptance(args):
         'n_parallel': 1, 'cache_type_k': 'f16', 'cache_type_v': 'f16', 'swa_full': False,
         'flash_attn': args.flash_attn, 'backend': args.backend, 'require_backend': True}
     evidence = {'status': 'running', 'platform': platform.platform(), 'machine': platform.machine(),
+        'inference_timeout_seconds': args.timeout_seconds,
         'model_file': Path(args.model).name, 'model_sha256': hashlib.file_digest(open(args.model, 'rb'), 'sha256').hexdigest(),
         'library_file': Path(args.library).name,
         'library_sha256': hashlib.file_digest(open(args.library, 'rb'), 'sha256').hexdigest(),
@@ -217,14 +240,15 @@ def acceptance(args):
             evidence.update(load_seconds=engine.load_seconds, caps=engine.caps())
             body, budget = long_request(engine, args.context)
             evidence['budget'] = budget
-            evidence['first_turn'] = engine.run(body)
+            evidence['first_turn'] = engine.run(body, timeout=args.timeout_seconds)
             verify_retrieval(evidence['first_turn'])
             history = body['messages'] + [{'role': 'assistant', 'content': evidence['first_turn']['text']},
                 {'role': 'user', 'content': 'Repeat the same three values as JSON.'}]
             second = dict(body, messages=history, max_tokens=256)
             evidence['second_budget'] = engine.prepare(second)
-            evidence['second_turn'] = engine.run(second)
+            evidence['second_turn'] = engine.run(second, timeout=args.timeout_seconds)
             verify_retrieval(evidence['second_turn'])
+            verify_prefix_reuse(evidence['second_turn'])
             overflow = dict(body, max_tokens=args.context)
             try:
                 engine.call('llcs_engine_submit', overflow)
@@ -258,7 +282,7 @@ def acceptance(args):
             evidence['stats'] = engine.stats()
             evidence['peak_rss_bytes'] = peaks.rss
             evidence['peak_vram_bytes'] = peaks.vram
-            evidence['vram_note'] = None if peaks.vram is not None else 'Driver did not expose per-process VRAM; unified-memory peak is included in RSS.'
+            evidence['vram_note'] = None if peaks.vram is not None else 'Per-process GPU memory was unavailable. RSS measures host memory and does not replace discrete VRAM measurement.'
         evidence['status'] = 'passed'
     except BaseException as error:
         evidence.update(status='failed', error=repr(error))
@@ -280,5 +304,10 @@ if __name__ == '__main__':
     parser.add_argument('--ubatch', type=int, default=256)
     parser.add_argument('--threads', type=int, default=8)
     parser.add_argument('--flash-attn', choices=['auto', 'on', 'off'], default='on')
+    parser.add_argument('--timeout-seconds', type=int, default=7200,
+                        help='Bound each long inference explicitly; does not relax content or recovery assertions')
     parser.add_argument('--output', required=True)
-    acceptance(parser.parse_args())
+    args = parser.parse_args()
+    if args.timeout_seconds <= 0:
+        parser.error('--timeout-seconds must be positive')
+    acceptance(args)

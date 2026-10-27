@@ -38,14 +38,19 @@ jobs:
       - name: Require matching OS and GPU hardware
         shell: bash
         env:
-          PLATFORM: ${{ inputs.platform }}
+          TARGET_PLATFORM: ${{ inputs.platform }}
           BACKEND: ${{ inputs.backend }}
         run: |
-          test "$RUNNER_OS" = "$([ "$PLATFORM" = linux ] && echo Linux || echo Windows)"
+          test "$RUNNER_OS" = "$([ "$TARGET_PLATFORM" = linux ] && echo Linux || echo Windows)"
           if [ "$BACKEND" = cuda ]; then nvidia-smi; fi
           if [ "$BACKEND" = vulkan ]; then vulkaninfo --summary; fi
       - uses: ilammy/msvc-dev-cmd@v1
         if: inputs.platform == 'windows'
+      - name: Check acceptance observability
+        shell: bash
+        run: |
+          python tools/test_desktop_context_benchmark.py
+          python packages/lib_llama_cpp_ffi/test/native/test_process_resources.py
       - name: Build Linux artifact
         if: inputs.platform == 'linux'
         shell: bash
@@ -71,7 +76,7 @@ jobs:
         env:
           BACKEND: ${{ inputs.backend }}
           CONTEXT: ${{ inputs.context }}
-          PLATFORM: ${{ inputs.platform }}
+          TARGET_PLATFORM: ${{ inputs.platform }}
         run: |
           architecture=x64
           case "$RUNNER_ARCH" in
@@ -80,12 +85,16 @@ jobs:
             *) echo "Unsupported runner architecture: $RUNNER_ARCH" >&2; exit 1 ;;
           esac
           library="$RUNNER_TEMP/prebuilt/linux/$architecture/liblib_llama_cpp_linux.so"
-          if [ "$PLATFORM" = windows ]; then library="$RUNNER_TEMP/prebuilt/windows/x64/lib_llama_cpp_windows.dll"; fi
+          if [ "$TARGET_PLATFORM" = windows ]; then library="$RUNNER_TEMP/prebuilt/windows/x64/lib_llama_cpp_windows.dll"; fi
           python packages/lib_llama_cpp_ffi/test/native/test_engine.py "$library" "$RUNNER_TEMP/models/model.gguf"
           gpu_layers=0
           if [ "$BACKEND" != cpu ]; then gpu_layers=99; fi
+          batch=1024
+          ubatch=256
+          if [ "$TARGET_PLATFORM" = windows ] && [ "$BACKEND" = cpu ]; then batch=256; ubatch=128; fi
           python tools/gguf_metadata.py "$RUNNER_TEMP/models/model.gguf" > results/model.json
-          python tools/desktop_context_benchmark.py --library "$library" --model "$RUNNER_TEMP/models/model.gguf" --backend "$BACKEND" --gpu-layers "$gpu_layers" --context "$CONTEXT" --output results/context.json
+          threads="$(python -c 'import os; print(max(1, min(8, len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1)))')"
+          python tools/desktop_context_benchmark.py --library "$library" --model "$RUNNER_TEMP/models/model.gguf" --backend "$BACKEND" --gpu-layers "$gpu_layers" --context "$CONTEXT" --threads "$threads" --batch "$batch" --ubatch "$ubatch" --timeout-seconds 18000 --output results/context.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

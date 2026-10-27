@@ -1,6 +1,7 @@
 """Isolated native ABI regression tests. Run: python3 test_engine.py LIB [MODEL]."""
 import ctypes
 import json
+import os
 import subprocess
 import sys
 import threading
@@ -67,6 +68,54 @@ class Engine:
 
 
 def process_resources():
+    if sys.platform == "win32":
+        from ctypes import wintypes
+
+        class Counters(ctypes.Structure):
+            _fields_ = [("cb", wintypes.DWORD), ("faults", wintypes.DWORD)] + [
+                (name, ctypes.c_size_t) for name in (
+                    "peak_ws", "ws", "qpp", "qpc", "qnpp", "qnpc", "page", "peak_page")]
+
+        class ThreadEntry(ctypes.Structure):
+            _fields_ = [("size", wintypes.DWORD), ("usage", wintypes.DWORD),
+                        ("thread", wintypes.DWORD), ("owner", wintypes.DWORD),
+                        ("base_priority", wintypes.LONG), ("delta_priority", wintypes.LONG),
+                        ("flags", wintypes.DWORD)]
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        kernel.GetCurrentProcess.argtypes = []
+        kernel.GetCurrentProcess.restype = wintypes.HANDLE
+        psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD]
+        psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+        counters = Counters()
+        counters.cb = ctypes.sizeof(counters)
+        if not psapi.GetProcessMemoryInfo(kernel.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+            raise ctypes.WinError(ctypes.get_last_error())
+        kernel.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+        kernel.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        for name in ("Thread32First", "Thread32Next"):
+            function = getattr(kernel, name)
+            function.argtypes = [wintypes.HANDLE, ctypes.POINTER(ThreadEntry)]
+            function.restype = wintypes.BOOL
+        snapshot = kernel.CreateToolhelp32Snapshot(0x00000004, 0)  # TH32CS_SNAPTHREAD
+        if snapshot == ctypes.c_void_p(-1).value:
+            raise ctypes.WinError(ctypes.get_last_error())
+        count = 0
+        try:
+            entry = ThreadEntry()
+            entry.size = ctypes.sizeof(entry)
+            found = kernel.Thread32First(snapshot, ctypes.byref(entry))
+            while found:
+                count += entry.owner == os.getpid()
+                found = kernel.Thread32Next(snapshot, ctypes.byref(entry))
+            if ctypes.get_last_error() != 18:  # ERROR_NO_MORE_FILES
+                raise ctypes.WinError(ctypes.get_last_error())
+        finally:
+            kernel.CloseHandle(snapshot)
+        return count, counters.ws // 1024
     try:
         with open("/proc/self/status") as status:
             rows = dict(line.split(":", 1) for line in status if ":" in line)
