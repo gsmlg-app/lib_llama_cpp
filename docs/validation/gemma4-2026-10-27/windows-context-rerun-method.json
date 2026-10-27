@@ -1,5 +1,5 @@
 {
-  "status": "monitoring_remaining_tiers",
+  "status": "passed",
   "source_commit": "f04e1a926a56d3eb99c851f7dce3a4d875920f6e",
   "release_tag": "v0.7.5",
   "release_tag_commit": "7ba54673295800b245960001e4128ebe141fd66a",
@@ -72,8 +72,55 @@
         "decode_cancel_latency_seconds": 0.06199999999989814,
         "recovery_text": "ready",
         "post_cancel_recovery_text": "ready",
-        "peak_rss_bytes": 2779369472
-      }
+        "peak_rss_bytes": 2779369472,
+        "load_seconds": 2.969000000000051,
+        "first_ttft_seconds": 1257.703,
+        "first_duration_seconds": 1264.984,
+        "first_decode_tokens_per_second_excluding_ttft": 6.729844801538297,
+        "first_prompt_tokens_per_second": 25.23840187573654,
+        "first_usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 31741,
+          "total_tokens": 31791,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "second_ttft_seconds": 1.969000000000051,
+        "second_duration_seconds": 9.188000000000102,
+        "second_decode_tokens_per_second_excluding_ttft": 6.7876437179664295,
+        "second_usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 31808,
+          "total_tokens": 31858,
+          "prompt_tokens_details": {
+            "cached_tokens": 31790
+          }
+        },
+        "peak_rss_gib": 2.588489532470703,
+        "prefill_cancel_observed": {
+          "id": 460,
+          "state": "prefilling",
+          "prompt_progress": {
+            "total": 31752,
+            "cache": 0,
+            "processed": 256,
+            "time_ms": 5293
+          }
+        },
+        "final_task_counts": {
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "pending_cancellations": 0,
+          "collector_threads": 1,
+          "submitted": 6,
+          "completed": 4,
+          "cancelled": 2,
+          "failed": 0
+        }
+      },
+      "effective_configuration_verified": true,
+      "upstream_checkout_verified": true
     },
     {
       "context": 65536,
@@ -140,7 +187,52 @@
         "decode_cancel_latency_seconds": 0.09400000000005093,
         "recovery_text": "ready",
         "post_cancel_recovery_text": "ready",
-        "peak_rss_bytes": 2997501952
+        "peak_rss_bytes": 2997501952,
+        "load_seconds": 2.9529999999999745,
+        "first_ttft_seconds": 3728.906,
+        "first_duration_seconds": 3741.187,
+        "first_decode_tokens_per_second_excluding_ttft": 3.989903102353245,
+        "first_prompt_tokens_per_second": 17.300278521718642,
+        "first_usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 64509,
+          "total_tokens": 64559,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "second_ttft_seconds": 3.75,
+        "second_duration_seconds": 16.04699999999957,
+        "second_decode_tokens_per_second_excluding_ttft": 3.984711718305417,
+        "second_usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 64576,
+          "total_tokens": 64626,
+          "prompt_tokens_details": {
+            "cached_tokens": 64558
+          }
+        },
+        "peak_rss_gib": 2.7916412353515625,
+        "prefill_cancel_observed": {
+          "id": 714,
+          "state": "prefilling",
+          "prompt_progress": {
+            "total": 64520,
+            "cache": 0,
+            "processed": 256,
+            "time_ms": 5268
+          }
+        },
+        "final_task_counts": {
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "pending_cancellations": 0,
+          "collector_threads": 1,
+          "submitted": 6,
+          "completed": 4,
+          "cancelled": 2,
+          "failed": 0
+        }
       },
       "effective_configuration_verified": true,
       "upstream_checkout_verified": true
@@ -149,8 +241,116 @@
       "context": 131072,
       "run_id": 40425606793,
       "job_id": 121930471298,
-      "status": "in_progress",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success",
+      "run_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425606793",
+      "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425606793/job/121930471298",
+      "started_at": "2026-10-27T00:19:03Z",
+      "completed_at": "2026-10-27T03:08:45Z",
+      "runner_labels": [
+        "windows-2022"
+      ],
+      "runner_name": "GitHub Actions 1000004967",
+      "artifact": {
+        "id": 12706597318,
+        "name": "desktop-windows-cpu-131072",
+        "size_in_bytes": 6489,
+        "digest": "sha256:c0a63e95fc00097511959fb2323d578b14487f1098ad78fbefd39c5a2d92c885",
+        "created_at": "2026-10-27T03:08:41Z"
+      },
+      "context_evidence_file": "windows-cpu-131072-final.json",
+      "context_json_sha256": "b7d9d3f710b187c668b2dd749225bc68fcdcc236d57405e46c31499c31c24d32",
+      "preservation": "Complete downloaded context.json copied byte-for-byte, without adding or removing fields.",
+      "job_log_sha256": "da182bea15abc5e820cc71d189ce7ea6c971bada04ca1004be29329876cb782e",
+      "model_metadata_sha256": "fcb9fdbf9aa45c7daec5aad9d09d8060da8a4e3480f446baa3f62140d1374911",
+      "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+      "dll_sha256": "9a7cb9804ffa6d73d1254be1c6793f8ff2fc83f070176e80e48c06ab1c288cac",
+      "os": "Windows-2022Server-10.0.20348-SP0",
+      "machine": "AMD64",
+      "cpu_backend": "cpu",
+      "cpu_model": null,
+      "cpu_model_note": "CPU brand/model was not reported in context artifact or job log.",
+      "threads": 4,
+      "dll_dependencies": null,
+      "dll_dependencies_note": "The workflow did not capture a DLL import/dependency listing.",
+      "step_conclusions": {
+        "Set up job": "success",
+        "Run actions/checkout@v4": "success",
+        "Require matching OS and GPU hardware": "success",
+        "Run ilammy/msvc-dev-cmd@v1": "success",
+        "Check acceptance observability": "success",
+        "Build Linux artifact": "skipped",
+        "Build Windows artifact": "success",
+        "Download immutable model fixture and verify hash": "success",
+        "Execute ABI regression and actual context acceptance": "success",
+        "Run actions/upload-artifact@v4": "success",
+        "Post Run actions/checkout@v4": "success",
+        "Complete job": "success"
+      },
+      "acceptance_summary": {
+        "prompt_tokens": 130045,
+        "second_prompt_tokens": 130112,
+        "second_cached_tokens": 130094,
+        "three_position_retrieval_both_turns": true,
+        "first_finish_reasons": [
+          "stop"
+        ],
+        "second_finish_reasons": [
+          "stop"
+        ],
+        "prefill_cancel_latency_seconds": 3.938000000000102,
+        "decode_cancel_latency_seconds": 1.0780000000013388,
+        "recovery_text": "ready",
+        "post_cancel_recovery_text": "ready",
+        "peak_rss_bytes": 3451387904,
+        "load_seconds": 2.2029999999999745,
+        "first_ttft_seconds": 9729.937,
+        "first_duration_seconds": 9753.593,
+        "first_decode_tokens_per_second_excluding_ttft": 2.071356104159546,
+        "first_prompt_tokens_per_second": 13.365639662539081,
+        "first_usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 130045,
+          "total_tokens": 130095,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "second_ttft_seconds": 4.186999999999898,
+        "second_duration_seconds": 29.82800000000134,
+        "second_decode_tokens_per_second_excluding_ttft": 1.9110019110018037,
+        "second_usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 130112,
+          "total_tokens": 130162,
+          "prompt_tokens_details": {
+            "cached_tokens": 130094
+          }
+        },
+        "peak_rss_gib": 3.21435546875,
+        "prefill_cancel_observed": {
+          "id": 1288,
+          "state": "prefilling",
+          "prompt_progress": {
+            "total": 130056,
+            "cache": 0,
+            "processed": 256,
+            "time_ms": 3391
+          }
+        },
+        "final_task_counts": {
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "pending_cancellations": 0,
+          "collector_threads": 1,
+          "submitted": 6,
+          "completed": 4,
+          "cancelled": 2,
+          "failed": 0
+        }
+      },
+      "effective_configuration_verified": true,
+      "upstream_checkout_verified": true
     }
   ],
   "required_configuration": {
@@ -188,5 +388,6 @@
     "gh api --allow-escape-sequences repos/gsmlg-app/lib_llama_cpp/actions/jobs/JOB_ID/logs",
     "gh api repos/gsmlg-app/lib_llama_cpp/actions/jobs/JOB_ID"
   ],
-  "updated_at": "2026-10-27T01:34:33.486740+00:00"
+  "updated_at": "2026-10-27T03:11:10.906908+00:00",
+  "validation": "All three preserved raw context files independently rechecked against downloaded artifact bytes, model hash, effective CPU configuration, parsed three-key retrieval, first/second usage and finish, positive prefix reuse, overflow, cancellation/recovery, nonzero RSS and final task counters."
 }

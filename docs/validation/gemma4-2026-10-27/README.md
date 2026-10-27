@@ -43,7 +43,7 @@ The library's Nix store dependencies make it a host build, not a portable artifa
 | Published Linux x64 CUDA, RTX 3050 | passed | passed | passed |
 | DGX Linux ARM64 Vulkan, GB10 | passed | passed | passed |
 | Published Linux x64 Vulkan, RTX 3050 | passed | passed | passed |
-| Windows x64 CPU | passed | passed | running |
+| Windows x64 CPU | passed | passed | passed |
 | Windows CUDA/Vulkan physical GPU | not run | not run | not run |
 
 CUDA measurements use one slot, F16 K/V, shared/unified KV, compact SWA,
@@ -171,7 +171,22 @@ Native prefill/decode rates were 17.30 / 4.07 tok/s. The second turn reused
 threads and the same 256/128/F16/compact-SWA baseline, observed real partial
 prefill, acknowledged cancellation in 5.484 seconds (decode 0.094 seconds) and
 completed both recovery requests. Its prefill/decode rates and complete original
-artifact bytes are retained in JSON. Windows CPU 128K remains in progress.
+artifact bytes are retained in JSON.
+
+Windows x64 CPU 128K [actual result](windows-cpu-131072-final.json), run
+[40425606793](https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425606793),
+passed with 130045 input tokens, two correct 50-token responses and `stop`.
+Load was 2.203 seconds, first TTFT 9729.937 seconds, native prefill/decode
+13.37 / 2.11 tok/s and peak RSS 3451387904 bytes. The second turn reused
+130094 tokens with 4.187-second TTFT. The same four-thread 256/128/F16/compact-SWA
+configuration observed 256 freshly processed prefill tokens before cancelling;
+prefill/decode cancellation acknowledged in 3.938 / 1.078 seconds and both
+immediate recovery requests completed. All active/retained task,
+pending-cancellation and queue counts cleared. The raw CRLF artifact is preserved
+byte for byte with SHA256
+`b7d9d3f710b187c668b2dd749225bc68fcdcc236d57405e46c31499c31c24d32`.
+These Windows tiers use source-built CPU DLLs; their identities remain separate
+from the short-context consumer of the actual published CPU DLL.
 
 ## Correctness, cancellation and resources
 
@@ -288,8 +303,8 @@ artifact bytes are retained in JSON. Windows CPU 128K remains in progress.
 - Acceptance tooling now requires positive cached tokens on turn two, propagates
   memory-sampler failures to the caller and types Win64 handles explicitly.
   Native resource regression measures Windows process threads and working set;
-  Linux observability tests passed. The Windows 32K/64K reruns each passed all 15 native cases;
-  cancellation 50 to 100 retained seven threads and grew only 36 / 24 KiB RSS, with
+  Linux observability tests passed. The Windows 32K/64K/128K reruns each passed all 15 native cases;
+  cancellation 50 to 100 retained seven threads and grew only 36 / 24 / 36 KiB RSS, with
   all task/cancellation counts zero; see
   [Windows resource results](windows-native-resources-final.json).
 - Local fast verification: 79 Flutter tests passed, 15 model/platform tests

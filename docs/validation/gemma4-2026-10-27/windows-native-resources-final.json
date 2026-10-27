@@ -1,5 +1,5 @@
 {
-  "status": "monitoring_remaining_tiers",
+  "status": "passed",
   "source_commit": "f04e1a926a56d3eb99c851f7dce3a4d875920f6e",
   "release_tag": "v0.7.5",
   "measurement": "Windows Toolhelp32 process-owned thread count and GetProcessMemoryInfo working-set RSS; native test tuples are [threads, rss_kib].",
@@ -419,7 +419,211 @@
         }
       ],
       "job_log_sha256": "8aa2f5ba85fcfbc868dadbf336489fc14011a93819e90c3f8d051c8e0cd0b8ff"
+    },
+    {
+      "context": 131072,
+      "run_id": 40425606793,
+      "job_id": 121930471298,
+      "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425606793/job/121930471298",
+      "status": "passed",
+      "native_subprocess_cases_passed": [
+        "invalid_config",
+        "missing_model",
+        "shared_abi",
+        "wrapper_errors",
+        "native_ceiling",
+        "invalid_request",
+        "budget_boundary",
+        "queued_cancel",
+        "prefill_state",
+        "terminal_cancel",
+        "expiry",
+        "stream",
+        "nonstream",
+        "cancel",
+        "two_engines"
+      ],
+      "observability_tests": "5 benchmark tests and 1 Windows process-resources test passed.",
+      "warmup_50": {
+        "threads": 7,
+        "rss_kib": 2484860
+      },
+      "repeat_100": {
+        "threads": 7,
+        "rss_kib": 2484896
+      },
+      "thread_growth": 0,
+      "rss_growth_kib": 36,
+      "native_counters": {
+        "active_tasks": 0,
+        "retained_tasks": 0,
+        "pending_cancellations": 0,
+        "collector_threads": 1
+      },
+      "context_peak_rss_bytes": 3451387904,
+      "native_log_records": [
+        {
+          "case": "invalid_config",
+          "status": "passed"
+        },
+        {
+          "case": "missing_model",
+          "status": "passed"
+        },
+        {
+          "case": "shared_abi",
+          "status": "passed"
+        },
+        {
+          "case": "wrapper_errors",
+          "status": "passed"
+        },
+        {
+          "case": "native_ceiling",
+          "status": "passed"
+        },
+        {
+          "case": "invalid_request",
+          "status": "passed"
+        },
+        {
+          "case": "budget_boundary",
+          "status": "passed"
+        },
+        {
+          "case": "queued_cancel",
+          "status": "passed"
+        },
+        {
+          "case": "prefill_state",
+          "observed_partial_prefill": true
+        },
+        {
+          "case": "prefill_state",
+          "status": "passed"
+        },
+        {
+          "case": "terminal_cancel",
+          "completed": 2,
+          "cancelled": 0,
+          "retained_tasks": 0
+        },
+        {
+          "case": "terminal_cancel",
+          "status": "passed"
+        },
+        {
+          "case": "expiry",
+          "status": "passed"
+        },
+        {
+          "case": "stream",
+          "status": "passed"
+        },
+        {
+          "case": "nonstream",
+          "status": "passed"
+        },
+        {
+          "case": "cancel",
+          "warmup_50": [
+            7,
+            2484860
+          ],
+          "repeat_100": [
+            7,
+            2484896
+          ],
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "pending_cancellations": 0,
+          "collector_threads": 1
+        },
+        {
+          "case": "cancel",
+          "status": "passed"
+        },
+        {
+          "case": "two_engines",
+          "status": "passed"
+        }
+      ],
+      "log_evidence": [
+        {
+          "line": 4128,
+          "text": "2026-10-27T00:25:16.5073264Z {\"case\": \"invalid_config\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4129,
+          "text": "2026-10-27T00:25:16.5073537Z {\"case\": \"missing_model\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4130,
+          "text": "2026-10-27T00:25:16.5073861Z {\"case\": \"shared_abi\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4131,
+          "text": "2026-10-27T00:25:16.5074165Z {\"case\": \"wrapper_errors\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4132,
+          "text": "2026-10-27T00:25:16.5074478Z {\"case\": \"native_ceiling\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4133,
+          "text": "2026-10-27T00:25:16.5075112Z {\"case\": \"invalid_request\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4134,
+          "text": "2026-10-27T00:25:16.5075416Z {\"case\": \"budget_boundary\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4135,
+          "text": "2026-10-27T00:25:16.5075713Z {\"case\": \"queued_cancel\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4136,
+          "text": "2026-10-27T00:25:16.5076045Z {\"case\": \"prefill_state\", \"observed_partial_prefill\": true}"
+        },
+        {
+          "line": 4137,
+          "text": "2026-10-27T00:25:16.5076381Z {\"case\": \"prefill_state\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4138,
+          "text": "2026-10-27T00:25:16.5076939Z {\"case\": \"terminal_cancel\", \"completed\": 2, \"cancelled\": 0, \"retained_tasks\": 0}"
+        },
+        {
+          "line": 4139,
+          "text": "2026-10-27T00:25:16.5077332Z {\"case\": \"terminal_cancel\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4140,
+          "text": "2026-10-27T00:25:16.5077625Z {\"case\": \"expiry\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4141,
+          "text": "2026-10-27T00:25:16.5077910Z {\"case\": \"stream\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4142,
+          "text": "2026-10-27T00:25:16.5078108Z {\"case\": \"nonstream\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4143,
+          "text": "2026-10-27T00:25:16.5078508Z {\"case\": \"cancel\", \"warmup_50\": [7, 2484860], \"repeat_100\": [7, 2484896], \"active_tasks\": 0, \"retained_tasks\": 0, \"pending_cancellations\": 0, \"collector_threads\": 1}"
+        },
+        {
+          "line": 4144,
+          "text": "2026-10-27T00:25:16.5078897Z {\"case\": \"cancel\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4145,
+          "text": "2026-10-27T00:25:16.5079091Z {\"case\": \"two_engines\", \"status\": \"passed\"}"
+        }
+      ],
+      "job_log_sha256": "da182bea15abc5e820cc71d189ce7ea6c971bada04ca1004be29329876cb782e"
     }
   ],
-  "updated_at": "2026-10-27T01:34:33.486740+00:00"
+  "updated_at": "2026-10-27T03:10:01.331199+00:00"
 }
