@@ -280,6 +280,28 @@ Cancellation tests do not poll after cancel. Results record load time, TTFT,
 upstream prefill/decode timings, peak RSS and driver-reported per-process memory.
 GB10 unified memory means RSS and GPU allocation can overlap; do not sum them.
 
+For NVIDIA GPU resource trends, the independent probe below keeps one model
+resident across 150 actual decode/cancel/recovery cycles. It never polls a
+cancelled task and checks that the immediately submitted legal request completes.
+After 50 warmup cycles it records five thread/RSS/per-process VRAM samples,
+requires cleared task/cancellation/queue counters, and bounds the VRAM range to
+one MiB (the driver's reporting granularity). Use the host PID namespace when
+running inside a container so `nvidia-smi` can identify the measured process.
+
+```sh
+python3 tools/desktop_gpu_resources.py \
+  --harness packages/lib_llama_cpp_ffi/test/native/test_engine.py \
+  --library "$LIBRARY" --model "$MODEL" --backend cuda \
+  --output cuda-gpu-resources.json
+```
+
+Use `--backend vulkan` for the matching NVIDIA Vulkan artifact. This probe uses
+a 512-token context and supplements, rather than replaces, the long-window
+checks. Its `cancel_barrier_seconds` values include the next legal request's
+completion and are cancel-to-recovery upper bounds, not exact GPU stop times.
+RSS includes the Python probe's retained timing/statistics records. Assess the
+sample trend alongside the native counts and VRAM; these are bounded-run results.
+
 Acceptance results and exact tested build identities are maintained in
 [the validation record](../validation/gemma4-2026-10-27/README.md). Initial CPU/GPU
 measurements are not a claim about unexecuted Windows/backend combinations. Q8 KV

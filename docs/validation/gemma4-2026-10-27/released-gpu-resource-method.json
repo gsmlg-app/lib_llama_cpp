@@ -1,0 +1,132 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "release_commit": "7ba54673295800b245960001e4128ebe141fd66a",
+  "host": "ms04, RTX 3050 6144 MiB, driver 595.71.05",
+  "image_id": "sha256:f3219c70d24423db87f7cd154b7c433a9fa26b8ab22cb6e747e30daa90b2813e",
+  "network": "none",
+  "pid_namespace": "host",
+  "containers_removed": true,
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "probe": "tools/desktop_gpu_resources.py",
+  "probe_sha256": "e620e29934e201c95be0d2094eca644d9c10148a530465fd0a664b724da67995",
+  "cases": [
+    {
+      "backend": "cuda",
+      "file": "released-cuda-gpu-resources.json",
+      "sha256": "c61bf7a631ab97b8b066e2744f4e5e49ec19adfd7f44b77e6f81c7563f670e13",
+      "library_sha256": "11c2b4ca33fde90a969939bd053328f0f0d25338fe16fd3dfa3915546b46cab3",
+      "raw_log_sha256": "fe78c1bf703fe3469bc0ff1f3c6b0377e6b3cb45154afb89347501c20f019914",
+      "sample_summaries": [
+        {
+          "cycles": 50,
+          "threads": 8,
+          "rss_bytes": 3029520384,
+          "vram_bytes": 1688207360
+        },
+        {
+          "cycles": 75,
+          "threads": 8,
+          "rss_bytes": 3029598208,
+          "vram_bytes": 1688207360
+        },
+        {
+          "cycles": 100,
+          "threads": 8,
+          "rss_bytes": 3029610496,
+          "vram_bytes": 1688207360
+        },
+        {
+          "cycles": 125,
+          "threads": 8,
+          "rss_bytes": 3029622784,
+          "vram_bytes": 1688207360
+        },
+        {
+          "cycles": 150,
+          "threads": 8,
+          "rss_bytes": 3029630976,
+          "vram_bytes": 1688207360
+        }
+      ],
+      "rss_delta_bytes": 110592,
+      "vram_range_bytes": 0,
+      "cancel_to_recovery_seconds": {
+        "minimum": 1.076928298920393,
+        "median": 1.0790588450618088,
+        "maximum": 1.085902918013744
+      },
+      "offload_log": "36/36 layers offloaded"
+    },
+    {
+      "backend": "vulkan",
+      "file": "released-vulkan-gpu-resources.json",
+      "sha256": "58ce9faf7155e2518316be6ad3ffccf000a4e4c9a857a5d848b63a1161e4f784",
+      "library_sha256": "0b91503832be05382da10be1f3a6c5683bb9ccaf090af1f21c77286566596e26",
+      "raw_log_sha256": "0d0a4e0420406e5150f38334ac7726912ba3ca4cd171171255521d38121c36df",
+      "sample_summaries": [
+        {
+          "cycles": 50,
+          "threads": 8,
+          "rss_bytes": 3324641280,
+          "vram_bytes": 1590689792
+        },
+        {
+          "cycles": 75,
+          "threads": 8,
+          "rss_bytes": 3324719104,
+          "vram_bytes": 1590689792
+        },
+        {
+          "cycles": 100,
+          "threads": 8,
+          "rss_bytes": 3324731392,
+          "vram_bytes": 1590689792
+        },
+        {
+          "cycles": 125,
+          "threads": 8,
+          "rss_bytes": 3324739584,
+          "vram_bytes": 1590689792
+        },
+        {
+          "cycles": 150,
+          "threads": 8,
+          "rss_bytes": 3324747776,
+          "vram_bytes": 1590689792
+        }
+      ],
+      "rss_delta_bytes": 106496,
+      "vram_range_bytes": 0,
+      "cancel_to_recovery_seconds": {
+        "minimum": 1.0960087849525735,
+        "median": 1.0990778924315237,
+        "maximum": 5.7510732429800555
+      },
+      "offload_log": "36/36 layers offloaded"
+    }
+  ],
+  "limitations": [
+    "This is a 512-token resource probe; independent 32K/64K/128K acceptance is recorded separately.",
+    "cancel_barrier_seconds includes completing the immediately following recovery request and is an upper bound, not precise GPU stop time.",
+    "The Python probe retains timing and five native-stat snapshots; process RSS includes that bookkeeping. Small RSS increases are reported, not silently rounded to zero or called a proven native leak.",
+    "Flat VRAM, stable threads, cleared native counters and the independent strict native regressions support bounded-run stability; no indefinite leak guarantee.",
+    "The pre-existing text-embeddings GPU service remained running; GPU resources were shared."
+  ],
+  "prototype_failures": [
+    {
+      "attempt": 1,
+      "diagnosis": "Probe initially failed to treat legal role delta content:null as empty text; native cleanup returned.",
+      "result_sha256": "9b9cc715766ff50e3146c67acd5380e7d9b435f76049b3a9a3a5e142a8ce1515",
+      "log_sha256": "1301439dddde222502f9026cd6ed03b2c30492a3bf49a2385c4954f28d36cf55",
+      "native_code_changed": false
+    },
+    {
+      "attempt": 2,
+      "diagnosis": "A 16-token recovery request with default thinking produced no final body; the probe now uses the existing consumer no-thinking ready fixture, preserving content/finish/usage and resource assertions.",
+      "result_sha256": "80ded2386f0461e9e952b16c8ab603ada294245b9d5180c436710c78b7f5ae30",
+      "log_sha256": "e1298821803241363b7c6ceaf1671865c6270ed49b72787bda18a87796151a26",
+      "native_code_changed": false
+    }
+  ]
+}

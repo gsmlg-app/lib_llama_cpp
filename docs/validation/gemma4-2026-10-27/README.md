@@ -203,6 +203,27 @@ artifact bytes are retained in JSON. Windows CPU 128K remains in progress.
   the test identities and evidence digests. Successful subprocess stderr is
   suppressed by the original aggregator; the independent consumer/long runs
   establish 36/36 model offload for this exact artifact and configuration.
+- The published CUDA and Vulkan assets each also passed 150 **actual decode**
+  cancellations with an immediately submitted, completed legal recovery request
+  after every cancel. There was no further poll of a cancelled task. A separate
+  512-token probe measured five checkpoints from warmup 50 through cycle 150:
+
+  | Artifact | Threads at all checkpoints | VRAM bytes at all checkpoints | RSS increase, 50 to 150 |
+  | --- | ---: | ---: | ---: |
+  | [CUDA](released-cuda-gpu-resources.json) | 8 | 1688207360 | 110592 bytes (108 KiB) |
+  | [Vulkan](released-vulkan-gpu-resources.json) | 8 | 1590689792 | 106496 bytes (104 KiB) |
+
+  Each run counted exactly 150 cancelled and 150 completed requests; active,
+  retained, pending and queue counts cleared at every checkpoint. This probe
+  retains Python timings/statistics, so total process RSS includes its own
+  bookkeeping. The small RSS increases are retained in the data; flat VRAM and
+  stable native counts are bounded-run evidence, not an indefinite leak guarantee.
+  [Method/provenance](released-gpu-resource-method.json) records all five samples,
+  original digests and the corrected prototype failures. The reusable
+  [probe](../../../tools/desktop_gpu_resources.py) supplements the long-window
+  tests and imports the unchanged native ABI harness. Reproduction commands are
+  in the architecture review. Its latency field includes the following recovery
+  request, rather than measuring exact GPU stop time.
 - Warmup 50 to repeat 100 cancellation requests: DGX CPU retained four threads
   and 3490408 KiB RSS; CUDA retained six threads and 3782612 KiB RSS. ms04 CPU
   retained four threads and 4383232 KiB RSS. Active/retained/pending counts returned
