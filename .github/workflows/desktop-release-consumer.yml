@@ -1,0 +1,75 @@
+name: Windows released CPU consumer
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published CPU release version
+        type: string
+        default: '0.7.5'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  consumer:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      CONSUMER_NAME: libllama-release-consumer-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download actual release and immutable model
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid release version' }
+          $inputs = Join-Path $env:RUNNER_TEMP 'consumer-input'
+          $results = Join-Path $env:RUNNER_TEMP 'consumer-results'
+          New-Item -ItemType Directory -Force $inputs, "$inputs/tools", $results | Out-Null
+          Copy-Item tools/desktop_release_consumer.py, tools/desktop_context_benchmark.py "$inputs/tools/"
+          gh release download "v$env:RELEASE_VERSION" --pattern "lib_llama_cpp-prebuilt-$env:RELEASE_VERSION.tar.gz*" --dir $inputs
+          if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
+          gh release view "v$env:RELEASE_VERSION" --json tagName,targetCommitish,publishedAt,url,assets | Out-File "$results/release.json" -Encoding utf8
+          curl.exe -L --fail --retry 3 'https://huggingface.co/batiai/Gemma-4-E2B-it-GGUF/resolve/a6807259ab0f1f77f666d635cfcc7d9d960bf39a/google-gemma-4-E2B-it-Q4_K_M.gguf' -o "$inputs/model.gguf"
+          if ($LASTEXITCODE -ne 0) { throw 'Model download failed' }
+          if ((Get-FileHash "$inputs/model.gguf" -Algorithm SHA256).Hash.ToLower() -ne 'e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64') { throw 'Model hash mismatch' }
+          curl.exe -L --fail --retry 3 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -o "$inputs/vc_redist.x64.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'VC runtime download failed' }
+          $signature = Get-AuthenticodeSignature "$inputs/vc_redist.x64.exe"
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Microsoft Corporation') { throw 'Unverified VC runtime installer' }
+          @{sha256=(Get-FileHash "$inputs/vc_redist.x64.exe" -Algorithm SHA256).Hash.ToLower(); version=(Get-Item "$inputs/vc_redist.x64.exe").VersionInfo.FileVersion; publisher=$signature.SignerCertificate.Subject} | ConvertTo-Json | Out-File "$results/vc-runtime.json" -Encoding utf8
+      - name: Consume in an offline Windows runtime container
+        shell: pwsh
+        run: |
+          $inputs = Join-Path $env:RUNNER_TEMP 'consumer-input'
+          $results = Join-Path $env:RUNNER_TEMP 'consumer-results'
+          $image = 'python:3.12-windowsservercore-ltsc2022'
+          docker pull $image
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image pull failed' }
+          docker image inspect $image | Out-File "$results/image.json" -Encoding utf8
+          $command = @'
+          $runtime = Start-Process C:\input\vc_redist.x64.exe -ArgumentList '/install','/quiet','/norestart' -Wait -PassThru
+          if ($runtime.ExitCode -notin @(0,3010)) { exit $runtime.ExitCode }
+          $archive = 'C:\input\lib_llama_cpp-prebuilt-' + $env:LIB_LLAMA_CPP_RELEASE_VERSION + '.tar.gz'
+          python C:\input\tools\desktop_release_consumer.py --archive $archive --checksum-file "$archive.sha256" --member windows/x64/lib_llama_cpp_windows.dll --model C:\input\model.gguf --version $env:LIB_LLAMA_CPP_RELEASE_VERSION --output C:\results\consumer.json
+          exit $LASTEXITCODE
+          '@
+          docker run --rm --isolation=process --network none --name $env:CONSUMER_NAME --env "LIB_LLAMA_CPP_RELEASE_VERSION=$env:RELEASE_VERSION" --mount "type=bind,source=$inputs,target=C:\input,readonly" --mount "type=bind,source=$results,target=C:\results" $image powershell -NoProfile -Command $command 2>&1 | Tee-Object "$results/consumer.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Published Windows CPU consumer failed' }
+          $evidence = Get-Content "$results/consumer.json" -Raw | ConvertFrom-Json
+          if ($evidence.status -ne 'passed') { throw 'Missing successful native inference' }
+      - name: Remove own container
+        if: always()
+        shell: pwsh
+        run: |
+          $container = docker ps -aq --filter "name=^/$env:CONSUMER_NAME$"
+          if ($container) { docker rm -f $container }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-released-cpu-${{ inputs.version }}
+          path: ${{ runner.temp }}/consumer-results/
