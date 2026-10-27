@@ -1,0 +1,35 @@
+--- current original native harness
++++ released strict cuda GPU harness
+@@ -202,17 +202,21 @@
+         assert engine.read(engine.error)["code"] == "backend"
+         return
+     if name == "native_ceiling":
+-        engine = Engine({"model_path": MODEL, "n_ctx": 2147483647, "n_gpu_layers": 0})
++        engine = Engine({"model_path": MODEL, "n_ctx": 2147483647, "n_gpu_layers": 99, "backend": "cuda", "require_backend": True})
+         assert not engine.ptr
+         assert engine.read(engine.error)["code"] == "context_overflow"
+         return
+     engine = Engine({"model_path": MODEL, "n_ctx": 512, "n_batch": 64, "n_ubatch": 64,
+-                     "n_parallel": 1, "n_gpu_layers": 0,
++                     "n_parallel": 1, "n_gpu_layers": 99, "backend": "cuda", "require_backend": True,
+                      "result_retention_ms": 100 if name == "expiry" else 30000})
+     assert engine.ptr, engine.read(engine.error)
+     engine.lib.llcs_engine_caps.argtypes = [ctypes.c_void_p]
+     engine.lib.llcs_engine_caps.restype = ctypes.c_void_p
+     caps = engine.read(engine.lib.llcs_engine_caps(engine.ptr))
++    assert caps["selected_backend"] == "cuda" and caps["require_backend"] is True, caps
++    assert caps["requested"]["n_gpu_layers"] == 99 and caps["degradation"] == "", caps
++    assert any(d["backend"].lower() == "cuda" and d["type"] != "cpu" for d in caps["device_info"]), caps
++    print(json.dumps({"case": name, "strict_cuda_caps": caps}), flush=True)
+     assert caps["effective"]["n_batch"] == 64, caps
+     assert caps["effective"]["cache_type_k"] == "f16", caps
+     assert caps["effective"]["swa_full"] is False, caps
+@@ -359,7 +363,7 @@
+             assert engine.read(engine.lib.llcs_engine_poll(engine.ptr, task, 100)) is None
+         elif name in ["stream", "two_engines"]:
+             if name == "two_engines":
+-                other = Engine({"model_path": MODEL, "n_ctx": 512, "n_gpu_layers": 0})
++                other = Engine({"model_path": MODEL, "n_ctx": 512, "n_gpu_layers": 99, "backend": "cuda", "require_backend": True})
+                 assert other.ptr, other.read(other.error)
+                 other.close()
+             engine.complete(body)

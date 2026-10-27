@@ -1,0 +1,1089 @@
+{
+  "status": "passed",
+  "audit_started_at_utc": "2026-10-27T02:03:08.842051+00:00",
+  "scope": "Actual public CPU/CUDA/Vulkan archive checksums and Linux/Windows static native dependency audit; no inference executed by this audit",
+  "release": {
+    "id": 424904559,
+    "tag_name": "v0.7.5",
+    "target_commitish": "7ba54673295800b245960001e4128ebe141fd66a",
+    "published_at": "2026-10-27T00:16:32Z",
+    "html_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/tag/v0.7.5",
+    "draft": false,
+    "prerelease": false
+  },
+  "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+  "public_tag_ref": {
+    "ref": "refs/tags/v0.7.5",
+    "node_id": "REF_kwDOSUiFKrByZWZzL3RhZ3MvdjAuNy41",
+    "url": "https://api.github.com/repos/gsmlg-app/lib_llama_cpp/git/refs/tags/v0.7.5",
+    "object": {
+      "sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "type": "commit",
+      "url": "https://api.github.com/repos/gsmlg-app/lib_llama_cpp/git/commits/7ba54673295800b245960001e4128ebe141fd66a"
+    }
+  },
+  "release_metadata_snapshot_provenance": "Coordinator-provided snapshot from its existing normal release workflow; this audit did not retry the rate-limited DGX anonymous metadata API",
+  "environment_events": [
+    {
+      "status": "blocked_env",
+      "scope": "DGX anonymous public GitHub release metadata polling only",
+      "observed_at_utc": "2026-10-27T01:27:52.356107+00:00",
+      "error": "HTTP Error 403: rate limit exceeded",
+      "process_exit_code": 1,
+      "script": "/tmp/libllama-20261027-validation/released-v075-audit/watch-cuda-linux.py",
+      "request_url": "https://api.github.com/repos/gsmlg-app/lib_llama_cpp/releases/tags/v0.7.5",
+      "last_successful_poll_at_utc": "2026-10-27T01:24:40.834709+00:00",
+      "last_successful_poll_cuda_linux_archive_present": false,
+      "last_successful_poll_cuda_linux_sidecar_present": false,
+      "watcher_stopped": true,
+      "limited_api_path_retried": false,
+      "credentials_or_permissions_changed": false,
+      "independent_existing_workflow_monitor_continues": true,
+      "parent_resolution": "Parent will provide one release asset snapshot through its existing normal release workflow after job completion; no credential/permission changes."
+    }
+  ],
+  "cpu_isa_build_log_evidence": {
+    "captured_at_utc": "2026-10-27T00:39:37.643342+00:00",
+    "scope": "Actual formal CPU release build-log evidence; configuration output rather than complete compiler command lines",
+    "records": [
+      {
+        "platform_arch": "linux-x64",
+        "workflow_id": 40418993600,
+        "workflow_head_sha": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+        "job_id": 121919623336,
+        "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40418993600/job/121919623336",
+        "raw_log_file": "cpu-build-linux-x64.log",
+        "raw_log_sha256": "130ed6569f37b7cd52360cc8f2458d8d67a713f7b0e27c3b058afe224ac170b3",
+        "cpu_backend_variant": "ggml-cpu",
+        "reported_variant_text": "-msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2",
+        "visible_configured_arch_flags": [
+          "-msse4.2",
+          "-mf16c",
+          "-mfma",
+          "-mbmi2",
+          "-mavx",
+          "-mavx2"
+        ],
+        "visible_configured_isa_features": [
+          "SSE4.2",
+          "F16C",
+          "FMA",
+          "BMI2",
+          "AVX",
+          "AVX2"
+        ],
+        "reported_arm_feature_probe_results": {},
+        "explicit_march_or_mcpu": "not applicable to these visible x86 flags",
+        "complete_per_translation_unit_compiler_flags": "unknown: non-verbose build log does not expose every compiler invocation",
+        "universal_cpu_compatibility": "unknown: no broad CPU compatibility claim is established by these logs or ELF notes",
+        "evidence": [
+          {
+            "line": 272,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:05.7553772Z -- The CXX compiler identification is GNU 13.3.0"
+          },
+          {
+            "line": 278,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.0676173Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=OFF NNAPI=OFF"
+          },
+          {
+            "line": 279,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.0676762Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=OFF NNAPI=OFF"
+          },
+          {
+            "line": 280,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.1997106Z -- The C compiler identification is GNU 13.3.0"
+          },
+          {
+            "line": 286,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.3163836Z CMAKE_BUILD_TYPE=Release"
+          },
+          {
+            "line": 288,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.3964981Z -- The ASM compiler identification is GNU"
+          },
+          {
+            "line": 294,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.6114565Z -- CMAKE_SYSTEM_PROCESSOR: x86_64"
+          },
+          {
+            "line": 295,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.6114923Z -- GGML_SYSTEM_ARCH: x86"
+          },
+          {
+            "line": 296,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.6135384Z -- Including CPU backend"
+          },
+          {
+            "line": 298,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.6139493Z -- Adding CPU backend variant ggml-cpu: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2"
+          },
+          {
+            "line": 299,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.6297420Z -- ggml version: 0.13.1"
+          },
+          {
+            "line": 300,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:06.6297665Z -- ggml commit:  95b8b8ec1"
+          },
+          {
+            "line": 610,
+            "text": "Native CPU prebuilt (linux-x64)\tBuild standalone Linux package consumer\t2026-10-26T23:52:47.6647986Z -- The CXX compiler identification is GNU 13.3.0"
+          }
+        ]
+      },
+      {
+        "platform_arch": "linux-arm64",
+        "workflow_id": 40418993600,
+        "workflow_head_sha": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+        "job_id": 121919623323,
+        "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40418993600/job/121919623323",
+        "raw_log_file": "cpu-build-linux-arm64.log",
+        "raw_log_sha256": "39d9f251ebdbdb92118b02e8a7407b6ba50d82706ff78226f1e6d3a400adcebd",
+        "cpu_backend_variant": "ggml-cpu",
+        "reported_variant_text": "",
+        "visible_configured_arch_flags": [],
+        "visible_configured_isa_features": [],
+        "reported_arm_feature_probe_results": {
+          "GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E": "Failed",
+          "HAVE_DOTPROD": "Failed",
+          "HAVE_SVE": "Failed",
+          "HAVE_MATMUL_INT8": "Failed",
+          "HAVE_FMA": "Success",
+          "HAVE_FP16_VECTOR_ARITHMETIC": "Failed",
+          "HAVE_SME": "Failed"
+        },
+        "explicit_march_or_mcpu": "unknown: no explicit -march/-mcpu compiler command is visible in this build log",
+        "complete_per_translation_unit_compiler_flags": "unknown: non-verbose build log does not expose every compiler invocation",
+        "universal_cpu_compatibility": "unknown: no broad CPU compatibility claim is established by these logs or ELF notes",
+        "evidence": [
+          {
+            "line": 270,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.2192685Z -- The CXX compiler identification is GNU 13.3.0"
+          },
+          {
+            "line": 276,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.3167781Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=OFF NNAPI=OFF"
+          },
+          {
+            "line": 277,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.3168604Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=OFF NNAPI=OFF"
+          },
+          {
+            "line": 278,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.4096189Z -- The C compiler identification is GNU 13.3.0"
+          },
+          {
+            "line": 284,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.4815130Z CMAKE_BUILD_TYPE=Release"
+          },
+          {
+            "line": 286,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.5680961Z -- The ASM compiler identification is GNU"
+          },
+          {
+            "line": 292,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6655768Z -- CMAKE_SYSTEM_PROCESSOR: aarch64"
+          },
+          {
+            "line": 293,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6656430Z -- GGML_SYSTEM_ARCH: ARM"
+          },
+          {
+            "line": 294,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6678657Z -- Including CPU backend"
+          },
+          {
+            "line": 295,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6682274Z -- ARM detected"
+          },
+          {
+            "line": 296,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6688926Z -- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E"
+          },
+          {
+            "line": 297,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6962724Z -- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E - Failed"
+          },
+          {
+            "line": 298,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6963362Z -- Checking for ARM features using flags:"
+          },
+          {
+            "line": 299,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.6965143Z -- Performing Test HAVE_DOTPROD"
+          },
+          {
+            "line": 300,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.7221641Z -- Performing Test HAVE_DOTPROD - Failed"
+          },
+          {
+            "line": 301,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.7222220Z -- Performing Test HAVE_SVE"
+          },
+          {
+            "line": 302,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.7483208Z -- Performing Test HAVE_SVE - Failed"
+          },
+          {
+            "line": 303,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.7483835Z -- Performing Test HAVE_MATMUL_INT8"
+          },
+          {
+            "line": 304,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.7737339Z -- Performing Test HAVE_MATMUL_INT8 - Failed"
+          },
+          {
+            "line": 305,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.7737756Z -- Performing Test HAVE_FMA"
+          },
+          {
+            "line": 306,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8246149Z -- Performing Test HAVE_FMA - Success"
+          },
+          {
+            "line": 307,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8246770Z -- Performing Test HAVE_FP16_VECTOR_ARITHMETIC"
+          },
+          {
+            "line": 308,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8499403Z -- Performing Test HAVE_FP16_VECTOR_ARITHMETIC - Failed"
+          },
+          {
+            "line": 309,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8500200Z -- Performing Test HAVE_SME"
+          },
+          {
+            "line": 310,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8751680Z -- Performing Test HAVE_SME - Failed"
+          },
+          {
+            "line": 311,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8752854Z -- Adding CPU backend variant ggml-cpu:  "
+          },
+          {
+            "line": 312,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8814280Z -- ggml version: 0.13.1"
+          },
+          {
+            "line": 313,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild Linux CPU prebuilt library\t2026-10-26T23:50:16.8814586Z -- ggml commit:  95b8b8ec1"
+          },
+          {
+            "line": 623,
+            "text": "Native CPU prebuilt (linux-arm64)\tBuild standalone Linux package consumer\t2026-10-26T23:54:21.2025922Z -- The CXX compiler identification is GNU 13.3.0"
+          }
+        ]
+      },
+      {
+        "platform_arch": "windows",
+        "workflow_id": 40418993600,
+        "workflow_head_sha": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+        "job_id": 121919623476,
+        "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40418993600/job/121919623476",
+        "raw_log_file": "cpu-build-windows.log",
+        "raw_log_sha256": "09db6e3fc288b05d9bed91f3191dc0f724e1bb6fe0266f8f70be52396abbbff8",
+        "cpu_backend_variant": "ggml-cpu",
+        "reported_variant_text": "/arch:AVX2 GGML_AVX2;GGML_FMA;GGML_F16C;__BMI2__;GGML_BMI2",
+        "visible_configured_arch_flags": [
+          "/arch:AVX2"
+        ],
+        "visible_configured_isa_features": [
+          "AVX2",
+          "FMA",
+          "F16C",
+          "BMI2"
+        ],
+        "reported_arm_feature_probe_results": {},
+        "explicit_march_or_mcpu": "not applicable to these visible x86 flags",
+        "complete_per_translation_unit_compiler_flags": "unknown: non-verbose build log does not expose every compiler invocation",
+        "universal_cpu_compatibility": "unknown: no broad CPU compatibility claim is established by these logs or ELF notes",
+        "evidence": [
+          {
+            "line": 154,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:27.5182448Z -- The CXX compiler identification is MSVC 19.44.35229.0"
+          },
+          {
+            "line": 160,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:29.0855722Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=OFF NNAPI=OFF"
+          },
+          {
+            "line": 161,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:29.0857774Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=OFF NNAPI=OFF"
+          },
+          {
+            "line": 162,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:30.3919268Z -- The C compiler identification is MSVC 19.44.35229.0"
+          },
+          {
+            "line": 168,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:31.1471574Z CMAKE_BUILD_TYPE=Release"
+          },
+          {
+            "line": 170,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:31.4890914Z -- The ASM compiler identification is MSVC"
+          },
+          {
+            "line": 180,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.6895825Z -- CMAKE_SYSTEM_PROCESSOR: AMD64"
+          },
+          {
+            "line": 181,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.6896149Z -- CMAKE_GENERATOR_PLATFORM: x64"
+          },
+          {
+            "line": 182,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.6896485Z -- GGML_SYSTEM_ARCH: x86"
+          },
+          {
+            "line": 183,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.6919638Z -- Including CPU backend"
+          },
+          {
+            "line": 185,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.6988503Z -- Adding CPU backend variant ggml-cpu: /arch:AVX2 GGML_AVX2;GGML_FMA;GGML_F16C;__BMI2__;GGML_BMI2"
+          },
+          {
+            "line": 186,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.7163988Z -- ggml version: 0.13.1"
+          },
+          {
+            "line": 187,
+            "text": "Native CPU prebuilt (windows)\tBuild Windows CPU prebuilt library\t2026-10-26T23:50:34.7166614Z -- ggml commit:  95b8b8ec1"
+          }
+        ]
+      }
+    ],
+    "limits": [
+      "Linux x64 and Windows CPU variants are visibly configured with AVX2/FMA/F16C/BMI2; do not describe the release as supporting every x64 CPU.",
+      "ARM64 log reports an empty additional-flags/definitions CPU variant; an exact minimum ARM ISA and all per-file flags remain unknown.",
+      "Compiler probe success/failure reports are configuration evidence, not independent hardware runtime verification.",
+      "No CPU ISA compatibility conclusion is inferred from ELF GNU property/baseline notes."
+    ]
+  },
+  "linux_vulkan_build_and_symbol_evidence": {
+    "scope": "Static public Vulkan Linux asset and completed formal build-job evidence; no native execution",
+    "archive_name": "lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz",
+    "library_sha256": "0b91503832be05382da10be1f3a6c5683bb9ccaf090af1f21c77286566596e26",
+    "workflow_id": 40425353453,
+    "workflow_head_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+    "job_id": 121929609746,
+    "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609746",
+    "build_log_sha256": "b6c952c9ea16b813c2b7982102422f42136dabb36ee80746f5501b22b2cc9774",
+    "build_log_file": "vulkan-linux-build.log",
+    "readelf_symbols_sha256": "7bd6c3f23efb4a51e3770b5cbb96ebb9fe7364728a7520ee9c1e08efba7dfc99",
+    "readelf_symbols_file": "vulkan-linux-symbols.txt",
+    "exported_registration_and_runtime_symbols": {
+      "ggml_backend_vk_reg": [
+        "13079: 000000000083a690    37 FUNC    GLOBAL DEFAULT   14 ggml_backend_vk_reg"
+      ],
+      "ggml_backend_vk_init": [
+        "12421: 00000000008e3260   702 FUNC    GLOBAL DEFAULT   14 ggml_backend_vk_init"
+      ],
+      "ggml_backend_vk_get_device_count": [
+        "9324: 000000000083a340    36 FUNC    GLOBAL DEFAULT   14 ggml_backend_vk_get_device_count"
+      ],
+      "ggml_backend_vk_buffer_type": [
+        "6973: 00000000008e1390   233 FUNC    GLOBAL DEFAULT   14 ggml_backend_vk_buffer_type"
+      ],
+      "ggml_backend_load_all": [
+        "6703: 000000000091cbb0    11 FUNC    GLOBAL DEFAULT   14 ggml_backend_load_all"
+      ],
+      "ggml_backend_register": [
+        "3191: 0000000000919df0   325 FUNC    GLOBAL DEFAULT   14 ggml_backend_register"
+      ]
+    },
+    "build_configuration_evidence": [
+      {
+        "line": 316,
+        "text": "2026-10-27T00:17:09.4999955Z   LIB_LLAMA_CPP_ENABLE_VULKAN: ON"
+      },
+      {
+        "line": 324,
+        "text": "2026-10-27T00:17:11.0494972Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=ON NNAPI=OFF"
+      },
+      {
+        "line": 325,
+        "text": "2026-10-27T00:17:11.0496688Z -- lib_llama_cpp backends: CPU=ON Metal=OFF CUDA=OFF Vulkan=ON NNAPI=OFF"
+      },
+      {
+        "line": 344,
+        "text": "2026-10-27T00:17:11.6850831Z -- Adding CPU backend variant ggml-cpu: -msse4.2;-mf16c;-mfma;-mbmi2;-mavx;-mavx2 GGML_SSE42;GGML_F16C;GGML_FMA;GGML_BMI2;GGML_AVX;GGML_AVX2"
+      },
+      {
+        "line": 345,
+        "text": "2026-10-27T00:17:11.7664434Z -- Found Vulkan: /usr/lib/x86_64-linux-gnu/libvulkan.so (found version \"1.3.275\") found components: glslc missing components: glslangValidator"
+      },
+      {
+        "line": 353,
+        "text": "2026-10-27T00:17:12.2557824Z -- ggml version: 0.13.1"
+      },
+      {
+        "line": 354,
+        "text": "2026-10-27T00:17:12.2558341Z -- ggml commit:  95b8b8ec1"
+      }
+    ],
+    "vulkan_configured_on": true,
+    "vulkan_registration_symbol_defined": true,
+    "limitations": [
+      "Registration symbol presence and a Vulkan=ON build do not establish a usable device/driver or successful required-backend selection.",
+      "This audit did not load the library or enumerate a runtime device."
+    ]
+  },
+  "workflows": {
+    "cpu": {
+      "conclusion": "success",
+      "headSha": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+      "status": "completed",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40418993600"
+    },
+    "accelerated": {
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453",
+      "headSha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  },
+  "accelerated_workflow_jobs": [
+    {
+      "name": "Vulkan prebuilts (android)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609395"
+    },
+    {
+      "name": "Metal prebuilts (apple)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609633"
+    },
+    {
+      "name": "CUDA prebuilt (linux)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609677"
+    },
+    {
+      "name": "Vulkan prebuilt (linux)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609746"
+    },
+    {
+      "name": "Vulkan prebuilt (windows)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609797"
+    },
+    {
+      "name": "CUDA prebuilt (windows)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453/job/121929609985"
+    }
+  ],
+  "all_release_asset_inventory": [
+    {
+      "id": 679915828,
+      "name": "lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+      "size": 37431522,
+      "digest": "sha256:8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:16:29Z",
+      "updated_at": "2026-10-27T00:16:30Z"
+    },
+    {
+      "id": 679915831,
+      "name": "lib_llama_cpp-prebuilt-0.7.5.tar.gz.sha256",
+      "size": 102,
+      "digest": "sha256:558d5cb5d4b7d2eee38ecffa502d8d9560dd45483589fee135da7330ce2033b4",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T00:16:29Z",
+      "updated_at": "2026-10-27T00:16:29Z"
+    },
+    {
+      "id": 680104862,
+      "name": "lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz",
+      "size": 254204466,
+      "digest": "sha256:46f00df7dad2904cbebe5bc51adb834d7fb74084ac583f49a2214c1886857ef1",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz",
+      "created_at": "2026-10-27T01:44:22Z",
+      "updated_at": "2026-10-27T01:44:32Z"
+    },
+    {
+      "id": 680104863,
+      "name": "lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz.sha256",
+      "size": 113,
+      "digest": "sha256:3464f08174ffbe3d8e9d9ebf47f65dffb645be7baf6688fc195c94a02ca6f99b",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T01:44:22Z",
+      "updated_at": "2026-10-27T01:44:22Z"
+    },
+    {
+      "id": 680127737,
+      "name": "lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz",
+      "size": 251613758,
+      "digest": "sha256:101869d320532b16ec6a4e0929d1a3b54081a21141b4f0d3a1470d97c6de59e9",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz",
+      "created_at": "2026-10-27T01:55:12Z",
+      "updated_at": "2026-10-27T01:55:21Z"
+    },
+    {
+      "id": 680127735,
+      "name": "lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz.sha256",
+      "size": 116,
+      "digest": "sha256:0eb203be74c30b3e3ab4a953754b1f0892770ae8beaccf0d25fe0e1cad0f8ea8",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T01:55:12Z",
+      "updated_at": "2026-10-27T01:55:13Z"
+    },
+    {
+      "id": 679943986,
+      "name": "lib_llama_cpp-prebuilt-metal-0.7.5.tar.gz",
+      "size": 16795953,
+      "digest": "sha256:04b754baaced199d1f8806abf13dcc2cae1dc116b6f0b7b6d0d6460c2b9131b9",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-metal-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:29:33Z",
+      "updated_at": "2026-10-27T00:29:34Z"
+    },
+    {
+      "id": 679943988,
+      "name": "lib_llama_cpp-prebuilt-metal-0.7.5.tar.gz.sha256",
+      "size": 108,
+      "digest": "sha256:e57d20a87d8d2a2246a31df7ebefee8a7d8d194a127fce018a4c448c90e46614",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-metal-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T00:29:33Z",
+      "updated_at": "2026-10-27T00:29:33Z"
+    },
+    {
+      "id": 679990129,
+      "name": "lib_llama_cpp-prebuilt-vulkan-android-0.7.5.tar.gz",
+      "size": 52486943,
+      "digest": "sha256:d2e58dfbbd46cb1cd17032b0ba414640e271c368671d9ec094722666f82ae678",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-android-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:52:28Z",
+      "updated_at": "2026-10-27T00:52:30Z"
+    },
+    {
+      "id": 679990127,
+      "name": "lib_llama_cpp-prebuilt-vulkan-android-0.7.5.tar.gz.sha256",
+      "size": 117,
+      "digest": "sha256:7c8228a8112f8d171d7947e5c4f0a226452813655c0b827bc16a984486c5069b",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-android-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T00:52:27Z",
+      "updated_at": "2026-10-27T00:52:28Z"
+    },
+    {
+      "id": 679931907,
+      "name": "lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz",
+      "size": 17754501,
+      "digest": "sha256:ef62d9dd752021b2df021e7359f49b34b368c5c679b1a4cdc987d35df23ed07b",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:23:35Z",
+      "updated_at": "2026-10-27T00:23:36Z"
+    },
+    {
+      "id": 679931913,
+      "name": "lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz.sha256",
+      "size": 115,
+      "digest": "sha256:8a9ffe858465da4182b560e2e901cf5bebbcdaf5430f8e77439c9d27f3f312a1",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T00:23:35Z",
+      "updated_at": "2026-10-27T00:23:36Z"
+    },
+    {
+      "id": 679971963,
+      "name": "lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz",
+      "size": 20105790,
+      "digest": "sha256:1db6e5c0bdcfe0f211c85efa0aaa9ebcb51e302dbb0c624ff842c950c776ad0e",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:43:29Z",
+      "updated_at": "2026-10-27T00:43:30Z"
+    },
+    {
+      "id": 679971962,
+      "name": "lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz.sha256",
+      "size": 118,
+      "digest": "sha256:7a27fa761e681ab80fa05023f8182e52880b5a621b477ded9c1e97f3a2b553b7",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz.sha256",
+      "created_at": "2026-10-27T00:43:29Z",
+      "updated_at": "2026-10-27T00:43:29Z"
+    },
+    {
+      "id": 679915826,
+      "name": "lib_llama_cpp-source-0.7.5.tar.gz",
+      "size": 50406462,
+      "digest": "sha256:236b98ab4bf6dcb222d2721cc3c7c536970c687d227874799d6ee4f0115053cd",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-source-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:16:29Z",
+      "updated_at": "2026-10-27T00:16:31Z"
+    },
+    {
+      "id": 679915824,
+      "name": "lib_llama_cpp_example-linux-0.7.5.tar.gz",
+      "size": 22358400,
+      "digest": "sha256:2848abfd141a05e168c3442c5981adb4397f74035bf9704dc4789589e03ea069",
+      "browser_download_url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp_example-linux-0.7.5.tar.gz",
+      "created_at": "2026-10-27T00:16:29Z",
+      "updated_at": "2026-10-27T00:16:30Z"
+    }
+  ],
+  "archives": [
+    {
+      "name": "lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+      "asset_id": 679915828,
+      "source_release_tag": "v0.7.5",
+      "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "build_workflow_head_sha": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+      "bytes": 37431522,
+      "sha256": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f",
+      "github_digest": "sha256:8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f",
+      "sidecar": {
+        "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-0.7.5.tar.gz.sha256",
+        "asset_id": 679915831,
+        "bytes": 102,
+        "sha256": "558d5cb5d4b7d2eee38ecffa502d8d9560dd45483589fee135da7330ce2033b4",
+        "github_digest": "sha256:558d5cb5d4b7d2eee38ecffa502d8d9560dd45483589fee135da7330ce2033b4",
+        "text": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f  lib_llama_cpp-prebuilt-0.7.5.tar.gz\n"
+      },
+      "checksum_and_size_checks_passed": true,
+      "reused_existing_cpu_archive_read_only": true,
+      "native_members": [
+        {
+          "member": "linux/x64/liblib_llama_cpp_linux.so",
+          "bytes": 10009416,
+          "sha256": "d9ea91a2d0e8474f95438235a5cc7dbbeaa81deb5555abc7991710a99c56beb2",
+          "format": "ELF",
+          "machine": "Advanced Micro Devices X86-64",
+          "needed": [
+            "libstdc++.so.6",
+            "libm.so.6",
+            "libgcc_s.so.1",
+            "libc.so.6",
+            "ld-linux-x86-64.so.2"
+          ],
+          "required_symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.11",
+            "CXXABI_1.3.13",
+            "CXXABI_1.3.2",
+            "CXXABI_1.3.3",
+            "CXXABI_1.3.5",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.11",
+            "GLIBCXX_3.4.14",
+            "GLIBCXX_3.4.15",
+            "GLIBCXX_3.4.17",
+            "GLIBCXX_3.4.18",
+            "GLIBCXX_3.4.19",
+            "GLIBCXX_3.4.20",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.22",
+            "GLIBCXX_3.4.25",
+            "GLIBCXX_3.4.26",
+            "GLIBCXX_3.4.29",
+            "GLIBCXX_3.4.30",
+            "GLIBCXX_3.4.32",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.17",
+            "GLIBC_2.2.5",
+            "GLIBC_2.27",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.38",
+            "GLIBC_2.4",
+            "GLIBC_2.7"
+          ],
+          "highest_required_glibc": "GLIBC_2.38",
+          "highest_required_glibcxx": "GLIBCXX_3.4.32",
+          "highest_required_cxxabi": "CXXABI_1.3.13",
+          "runpath": [],
+          "method": "readelf -h, -d and --version-info; library was not loaded or executed"
+        },
+        {
+          "member": "linux/arm64/liblib_llama_cpp_linux.so",
+          "bytes": 8887336,
+          "sha256": "561e89455ffada10f954bfdf1a4b0fc8a636fe4604e512fc2edbc099a143f555",
+          "format": "ELF",
+          "machine": "AArch64",
+          "needed": [
+            "libstdc++.so.6",
+            "libm.so.6",
+            "libgcc_s.so.1",
+            "libc.so.6",
+            "ld-linux-aarch64.so.1"
+          ],
+          "required_symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.11",
+            "CXXABI_1.3.13",
+            "CXXABI_1.3.2",
+            "CXXABI_1.3.3",
+            "CXXABI_1.3.5",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.11",
+            "GLIBCXX_3.4.14",
+            "GLIBCXX_3.4.15",
+            "GLIBCXX_3.4.17",
+            "GLIBCXX_3.4.18",
+            "GLIBCXX_3.4.19",
+            "GLIBCXX_3.4.20",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.22",
+            "GLIBCXX_3.4.25",
+            "GLIBCXX_3.4.26",
+            "GLIBCXX_3.4.29",
+            "GLIBCXX_3.4.30",
+            "GLIBCXX_3.4.32",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.17",
+            "GLIBC_2.27",
+            "GLIBC_2.29",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.38"
+          ],
+          "highest_required_glibc": "GLIBC_2.38",
+          "highest_required_glibcxx": "GLIBCXX_3.4.32",
+          "highest_required_cxxabi": "CXXABI_1.3.13",
+          "runpath": [],
+          "method": "readelf -h, -d and --version-info; library was not loaded or executed"
+        },
+        {
+          "member": "windows/x64/lib_llama_cpp_windows.dll",
+          "bytes": 6664192,
+          "sha256": "11a4b1f0b36f52619f0313e8dee291a3508db4bb03153d55a3e1d2f80e0222ab",
+          "format": "PE32+",
+          "machine_hex": "0x8664",
+          "machine": "AMD64",
+          "imported_dlls": [
+            "ADVAPI32.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll",
+            "api-ms-win-crt-filesystem-l1-1-0.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-locale-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-utility-l1-1-0.dll",
+            "KERNEL32.dll",
+            "MSVCP140.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll"
+          ],
+          "delay_imported_dlls": [],
+          "method": "Pure Python PE import and delay-import directory parsing; DLL was not executed"
+        }
+      ]
+    },
+    {
+      "name": "lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz",
+      "asset_id": 680104862,
+      "source_release_tag": "v0.7.5",
+      "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "build_workflow_head_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "bytes": 254204466,
+      "sha256": "46f00df7dad2904cbebe5bc51adb834d7fb74084ac583f49a2214c1886857ef1",
+      "github_digest": "sha256:46f00df7dad2904cbebe5bc51adb834d7fb74084ac583f49a2214c1886857ef1",
+      "sidecar": {
+        "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz.sha256",
+        "asset_id": 680104863,
+        "bytes": 113,
+        "sha256": "3464f08174ffbe3d8e9d9ebf47f65dffb645be7baf6688fc195c94a02ca6f99b",
+        "github_digest": "sha256:3464f08174ffbe3d8e9d9ebf47f65dffb645be7baf6688fc195c94a02ca6f99b",
+        "text": "46f00df7dad2904cbebe5bc51adb834d7fb74084ac583f49a2214c1886857ef1  lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz\n"
+      },
+      "checksum_and_size_checks_passed": true,
+      "reused_existing_cpu_archive_read_only": false,
+      "native_members": [
+        {
+          "member": "linux/x64/liblib_llama_cpp_linux.so",
+          "bytes": 575664312,
+          "sha256": "11c2b4ca33fde90a969939bd053328f0f0d25338fe16fd3dfa3915546b46cab3",
+          "format": "ELF",
+          "machine": "Advanced Micro Devices X86-64",
+          "needed": [
+            "libcudart.so.12",
+            "libcublas.so.12",
+            "libcuda.so.1",
+            "libstdc++.so.6",
+            "libm.so.6",
+            "libgcc_s.so.1",
+            "libc.so.6",
+            "ld-linux-x86-64.so.2"
+          ],
+          "required_symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.11",
+            "CXXABI_1.3.13",
+            "CXXABI_1.3.2",
+            "CXXABI_1.3.3",
+            "CXXABI_1.3.5",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.11",
+            "GLIBCXX_3.4.14",
+            "GLIBCXX_3.4.15",
+            "GLIBCXX_3.4.17",
+            "GLIBCXX_3.4.18",
+            "GLIBCXX_3.4.19",
+            "GLIBCXX_3.4.20",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.22",
+            "GLIBCXX_3.4.25",
+            "GLIBCXX_3.4.26",
+            "GLIBCXX_3.4.29",
+            "GLIBCXX_3.4.30",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.17",
+            "GLIBC_2.2.5",
+            "GLIBC_2.27",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.4",
+            "GLIBC_2.7"
+          ],
+          "highest_required_glibc": "GLIBC_2.34",
+          "highest_required_glibcxx": "GLIBCXX_3.4.30",
+          "highest_required_cxxabi": "CXXABI_1.3.13",
+          "runpath": [
+            "/usr/local/cuda-12.5/targets/x86_64-linux/lib"
+          ],
+          "method": "readelf -h, -d and --version-info; library was not loaded or executed"
+        }
+      ]
+    },
+    {
+      "name": "lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz",
+      "asset_id": 680127737,
+      "source_release_tag": "v0.7.5",
+      "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "build_workflow_head_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "bytes": 251613758,
+      "sha256": "101869d320532b16ec6a4e0929d1a3b54081a21141b4f0d3a1470d97c6de59e9",
+      "github_digest": "sha256:101869d320532b16ec6a4e0929d1a3b54081a21141b4f0d3a1470d97c6de59e9",
+      "sidecar": {
+        "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz.sha256",
+        "asset_id": 680127735,
+        "bytes": 116,
+        "sha256": "0eb203be74c30b3e3ab4a953754b1f0892770ae8beaccf0d25fe0e1cad0f8ea8",
+        "github_digest": "sha256:0eb203be74c30b3e3ab4a953754b1f0892770ae8beaccf0d25fe0e1cad0f8ea8",
+        "text": "101869d320532b16ec6a4e0929d1a3b54081a21141b4f0d3a1470d97c6de59e9  lib_llama_cpp-prebuilt-cuda-windows-0.7.5.tar.gz\n"
+      },
+      "checksum_and_size_checks_passed": true,
+      "reused_existing_cpu_archive_read_only": false,
+      "native_members": [
+        {
+          "member": "windows/x64/lib_llama_cpp_windows.dll",
+          "bytes": 570552320,
+          "sha256": "7a53b785e97a3798eceafeb1f18f1c97cf7d83471d1ca26c9242d9c97c9b1773",
+          "format": "PE32+",
+          "machine_hex": "0x8664",
+          "machine": "AMD64",
+          "imported_dlls": [
+            "ADVAPI32.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll",
+            "api-ms-win-crt-filesystem-l1-1-0.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-locale-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-utility-l1-1-0.dll",
+            "cublas64_12.dll",
+            "cudart64_12.dll",
+            "KERNEL32.dll",
+            "MSVCP140.dll",
+            "nvcuda.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll"
+          ],
+          "delay_imported_dlls": [],
+          "method": "Pure Python PE import and delay-import directory parsing; DLL was not executed"
+        }
+      ]
+    },
+    {
+      "name": "lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz",
+      "asset_id": 679931907,
+      "source_release_tag": "v0.7.5",
+      "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "build_workflow_head_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "bytes": 17754501,
+      "sha256": "ef62d9dd752021b2df021e7359f49b34b368c5c679b1a4cdc987d35df23ed07b",
+      "github_digest": "sha256:ef62d9dd752021b2df021e7359f49b34b368c5c679b1a4cdc987d35df23ed07b",
+      "sidecar": {
+        "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz.sha256",
+        "asset_id": 679931913,
+        "bytes": 115,
+        "sha256": "8a9ffe858465da4182b560e2e901cf5bebbcdaf5430f8e77439c9d27f3f312a1",
+        "github_digest": "sha256:8a9ffe858465da4182b560e2e901cf5bebbcdaf5430f8e77439c9d27f3f312a1",
+        "text": "ef62d9dd752021b2df021e7359f49b34b368c5c679b1a4cdc987d35df23ed07b  lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz\n"
+      },
+      "checksum_and_size_checks_passed": true,
+      "reused_existing_cpu_archive_read_only": false,
+      "native_members": [
+        {
+          "member": "linux/x64/liblib_llama_cpp_linux.so",
+          "bytes": 55942120,
+          "sha256": "0b91503832be05382da10be1f3a6c5683bb9ccaf090af1f21c77286566596e26",
+          "format": "ELF",
+          "machine": "Advanced Micro Devices X86-64",
+          "needed": [
+            "libvulkan.so.1",
+            "libstdc++.so.6",
+            "libm.so.6",
+            "libgcc_s.so.1",
+            "libc.so.6",
+            "ld-linux-x86-64.so.2"
+          ],
+          "required_symbol_versions": [
+            "CXXABI_1.3",
+            "CXXABI_1.3.11",
+            "CXXABI_1.3.13",
+            "CXXABI_1.3.2",
+            "CXXABI_1.3.3",
+            "CXXABI_1.3.5",
+            "CXXABI_1.3.9",
+            "GLIBCXX_3.4",
+            "GLIBCXX_3.4.11",
+            "GLIBCXX_3.4.14",
+            "GLIBCXX_3.4.15",
+            "GLIBCXX_3.4.17",
+            "GLIBCXX_3.4.18",
+            "GLIBCXX_3.4.19",
+            "GLIBCXX_3.4.20",
+            "GLIBCXX_3.4.21",
+            "GLIBCXX_3.4.22",
+            "GLIBCXX_3.4.25",
+            "GLIBCXX_3.4.26",
+            "GLIBCXX_3.4.29",
+            "GLIBCXX_3.4.30",
+            "GLIBCXX_3.4.32",
+            "GLIBCXX_3.4.9",
+            "GLIBC_2.14",
+            "GLIBC_2.17",
+            "GLIBC_2.2.5",
+            "GLIBC_2.27",
+            "GLIBC_2.29",
+            "GLIBC_2.3",
+            "GLIBC_2.3.2",
+            "GLIBC_2.3.4",
+            "GLIBC_2.32",
+            "GLIBC_2.33",
+            "GLIBC_2.34",
+            "GLIBC_2.38",
+            "GLIBC_2.4",
+            "GLIBC_2.7"
+          ],
+          "highest_required_glibc": "GLIBC_2.38",
+          "highest_required_glibcxx": "GLIBCXX_3.4.32",
+          "highest_required_cxxabi": "CXXABI_1.3.13",
+          "runpath": [],
+          "method": "readelf -h, -d and --version-info; library was not loaded or executed"
+        }
+      ]
+    },
+    {
+      "name": "lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz",
+      "asset_id": 679971963,
+      "source_release_tag": "v0.7.5",
+      "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "build_workflow_head_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "bytes": 20105790,
+      "sha256": "1db6e5c0bdcfe0f211c85efa0aaa9ebcb51e302dbb0c624ff842c950c776ad0e",
+      "github_digest": "sha256:1db6e5c0bdcfe0f211c85efa0aaa9ebcb51e302dbb0c624ff842c950c776ad0e",
+      "sidecar": {
+        "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz.sha256",
+        "asset_id": 679971962,
+        "bytes": 118,
+        "sha256": "7a27fa761e681ab80fa05023f8182e52880b5a621b477ded9c1e97f3a2b553b7",
+        "github_digest": "sha256:7a27fa761e681ab80fa05023f8182e52880b5a621b477ded9c1e97f3a2b553b7",
+        "text": "1db6e5c0bdcfe0f211c85efa0aaa9ebcb51e302dbb0c624ff842c950c776ad0e  lib_llama_cpp-prebuilt-vulkan-windows-0.7.5.tar.gz\n"
+      },
+      "checksum_and_size_checks_passed": true,
+      "reused_existing_cpu_archive_read_only": false,
+      "native_members": [
+        {
+          "member": "windows/x64/lib_llama_cpp_windows.dll",
+          "bytes": 64947200,
+          "sha256": "d35618cdbb3a4794adc6c29da8bbf25084576b34c65cdb355cbce7626786412b",
+          "format": "PE32+",
+          "machine_hex": "0x8664",
+          "machine": "AMD64",
+          "imported_dlls": [
+            "ADVAPI32.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll",
+            "api-ms-win-crt-filesystem-l1-1-0.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-locale-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-utility-l1-1-0.dll",
+            "KERNEL32.dll",
+            "MSVCP140.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+            "vulkan-1.dll"
+          ],
+          "delay_imported_dlls": [],
+          "method": "Pure Python PE import and delay-import directory parsing; DLL was not executed"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Static ELF requirements and PE DLL imports are recorded, not runtime resolution or inference evidence.",
+    "Dependencies opened dynamically through dlopen/LoadLibrary may not appear in ELF NEEDED or PE import directories; these static tables are not an exhaustive dynamic-loader trace.",
+    "No x64 library or Windows DLL was loaded/executed, and no GPU/hardware inference was run by this audit.",
+    "The separate released-cpu-consumer.json records the actual passing ARM64 CPU inference; accelerated inference is a separate verification responsibility.",
+    "Non-Linux/Windows assets are inventoried for existence only.",
+    "CPU archive build source precedes the final release tag; its exact workflow head is recorded separately from the tag commit.",
+    "CPU ISA configuration is captured from actual release build logs. Full per-file compiler invocations and universal CPU compatibility remain unknown; no broad CPU claim is inferred from ELF notes."
+  ],
+  "checks": {
+    "all_five_linux_windows_cpu_cuda_vulkan_archives_present": true,
+    "all_archive_sidecar_sizes_and_github_digests_match": true,
+    "all_target_native_members_static_dependencies_inspected": true,
+    "accelerated_workflow_success": true,
+    "cpu_release_workflow_success": true,
+    "cpu_build_log_isa_evidence_captured_with_unknowns_explicit": true
+  },
+  "raw_evidence": {
+    "directory": "dgx-spark:/tmp/libllama-20261027-validation/released-v075-audit",
+    "audit_script_sha256": "f08792764dde9ff8785da14fbafe1907b352cc9f2427b983888e29c376912d19",
+    "release_metadata_sha256": "47ec5e800c42ac5847b3659b0ac211e4fc15adc3d5c425ac89a677079516d623",
+    "accelerated_workflow_snapshot_sha256": "2d47ef7a139ba8b3b13cbde20e33c7efff8625cadbd63aff5fd00de3003a1b97",
+    "cpu_isa_evidence_sha256": "ef7ab9e690e2a8b1f01a526ab4e410c0ef8a6d1db208a16175593452c26b2630"
+  },
+  "verified_at_utc": "2026-10-27T02:03:18.255691+00:00"
+}

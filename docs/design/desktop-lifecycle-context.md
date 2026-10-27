@@ -305,12 +305,18 @@ NVIDIA driver; inspect ELF/DLL imports for the **actual asset** before deploying
 For the measured CUDA 13 build, dependencies include libcudart.so.13,
 libcublas.so.13, libcublasLt.so.13 and libcuda.so.1. Install matching NVIDIA
 redistributable runtimes and a compatible driver; this release does not bundle a
-CUDA toolkit or claim a toolkit-free CUDA deployment. Vulkan needs the system
+CUDA runtime. A compiler/toolkit installation is unnecessary when the matching
+runtime libraries and driver are available. Vulkan needs the system
 loader and a working vendor ICD/driver. Windows CPU needs the matching Microsoft
 VC++ runtime when the asset imports it. Linux needs compatible glibc/libstdc++.
 Build-tool availability is not a consumer runtime requirement.
 The v0.7.5 Linux CPU assets require GLIBC >=2.38 and GLIBCXX >=3.4.32; the clean
-ARM64 consumer passed on Ubuntu 24.04.5. The Windows CPU asset imports MSVCP140,
+ARM64 consumer passed on Ubuntu 24.04.5. The Linux Vulkan asset has the same
+symbol-version floors. The separately built Linux CUDA asset requires
+GLIBC >=2.34, GLIBCXX >=3.4.30 and CXXABI >=1.3.13; it passed actual model
+streaming in both Ubuntu 22.04.4 and 24.04.5 runtime containers. These are
+asset-specific floors, not a single baseline for every backend.
+The Windows CPU asset imports MSVCP140,
 VCRUNTIME140/VCRUNTIME140_1 and UCRT. The manual `desktop-release-consumer.yml`
 job consumes its actual archive in a disposable Windows container with Python
 and the Microsoft VC++ x64 redistributable, checking content, finish, usage and
@@ -322,9 +328,13 @@ cuBLAS and driver dependencies rather than copying a CUDA 13 source-build setup.
 NVIDIA's [12.5 release notes](https://docs.nvidia.com/cuda/archive/12.5.0/cuda-toolkit-release-notes/index.html)
 list GA drivers Linux >=555.42.02 and Windows >=555.85. Their lower minor-version
 compatibility thresholds (525.60.13 / 528.33) have restrictions and are not tested
-by this project. The prepared Linux CUDA consumer uses installed 12.5 runtime
-redistributables with driver 595.71.05, without compiler/build tools; its actual
-published-asset result is tracked separately in the validation record.
+by this project. The published Linux CUDA library imports libcudart.so.12,
+libcublas.so.12 and libcuda.so.1 and records a CUDA 12.5 runtime RUNPATH; cuBLAS
+also needs its matching transitive libraries. Clean consumers used installed
+12.5 runtime redistributables with driver 595.71.05, without compiler/build tools.
+Both logged 36/36 layers offloaded on the RTX 3050 and completed streaming and
+native cleanup. Their actual environments and resolved library paths are
+tracked separately in the validation record.
 
 Build defaults disable host-native instruction tuning. The actual v0.7.5 CPU
 build logs nevertheless enable **SSE4.2, AVX, AVX2, FMA, F16C and BMI2** on Linux

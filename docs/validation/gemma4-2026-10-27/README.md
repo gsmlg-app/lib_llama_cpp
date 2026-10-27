@@ -40,7 +40,7 @@ The library's Nix store dependencies make it a host build, not a portable artifa
 | --- | --- | --- | --- |
 | DGX Linux ARM64 CUDA | passed | passed | passed |
 | ms04 Linux x64 CPU | passed | passed | passed |
-| Linux x64 CUDA release asset | awaiting asset build | awaiting asset build | awaiting asset build |
+| Published Linux x64 CUDA, RTX 3050 | passed | passed | passed |
 | DGX Linux ARM64 Vulkan, GB10 | passed | passed | passed |
 | Published Linux x64 Vulkan, RTX 3050 | passed | passed | passed |
 | Windows x64 CPU | passed | passed | running |
@@ -109,6 +109,25 @@ retained approximately 1248 MiB of GPU memory during these measurements; the GPU
 was shared and the service was preserved. These are per-process measurements in
 a real desktop environment, not an isolated performance claim.
 
+The **published Linux x64 CUDA archive**, using CUDA 12.5 runtime libraries in
+the same offline Ubuntu 24.04.5 container and shared RTX 3050, also passed all
+three tiers. Its F16/shared-KV/compact-SWA configuration is 1024/256, eight
+threads, one slot. All three startup logs prove 36/36 layers offloaded and
+`flash_attn = enabled`; API introspection remains null where unsupported.
+
+| Published CUDA context | Prompt tokens | Load s | TTFT s | Prefill tok/s | Decode tok/s | Cached tokens, second turn | Second TTFT s | Peak RSS bytes | Peak VRAM bytes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| [32768](released-cuda-32768-final.json) | 31741 | 0.952 | 16.809 | 1891.75 | 61.61 | 31790 | 0.082 | 3807764480 | 2122317824 |
+| [65536](released-cuda-65536-final.json) | 64509 | 0.912 | 53.670 | 1203.31 | 21.16 | 64558 | 0.226 | 3572154368 | 2340421632 |
+| [131072](released-cuda-131072-final.json) | 130045 | 0.920 | 215.551 | 603.65 | 22.66 | 130094 | 0.218 | 3994820608 | 2776629248 |
+
+Every tier generated two correct 50-token responses and passed overflow and
+recovery. Prefill cancellation acknowledged in 0.364 / 0.963 / 0.495 seconds;
+decode cancellation barriers were 1.015 / 0.021 / 1.035 seconds. No further
+task poll followed cancellation. [Artifact/run provenance](released-cuda-method.json)
+records the actual published member and raw evidence digests. Model-file cache
+was warm; this shared GPU run is not an isolated or cold-start benchmark.
+
 CPU final acceptance uses six threads and the same 1024/256/F16/compact-SWA
 baseline. All three tiers generated 50 tokens, acknowledged actual
 partial-prefill cancellation and recovered.
@@ -176,6 +195,14 @@ artifact bytes are retained in JSON. Windows CPU 128K remains in progress.
   retained eight threads and grew only 4 KiB RSS, with task/cancellation counts
   zero; [summary](released-vulkan-native-summary.json),
   [strict-backend harness diff](released-vulkan-native-wrapper.diff).
+  The published Linux x64 CUDA asset then passed the same 15 independent cases
+  with required GPU placement in 24.196 seconds. Cancellation 50 to 100 retained
+  eight threads and exactly 2944556 KiB RSS; all task/cancellation counts cleared.
+  [Summary](released-cuda-native-summary.json) and
+  [exact configuration/assertion diff](released-cuda-native-wrapper.diff) retain
+  the test identities and evidence digests. Successful subprocess stderr is
+  suppressed by the original aggregator; the independent consumer/long runs
+  establish 36/36 model offload for this exact artifact and configuration.
 - Warmup 50 to repeat 100 cancellation requests: DGX CPU retained four threads
   and 3490408 KiB RSS; CUDA retained six threads and 3782612 KiB RSS. ms04 CPU
   retained four threads and 4383232 KiB RSS. Active/retained/pending counts returned
@@ -322,9 +349,49 @@ X11/Xext/EGL/GLVND runtime libraries and both Vulkan ICD and EGL vendor metadata
 missing metadata caused an explicit required-backend error, never CPU fallback.
 Long-window runs of that release asset are recorded separately.
 
+The actual [Linux x64 CUDA consumer](released-linux-cuda-consumer.json) passed
+in two offline runtime-only containers: Ubuntu 22.04.4/Python 3.10.12 and
+Ubuntu 24.04.5/Python 3.12.3. Both used installed CUDA 12.5 redistributables,
+driver 595.71.05 and the same RTX 3050, with no native compilation. Both emitted
+`ready`, `stop`, four events and usage 15+2=17, cleared own task/buffer/cancellation
+counts, returned from destroy and logged **36/36 layers offloaded**.
+The published CUDA library imports libcudart.so.12, libcublas.so.12 and
+libcuda.so.1; cuBLAS resolves libcublasLt.so.12 transitively. Its symbol floors
+are GLIBC 2.34, GLIBCXX 3.4.30 and CXXABI 1.3.13, unlike the CPU/Vulkan floors.
+Runtime module paths, image IDs, archive/library hashes and original log digests
+are recorded in that evidence file. The two short consumer runs do not
+establish long-window performance.
+
+With matching CUDA runtime/cuBLAS and the driver already installed, reproduce
+the published-archive inference without a native compiler using the frozen helper:
+
+```sh
+python3 docs/validation/gemma4-2026-10-27/release-consumer-fixture/consumer.py consume \
+  --archive "$RELEASE_ASSET_DIRECTORY/lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz" \
+  --checksum-file "$RELEASE_ASSET_DIRECTORY/lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz.sha256" \
+  --member linux/x64/liblib_llama_cpp_linux.so --model "$MODEL" \
+  --version 0.7.5 --backend cuda --gpu-layers 99 --output cuda-consumer.json
+```
+
+The helper deliberately rejects installed compilers/build tools. Use a runtime
+container or clean consumer environment, expose the GPU/driver, and make the
+matching runtime libraries visible to the dynamic loader. The recorded runs
+disabled container networking and mounted only archive/sidecar, model, helper
+and results. No source-built library was substituted.
+
 CUDA runtime distribution uses matching installed NVIDIA redistributables plus
 driver; Vulkan uses the system loader/vendor ICD. Accelerated asset builds and
 their independent dependency/consumer checks are tracked separately.
+All six accelerated build jobs in
+[40425353453](https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425353453)
+completed successfully. The [final public-asset audit](released-native-assets.json)
+verified archive/sidecar hashes and static imports for all five Linux/Windows
+CPU/CUDA/Vulkan archives (seven native members), independently of inference.
+Windows CUDA directly imports `cublas64_12.dll`, `cudart64_12.dll` and
+`nvcuda.dll`, plus the Microsoft C++/UCRT runtimes; it has no delay imports.
+Install matching NVIDIA runtime/cuBLAS dependencies and the vendor driver,
+and make the runtime directories available to DLL loading. Static import
+inspection does not verify their resolution or execution on a Windows GPU.
 A physical Windows GPU host was unavailable locally.
 DGX's Vulkan GPU was confirmed through the native loader and then tested using
 an isolated build container, without changing the host driver or source pin.

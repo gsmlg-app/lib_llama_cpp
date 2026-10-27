@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "library_sha256": "11c2b4ca33fde90a969939bd053328f0f0d25338fe16fd3dfa3915546b46cab3",
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "case_count": 15,
+  "cases": [
+    "budget_boundary",
+    "cancel",
+    "expiry",
+    "invalid_config",
+    "invalid_request",
+    "missing_model",
+    "native_ceiling",
+    "nonstream",
+    "prefill_state",
+    "queued_cancel",
+    "shared_abi",
+    "stream",
+    "terminal_cancel",
+    "two_engines",
+    "wrapper_errors"
+  ],
+  "suite": "One unittest aggregator launches 15 independent subprocess cases.",
+  "elapsed_seconds": 24.196,
+  "backend": "cuda",
+  "require_backend": true,
+  "n_gpu_layers": 99,
+  "original_assertions_preserved": true,
+  "configuration_diff": "released-cuda-native-wrapper.diff",
+  "original_harness_sha256": "12bb75e2bff938016d851331b3f6ac2cf43942670a20a1ef3841b7d99bcdee5d",
+  "effective_harness_sha256": "cd2baf0436012caca41d78be920b515e766a7036d698f1f3aa44aa92880e4884",
+  "native_log_sha256": "0d0aa842faae540b48bfd58357d053dd1136ac2b8a9df98373422f212a18849a",
+  "native_log_location": "ms04:/tmp/libllama-20261027-validation/libllama-v075-gpu-consumer/results/cuda-native.log",
+  "resource_trend": {
+    "case": "cancel",
+    "warmup_50": [
+      8,
+      2944556
+    ],
+    "repeat_100": [
+      8,
+      2944556
+    ],
+    "active_tasks": 0,
+    "retained_tasks": 0,
+    "pending_cancellations": 0,
+    "collector_threads": 1
+  },
+  "rss_delta_kib": 0,
+  "offload_evidence": "The same actual artifact/configuration independently logged 36/36 offload during consumer and all three long-window runs. Native subtests check required backend/device and no degradation; their successful captured child stderr is not printed by the original aggregator.",
+  "command": "python3 /opt/native-test-cuda.py /input-native/liblib_llama_cpp_linux.so /input/model.gguf in the same offline runtime container; only the test, actual release member and model are mounted."
+}

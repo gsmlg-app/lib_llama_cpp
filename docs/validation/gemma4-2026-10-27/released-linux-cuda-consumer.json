@@ -1,0 +1,640 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "release_commit": "7ba54673295800b245960001e4128ebe141fd66a",
+  "execution": {
+    "host": "ms04",
+    "gpu": "NVIDIA GeForce RTX 3050",
+    "gpu_total_mib": 6144,
+    "driver": "595.71.05",
+    "network": "none",
+    "gpu_injection": "--device nvidia.com/gpu=all",
+    "native_build_tools_installed": false,
+    "source_build_substituted": false,
+    "containers_removed": true,
+    "helper": "release-consumer-fixture/consumer.py",
+    "helper_sha256": "f467c1e829558e2f235392582bc06262a862c9b2e7d27ec1da7309b6219b14ce"
+  },
+  "runtime_requirements": {
+    "cuda_runtime": "12.5.0 runtime and cuBLAS redistributables installed in runtime image",
+    "cuda_runtime_api_version": 12050,
+    "driver_api_version": 13020,
+    "direct_elf_imports": [
+      "libcudart.so.12",
+      "libcublas.so.12",
+      "libcuda.so.1",
+      "libstdc++.so.6",
+      "libm.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "highest_required_symbol_versions": {
+      "GLIBC": "2.34",
+      "GLIBCXX": "3.4.30",
+      "CXXABI": "1.3.13"
+    },
+    "runpath": "/usr/local/cuda-12.5/targets/x86_64-linux/lib",
+    "deployment": "Install matching NVIDIA runtime/cuBLAS and compatible driver; no toolkit compiler is needed."
+  },
+  "cases": [
+    {
+      "name": "cuda-consumer",
+      "image_id": "sha256:f3219c70d24423db87f7cd154b7c433a9fa26b8ab22cb6e747e30daa90b2813e",
+      "consumer": {
+        "environment": {
+          "platform": "Linux-6.18.48-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+          "python": "3.12.3",
+          "cpu_count": 16,
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "build_tools": {
+            "cmake": null,
+            "cc": null,
+            "gcc": null,
+            "g++": null,
+            "c++": null,
+            "clang": null,
+            "clang++": null,
+            "make": null,
+            "ninja": null,
+            "nvcc": null
+          }
+        },
+        "version": "0.7.5",
+        "archive_name": "lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz",
+        "archive_sha256": "46f00df7dad2904cbebe5bc51adb834d7fb74084ac583f49a2214c1886857ef1",
+        "member": "linux/x64/liblib_llama_cpp_linux.so",
+        "legacy_v074": false,
+        "scope": "Consumer of the supplied checksummed release archive",
+        "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+        "library_sha256": "11c2b4ca33fde90a969939bd053328f0f0d25338fe16fd3dfa3915546b46cab3",
+        "ldd": "\tlinux-vdso.so.1 (0x00007dd983ea7000)\n\tlibcudart.so.12 => /usr/local/cuda-12.5/targets/x86_64-linux/lib/libcudart.so.12 (0x00007dd961600000)\n\tlibcublas.so.12 => /usr/local/cuda-12.5/targets/x86_64-linux/lib/libcublas.so.12 (0x00007dd95b000000)\n\tlibcuda.so.1 => /usr/local/nvidia/lib/libcuda.so.1 (0x00007dd955800000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007dd955582000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007dd955499000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007dd9618bc000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007dd955286000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007dd983ea9000)\n\tlibdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007dd9618b7000)\n\tlibpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007dd9618b2000)\n\tlibrt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x00007dd9615fb000)\n\tlibcublasLt.so.12 => /usr/local/cuda-12.5/targets/x86_64-linux/lib/libcublasLt.so.12 (0x00007dd936e00000)\n",
+        "exports": {
+          "llcs_engine_create": true,
+          "llcs_engine_prepare": true,
+          "llcs_engine_caps": true,
+          "llcs_engine_submit": true,
+          "llcs_engine_poll": true,
+          "llcs_engine_destroy": true,
+          "llcs_engine_stats": true,
+          "llcs_string_free": true
+        },
+        "requested": {
+          "model_path": "/input/model.gguf",
+          "n_ctx": 512,
+          "n_batch": 64,
+          "n_ubatch": 64,
+          "n_threads": 2,
+          "n_threads_batch": 2,
+          "n_gpu_layers": 99,
+          "backend": "cuda",
+          "require_backend": true,
+          "n_parallel": 1
+        },
+        "caps": {
+          "model_name": "model.gguf",
+          "chat_template": "present",
+          "native_n_ctx": 131072,
+          "rope_extrapolation": false,
+          "task_state_observation": "streaming: upstream prompt progress and decode results; nonstream: sampled active/decoding metrics, prefill phase unavailable",
+          "supports_tools": true,
+          "supports_parallel_tool_calls": true,
+          "supports_reasoning": true,
+          "chat_template_caps": {
+            "supports_object_arguments": true,
+            "supports_parallel_tool_calls": true,
+            "supports_preserve_reasoning": false,
+            "supports_string_content": true,
+            "supports_system_role": true,
+            "supports_tool_calls": true,
+            "supports_tools": true,
+            "supports_typed_content": false
+          },
+          "supports_vision": false,
+          "supports_audio": false,
+          "requested": {
+            "model_path": "/input/model.gguf",
+            "n_ctx": 512,
+            "n_batch": 64,
+            "n_ubatch": 64,
+            "n_threads": 2,
+            "n_threads_batch": 2,
+            "n_gpu_layers": 99,
+            "backend": "cuda",
+            "require_backend": true,
+            "n_parallel": 1
+          },
+          "unsupported": [],
+          "effective": {
+            "n_ctx": 512,
+            "slot_n_ctx": 512,
+            "n_batch": 64,
+            "n_ubatch": 64,
+            "n_threads": 2,
+            "n_threads_batch": 2,
+            "n_parallel": 1,
+            "cache_type_k": "f16",
+            "cache_type_v": "f16",
+            "swa_full": false,
+            "kv_unified": true,
+            "context_shift": false,
+            "flash_attn": null,
+            "n_gpu_layers": null
+          },
+          "result_retention_ms": 30000,
+          "available_devices": [
+            "CUDA0",
+            "CPU"
+          ],
+          "compiled_backends": [
+            "CUDA",
+            "CPU"
+          ],
+          "device_info": [
+            {
+              "name": "CUDA0",
+              "backend": "CUDA",
+              "type": "gpu"
+            },
+            {
+              "name": "CPU",
+              "backend": "CPU",
+              "type": "cpu"
+            }
+          ],
+          "selected_backend": "cuda",
+          "require_backend": true,
+          "degradation": "",
+          "backend": null,
+          "device": null,
+          "offload": null,
+          "diagnostic_limits": [
+            "upstream public API does not expose actual flash attention, device placement, or offloaded layer count"
+          ]
+        },
+        "budget": {
+          "prompt_tokens": 15,
+          "reserved_output_tokens": 16,
+          "effective_context": 512,
+          "usable_context": 511,
+          "fits": true
+        },
+        "inference": {
+          "text": "ready",
+          "finished": true,
+          "drained": true,
+          "events": 4,
+          "reasoning": "",
+          "finish_reasons": [
+            "stop"
+          ],
+          "usage": {
+            "completion_tokens": 2,
+            "prompt_tokens": 15,
+            "total_tokens": 17,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "seconds": 0.0666695541003719
+        },
+        "final_native_stats": {
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "tasks": [],
+          "pending_cancellations": 0,
+          "buffered_bytes": 0,
+          "buffered_events": 0,
+          "expired_results": 0,
+          "expiry_tombstones": 0,
+          "result_retention_ms": 30000,
+          "max_tasks": 64,
+          "max_event_bytes_per_task": 1048576,
+          "collector_threads": 1,
+          "submitted": 1,
+          "completed": 1,
+          "cancelled": 0,
+          "failed": 0,
+          "running": true,
+          "upstream_metrics": {
+            "idle": 0,
+            "processing": 1,
+            "deferred": 0,
+            "t_start": 641670441980,
+            "n_prompt_tokens_processed_total": 0,
+            "t_tokens_generation_total": 0,
+            "n_tokens_predicted_total": 0,
+            "t_prompt_processing_total": 0,
+            "n_tokens_max": 0,
+            "n_prompt_tokens_processed": 0,
+            "t_prompt_processing": 0,
+            "n_tokens_predicted": 0,
+            "t_tokens_generation": 0,
+            "n_decode_total": 0,
+            "n_busy_slots_total": 0,
+            "slots": [
+              {
+                "id": 0,
+                "n_ctx": 512,
+                "speculative": false,
+                "is_processing": true,
+                "id_task": 1,
+                "n_prompt_tokens": 0,
+                "n_prompt_tokens_processed": 0,
+                "n_prompt_tokens_cache": 0,
+                "params": {
+                  "seed": 4294967295,
+                  "temperature": 0.0,
+                  "dynatemp_range": 0.0,
+                  "dynatemp_exponent": 1.0,
+                  "top_k": 64,
+                  "top_p": 0.949999988079071,
+                  "min_p": 0.05000000074505806,
+                  "top_n_sigma": -1.0,
+                  "xtc_probability": 0.0,
+                  "xtc_threshold": 0.10000000149011612,
+                  "typical_p": 1.0,
+                  "repeat_last_n": 64,
+                  "repeat_penalty": 1.0,
+                  "presence_penalty": 0.0,
+                  "frequency_penalty": 0.0,
+                  "dry_multiplier": 0.0,
+                  "dry_base": 1.75,
+                  "dry_allowed_length": 2,
+                  "dry_penalty_last_n": 512,
+                  "mirostat": 0,
+                  "mirostat_tau": 5.0,
+                  "mirostat_eta": 0.10000000149011612,
+                  "max_tokens": 16,
+                  "n_predict": 16,
+                  "n_keep": 0,
+                  "n_discard": 0,
+                  "ignore_eos": false,
+                  "stream": true,
+                  "n_probs": 0,
+                  "min_keep": 0,
+                  "chat_format": "peg-gemma4",
+                  "reasoning_format": "deepseek",
+                  "reasoning_in_content": false,
+                  "generation_prompt": "<|turn>model\n",
+                  "samplers": [
+                    "penalties",
+                    "dry",
+                    "top_n_sigma",
+                    "top_k",
+                    "typ_p",
+                    "top_p",
+                    "min_p",
+                    "xtc",
+                    "temperature"
+                  ],
+                  "speculative.types": "none",
+                  "timings_per_token": false,
+                  "post_sampling_probs": false,
+                  "backend_sampling": false,
+                  "lora": []
+                },
+                "next_token": [
+                  {
+                    "has_next_token": true,
+                    "has_new_line": false,
+                    "n_remain": -1,
+                    "n_decoded": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "teardown": {
+          "engine_destroy_returned": true
+        },
+        "status": "passed"
+      },
+      "native_offload_log": "load_tensors: offloaded 36/36 layers to GPU",
+      "raw_json_sha256": "82f598de5f2f185ca3ce5ee6069c5df8eab9cdc806c421bb7db9d922b1028392",
+      "raw_log_sha256": "c43a4d17a7641ddebbb6740a8132d7ef39d38c41c2338ec3c8cd05ac408d952d"
+    },
+    {
+      "name": "cuda-ubuntu22-consumer",
+      "image_id": "sha256:0e6da78c032473847070afc9b83bf13dea450ca5a0b795c0c401ac33f0e12ced",
+      "consumer": {
+        "environment": {
+          "platform": "Linux-6.18.48-x86_64-with-glibc2.35",
+          "machine": "x86_64",
+          "os_release": "PRETTY_NAME=\"Ubuntu 22.04.4 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"22.04\"\nVERSION=\"22.04.4 LTS (Jammy Jellyfish)\"\nVERSION_CODENAME=jammy\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=jammy\n",
+          "python": "3.10.12",
+          "cpu_count": 16,
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "build_tools": {
+            "cmake": null,
+            "cc": null,
+            "gcc": null,
+            "g++": null,
+            "c++": null,
+            "clang": null,
+            "clang++": null,
+            "make": null,
+            "ninja": null,
+            "nvcc": null
+          }
+        },
+        "version": "0.7.5",
+        "archive_name": "lib_llama_cpp-prebuilt-cuda-linux-0.7.5.tar.gz",
+        "archive_sha256": "46f00df7dad2904cbebe5bc51adb834d7fb74084ac583f49a2214c1886857ef1",
+        "member": "linux/x64/liblib_llama_cpp_linux.so",
+        "legacy_v074": false,
+        "scope": "Consumer of the supplied checksummed release archive",
+        "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+        "library_sha256": "11c2b4ca33fde90a969939bd053328f0f0d25338fe16fd3dfa3915546b46cab3",
+        "ldd": "\tlinux-vdso.so.1 (0x0000799b59c31000)\n\tlibcudart.so.12 => /usr/local/cuda-12.5/targets/x86_64-linux/lib/libcudart.so.12 (0x0000799b37200000)\n\tlibcublas.so.12 => /usr/local/cuda-12.5/targets/x86_64-linux/lib/libcublas.so.12 (0x0000799b30c00000)\n\tlibcuda.so.1 => /usr/local/nvidia/lib/libcuda.so.1 (0x0000799b2b400000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x0000799b2b1d4000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x0000799b3758f000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x0000799b3756d000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x0000799b2afab000)\n\t/lib64/ld-linux-x86-64.so.2 (0x0000799b59c33000)\n\tlibdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x0000799b37568000)\n\tlibpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x0000799b37563000)\n\tlibrt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x0000799b3755e000)\n\tlibcublasLt.so.12 => /usr/local/cuda-12.5/targets/x86_64-linux/lib/libcublasLt.so.12 (0x0000799b0ca00000)\n",
+        "exports": {
+          "llcs_engine_create": true,
+          "llcs_engine_prepare": true,
+          "llcs_engine_caps": true,
+          "llcs_engine_submit": true,
+          "llcs_engine_poll": true,
+          "llcs_engine_destroy": true,
+          "llcs_engine_stats": true,
+          "llcs_string_free": true
+        },
+        "requested": {
+          "model_path": "/input/model.gguf",
+          "n_ctx": 512,
+          "n_batch": 64,
+          "n_ubatch": 64,
+          "n_threads": 2,
+          "n_threads_batch": 2,
+          "n_gpu_layers": 99,
+          "backend": "cuda",
+          "require_backend": true,
+          "n_parallel": 1
+        },
+        "caps": {
+          "model_name": "model.gguf",
+          "chat_template": "present",
+          "native_n_ctx": 131072,
+          "rope_extrapolation": false,
+          "task_state_observation": "streaming: upstream prompt progress and decode results; nonstream: sampled active/decoding metrics, prefill phase unavailable",
+          "supports_tools": true,
+          "supports_parallel_tool_calls": true,
+          "supports_reasoning": true,
+          "chat_template_caps": {
+            "supports_object_arguments": true,
+            "supports_parallel_tool_calls": true,
+            "supports_preserve_reasoning": false,
+            "supports_string_content": true,
+            "supports_system_role": true,
+            "supports_tool_calls": true,
+            "supports_tools": true,
+            "supports_typed_content": false
+          },
+          "supports_vision": false,
+          "supports_audio": false,
+          "requested": {
+            "model_path": "/input/model.gguf",
+            "n_ctx": 512,
+            "n_batch": 64,
+            "n_ubatch": 64,
+            "n_threads": 2,
+            "n_threads_batch": 2,
+            "n_gpu_layers": 99,
+            "backend": "cuda",
+            "require_backend": true,
+            "n_parallel": 1
+          },
+          "unsupported": [],
+          "effective": {
+            "n_ctx": 512,
+            "slot_n_ctx": 512,
+            "n_batch": 64,
+            "n_ubatch": 64,
+            "n_threads": 2,
+            "n_threads_batch": 2,
+            "n_parallel": 1,
+            "cache_type_k": "f16",
+            "cache_type_v": "f16",
+            "swa_full": false,
+            "kv_unified": true,
+            "context_shift": false,
+            "flash_attn": null,
+            "n_gpu_layers": null
+          },
+          "result_retention_ms": 30000,
+          "available_devices": [
+            "CUDA0",
+            "CPU"
+          ],
+          "compiled_backends": [
+            "CUDA",
+            "CPU"
+          ],
+          "device_info": [
+            {
+              "name": "CUDA0",
+              "backend": "CUDA",
+              "type": "gpu"
+            },
+            {
+              "name": "CPU",
+              "backend": "CPU",
+              "type": "cpu"
+            }
+          ],
+          "selected_backend": "cuda",
+          "require_backend": true,
+          "degradation": "",
+          "backend": null,
+          "device": null,
+          "offload": null,
+          "diagnostic_limits": [
+            "upstream public API does not expose actual flash attention, device placement, or offloaded layer count"
+          ]
+        },
+        "budget": {
+          "prompt_tokens": 15,
+          "reserved_output_tokens": 16,
+          "effective_context": 512,
+          "usable_context": 511,
+          "fits": true
+        },
+        "inference": {
+          "text": "ready",
+          "finished": true,
+          "drained": true,
+          "events": 4,
+          "reasoning": "",
+          "finish_reasons": [
+            "stop"
+          ],
+          "usage": {
+            "completion_tokens": 2,
+            "prompt_tokens": 15,
+            "total_tokens": 17,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "seconds": 0.06405083497520536
+        },
+        "final_native_stats": {
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "tasks": [],
+          "pending_cancellations": 0,
+          "buffered_bytes": 0,
+          "buffered_events": 0,
+          "expired_results": 0,
+          "expiry_tombstones": 0,
+          "result_retention_ms": 30000,
+          "max_tasks": 64,
+          "max_event_bytes_per_task": 1048576,
+          "collector_threads": 1,
+          "submitted": 1,
+          "completed": 1,
+          "cancelled": 0,
+          "failed": 0,
+          "running": true,
+          "upstream_metrics": {
+            "idle": 0,
+            "processing": 1,
+            "deferred": 0,
+            "t_start": 641848870940,
+            "n_prompt_tokens_processed_total": 0,
+            "t_tokens_generation_total": 0,
+            "n_tokens_predicted_total": 0,
+            "t_prompt_processing_total": 0,
+            "n_tokens_max": 0,
+            "n_prompt_tokens_processed": 0,
+            "t_prompt_processing": 0,
+            "n_tokens_predicted": 0,
+            "t_tokens_generation": 0,
+            "n_decode_total": 0,
+            "n_busy_slots_total": 0,
+            "slots": [
+              {
+                "id": 0,
+                "n_ctx": 512,
+                "speculative": false,
+                "is_processing": true,
+                "id_task": 1,
+                "n_prompt_tokens": 0,
+                "n_prompt_tokens_processed": 0,
+                "n_prompt_tokens_cache": 0,
+                "params": {
+                  "seed": 4294967295,
+                  "temperature": 0.0,
+                  "dynatemp_range": 0.0,
+                  "dynatemp_exponent": 1.0,
+                  "top_k": 64,
+                  "top_p": 0.949999988079071,
+                  "min_p": 0.05000000074505806,
+                  "top_n_sigma": -1.0,
+                  "xtc_probability": 0.0,
+                  "xtc_threshold": 0.10000000149011612,
+                  "typical_p": 1.0,
+                  "repeat_last_n": 64,
+                  "repeat_penalty": 1.0,
+                  "presence_penalty": 0.0,
+                  "frequency_penalty": 0.0,
+                  "dry_multiplier": 0.0,
+                  "dry_base": 1.75,
+                  "dry_allowed_length": 2,
+                  "dry_penalty_last_n": 512,
+                  "mirostat": 0,
+                  "mirostat_tau": 5.0,
+                  "mirostat_eta": 0.10000000149011612,
+                  "max_tokens": 16,
+                  "n_predict": 16,
+                  "n_keep": 0,
+                  "n_discard": 0,
+                  "ignore_eos": false,
+                  "stream": true,
+                  "n_probs": 0,
+                  "min_keep": 0,
+                  "chat_format": "peg-gemma4",
+                  "reasoning_format": "deepseek",
+                  "reasoning_in_content": false,
+                  "generation_prompt": "<|turn>model\n",
+                  "samplers": [
+                    "penalties",
+                    "dry",
+                    "top_n_sigma",
+                    "top_k",
+                    "typ_p",
+                    "top_p",
+                    "min_p",
+                    "xtc",
+                    "temperature"
+                  ],
+                  "speculative.types": "none",
+                  "timings_per_token": false,
+                  "post_sampling_probs": false,
+                  "backend_sampling": false,
+                  "lora": []
+                },
+                "next_token": [
+                  {
+                    "has_next_token": true,
+                    "has_new_line": false,
+                    "n_remain": -1,
+                    "n_decoded": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "teardown": {
+          "engine_destroy_returned": true
+        },
+        "status": "passed"
+      },
+      "native_offload_log": "load_tensors: offloaded 36/36 layers to GPU",
+      "raw_json_sha256": "46ad8fd36fa3548594507580dbfdff1ed8e67059df08d59646ad2862c38cc66b",
+      "raw_log_sha256": "1541941bb0713b46f9049214008bca8071ab4f8b9e4fe900cfd6eae2c43ceb6e"
+    }
+  ],
+  "limits": [
+    "Short-context acceptance of the actual Linux x64 CUDA public archive in two runtime-only environments. Long-context and repeated cancellation evidence are separate.",
+    "The original model hash verification warms file cache; durations are not cold-start disk performance.",
+    "Existing user text-embeddings GPU process was preserved.",
+    "Public API actual device placement/offload fields remain null; logs independently prove 36/36 layer offload."
+  ]
+}
