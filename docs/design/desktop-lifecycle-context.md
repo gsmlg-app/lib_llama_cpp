@@ -224,9 +224,43 @@ for a validated Vulkan library/device. Windows uses the same Python scripts and
 its DLL path; run each context command separately in PowerShell. Python 3.11+ is
 required. No test downloads a model implicitly. The manual `desktop-context.yml`
 workflow provides Linux/Windows CPU/CUDA/Vulkan entry points with a required
-matching runner; it fails when requested GPU hardware is absent. Ordinary CI
-runs fast regressions without a model download. The existing release E2E gate
-also exercises Gemma direct/media/server/ABI/default-name loading on Linux and
+matching runner; it fails when requested GPU hardware is absent. For example,
+dispatch a source-build acceptance job on an already configured Windows GPU runner:
+
+```sh
+gh workflow run desktop-context.yml --repo gsmlg-app/lib_llama_cpp --ref main \
+  -f runner="$WINDOWS_GPU_RUNNER_LABEL" -f platform=windows \
+  -f backend=cuda -f context=131072
+```
+
+The runner needs the matching native build toolchain and GPU runtime. Run each
+32K/64K/128K tier for both CUDA and Vulkan; this command does not validate a
+published archive. To validate an already checksummed **published** Windows DLL
+instead, use Python 3.11+ and PowerShell from the repository. Place matching
+CUDA runtime/cuBLAS DLLs beside the published DLL for Python's dependency search,
+or register their directories with `os.add_dll_directory` before loading. The
+Vulkan loader normally comes from the installed vendor driver.
+
+```powershell
+$LlamaReleaseDll = 'C:\release\lib_llama_cpp_windows.dll'
+$GemmaGguf = 'C:\models\google-gemma-4-E2B-it-Q4_K_M.gguf'
+$LlamaBackend = 'cuda' # Use the Vulkan release DLL and 'vulkan' for that backend.
+foreach ($LlamaContext in 32768, 65536, 131072) {
+  python tools/desktop_context_benchmark.py --library $LlamaReleaseDll `
+    --model $GemmaGguf --context $LlamaContext --backend $LlamaBackend `
+    --gpu-layers 99 --batch 1024 --ubatch 256 --threads 8 --flash-attn on `
+    --timeout-seconds 18000 --output "$LlamaBackend-$LlamaContext.json"
+  if ($LASTEXITCODE -ne 0) { throw "Acceptance failed for $LlamaContext" }
+}
+```
+
+Record the downloaded archive/sidecar hashes, DLL hash and imports, model hash,
+OS/CPU/GPU/driver/runtime identity and actual GPU offload startup log with these
+results. The unmodified harness rejects a missing required backend, empty or
+unfinished output, missing cached tokens, missed prefill cancellation and failed
+recovery. No C++ compiler is needed when consuming a matching published DLL.
+Ordinary CI runs fast regressions without a model download. The existing release
+E2E gate also exercises Gemma direct/media/server/ABI/default-name loading on Linux and
 Windows CPU.
 
 The benchmark defaults to a two-hour limit per long inference. For slower desktop

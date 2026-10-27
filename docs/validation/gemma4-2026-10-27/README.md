@@ -43,7 +43,7 @@ The library's Nix store dependencies make it a host build, not a portable artifa
 | Linux x64 CUDA release asset | awaiting asset build | awaiting asset build | awaiting asset build |
 | DGX Linux ARM64 Vulkan, GB10 | passed | passed | passed |
 | Published Linux x64 Vulkan, RTX 3050 | passed | passed | passed |
-| Windows x64 CPU | passed | running | running |
+| Windows x64 CPU | passed | passed | running |
 | Windows CUDA/Vulkan physical GPU | not run | not run | not run |
 
 CUDA measurements use one slot, F16 K/V, shared/unified KV, compact SWA,
@@ -88,7 +88,9 @@ All Vulkan terminal/task counters cleared. Prefill cancellation barriers were
 The **published Linux x64 Vulkan archive** is a separate artifact from the DGX
 source build above. On ms04's RTX 3050, it uses the same F16/shared-KV/compact-SWA
 1024/256 baseline and eight threads. Each passing run independently logged
-36/36 layers offloaded. The container uses the host PID namespace so the benchmark
+36/36 layers offloaded and `flash_attn = enabled`. Those startup observations
+are independent of the API's unavailable effective-FA/offload introspection fields.
+The container uses the host PID namespace so the benchmark
 can match its actual process to `nvidia-smi`; RSS is host memory, distinct from
 the discrete GPU allocation. No native source/build tree is mounted.
 
@@ -140,6 +142,17 @@ completed both recovery requests. The exact source/build identities, original
 failed attempts and rerun method are recorded in
 [windows-context-rerun-method.json](windows-context-rerun-method.json).
 The CPU brand was not recorded and is not inferred from the hosted-runner label.
+
+Windows x64 CPU 64K [actual result](windows-cpu-65536-final.json), run
+[40425602744](https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425602744),
+also passed: 64509 prompt tokens, two correct 50-token responses, load
+2.953 seconds, TTFT 3728.906 seconds and peak RSS 2997501952 bytes.
+Native prefill/decode rates were 17.30 / 4.07 tok/s. The second turn reused
+64558 tokens with 3.750-second TTFT. It used four
+threads and the same 256/128/F16/compact-SWA baseline, observed real partial
+prefill, acknowledged cancellation in 5.484 seconds (decode 0.094 seconds) and
+completed both recovery requests. Its prefill/decode rates and complete original
+artifact bytes are retained in JSON. Windows CPU 128K remains in progress.
 
 ## Correctness, cancellation and resources
 
@@ -227,8 +240,8 @@ The CPU brand was not recorded and is not inferred from the hosted-runner label.
 - Acceptance tooling now requires positive cached tokens on turn two, propagates
   memory-sampler failures to the caller and types Win64 handles explicitly.
   Native resource regression measures Windows process threads and working set;
-  Linux observability tests passed. The Windows rerun passed all 15 native cases;
-  cancellation 50 to 100 retained seven threads and grew only 36 KiB RSS, with
+  Linux observability tests passed. The Windows 32K/64K reruns each passed all 15 native cases;
+  cancellation 50 to 100 retained seven threads and grew only 36 / 24 KiB RSS, with
   all task/cancellation counts zero; see
   [Windows resource results](windows-native-resources-final.json).
 - Local fast verification: 79 Flutter tests passed, 15 model/platform tests

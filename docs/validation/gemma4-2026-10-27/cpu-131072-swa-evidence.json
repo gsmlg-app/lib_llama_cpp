@@ -42,5 +42,10 @@
       "text": "slot update_slots: id  0 | task 478 | restored context checkpoint (pos_min = 0, pos_max = 10, n_tokens = 11, n_past = 4, size = 0.129 MiB)"
     }
   ],
-  "meaning": "Second turn reused 130094 actual tokens. The changed system prefix lacked valid compact-SWA checkpoint data; upstream invalidated old checkpoints and forced full reprocessing. A later short request restored an available checkpoint. No unconditional token-prefix rewind or context shift was used."
+  "meaning": "Second turn reused 130094 actual tokens. The changed system prefix lacked valid compact-SWA checkpoint data; upstream invalidated old checkpoints and forced full reprocessing. A later short request restored an available checkpoint. No unconditional token-prefix rewind or context shift was used.",
+  "observed_startup_configuration": {
+    "flash_attn": "enabled",
+    "log_line": 1074,
+    "log_text": "llama_context: flash_attn    = enabled"
+  }
 }

@@ -215,7 +215,211 @@
         }
       ],
       "job_log_sha256": "c2aad4c65d27e754946183a9926fbc636c2cdcdcf91e55527d592fabdc31e533"
+    },
+    {
+      "context": 65536,
+      "run_id": 40425602744,
+      "job_id": 121930456873,
+      "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425602744/job/121930456873",
+      "status": "passed",
+      "native_subprocess_cases_passed": [
+        "invalid_config",
+        "missing_model",
+        "shared_abi",
+        "wrapper_errors",
+        "native_ceiling",
+        "invalid_request",
+        "budget_boundary",
+        "queued_cancel",
+        "prefill_state",
+        "terminal_cancel",
+        "expiry",
+        "stream",
+        "nonstream",
+        "cancel",
+        "two_engines"
+      ],
+      "observability_tests": "5 benchmark tests and 1 Windows process-resources test passed.",
+      "warmup_50": {
+        "threads": 7,
+        "rss_kib": 2484560
+      },
+      "repeat_100": {
+        "threads": 7,
+        "rss_kib": 2484584
+      },
+      "thread_growth": 0,
+      "rss_growth_kib": 24,
+      "native_counters": {
+        "active_tasks": 0,
+        "retained_tasks": 0,
+        "pending_cancellations": 0,
+        "collector_threads": 1
+      },
+      "context_peak_rss_bytes": 2997501952,
+      "native_log_records": [
+        {
+          "case": "invalid_config",
+          "status": "passed"
+        },
+        {
+          "case": "missing_model",
+          "status": "passed"
+        },
+        {
+          "case": "shared_abi",
+          "status": "passed"
+        },
+        {
+          "case": "wrapper_errors",
+          "status": "passed"
+        },
+        {
+          "case": "native_ceiling",
+          "status": "passed"
+        },
+        {
+          "case": "invalid_request",
+          "status": "passed"
+        },
+        {
+          "case": "budget_boundary",
+          "status": "passed"
+        },
+        {
+          "case": "queued_cancel",
+          "status": "passed"
+        },
+        {
+          "case": "prefill_state",
+          "observed_partial_prefill": true
+        },
+        {
+          "case": "prefill_state",
+          "status": "passed"
+        },
+        {
+          "case": "terminal_cancel",
+          "completed": 2,
+          "cancelled": 0,
+          "retained_tasks": 0
+        },
+        {
+          "case": "terminal_cancel",
+          "status": "passed"
+        },
+        {
+          "case": "expiry",
+          "status": "passed"
+        },
+        {
+          "case": "stream",
+          "status": "passed"
+        },
+        {
+          "case": "nonstream",
+          "status": "passed"
+        },
+        {
+          "case": "cancel",
+          "warmup_50": [
+            7,
+            2484560
+          ],
+          "repeat_100": [
+            7,
+            2484584
+          ],
+          "active_tasks": 0,
+          "retained_tasks": 0,
+          "pending_cancellations": 0,
+          "collector_threads": 1
+        },
+        {
+          "case": "cancel",
+          "status": "passed"
+        },
+        {
+          "case": "two_engines",
+          "status": "passed"
+        }
+      ],
+      "log_evidence": [
+        {
+          "line": 4143,
+          "text": "2026-10-27T00:28:22.0435654Z {\"case\": \"invalid_config\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4144,
+          "text": "2026-10-27T00:28:22.0436233Z {\"case\": \"missing_model\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4145,
+          "text": "2026-10-27T00:28:22.0436808Z {\"case\": \"shared_abi\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4146,
+          "text": "2026-10-27T00:28:22.0437315Z {\"case\": \"wrapper_errors\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4147,
+          "text": "2026-10-27T00:28:22.0437907Z {\"case\": \"native_ceiling\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4148,
+          "text": "2026-10-27T00:28:22.0439175Z {\"case\": \"invalid_request\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4149,
+          "text": "2026-10-27T00:28:22.0439797Z {\"case\": \"budget_boundary\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4150,
+          "text": "2026-10-27T00:28:22.0440334Z {\"case\": \"queued_cancel\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4151,
+          "text": "2026-10-27T00:28:22.0440924Z {\"case\": \"prefill_state\", \"observed_partial_prefill\": true}"
+        },
+        {
+          "line": 4152,
+          "text": "2026-10-27T00:28:22.0441544Z {\"case\": \"prefill_state\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4153,
+          "text": "2026-10-27T00:28:22.0442225Z {\"case\": \"terminal_cancel\", \"completed\": 2, \"cancelled\": 0, \"retained_tasks\": 0}"
+        },
+        {
+          "line": 4154,
+          "text": "2026-10-27T00:28:22.0442908Z {\"case\": \"terminal_cancel\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4155,
+          "text": "2026-10-27T00:28:22.0443423Z {\"case\": \"expiry\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4156,
+          "text": "2026-10-27T00:28:22.0443867Z {\"case\": \"stream\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4157,
+          "text": "2026-10-27T00:28:22.0444353Z {\"case\": \"nonstream\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4158,
+          "text": "2026-10-27T00:28:22.0445328Z {\"case\": \"cancel\", \"warmup_50\": [7, 2484560], \"repeat_100\": [7, 2484584], \"active_tasks\": 0, \"retained_tasks\": 0, \"pending_cancellations\": 0, \"collector_threads\": 1}"
+        },
+        {
+          "line": 4159,
+          "text": "2026-10-27T00:28:22.0446352Z {\"case\": \"cancel\", \"status\": \"passed\"}"
+        },
+        {
+          "line": 4160,
+          "text": "2026-10-27T00:28:22.0446797Z {\"case\": \"two_engines\", \"status\": \"passed\"}"
+        }
+      ],
+      "job_log_sha256": "8aa2f5ba85fcfbc868dadbf336489fc14011a93819e90c3f8d051c8e0cd0b8ff"
     }
   ],
-  "updated_at": "2026-10-27T00:51:50.693406+00:00"
+  "updated_at": "2026-10-27T01:34:33.486740+00:00"
 }

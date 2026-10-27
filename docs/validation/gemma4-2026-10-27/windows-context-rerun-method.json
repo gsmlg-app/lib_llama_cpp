@@ -79,8 +79,71 @@
       "context": 65536,
       "run_id": 40425602744,
       "job_id": 121930456873,
-      "status": "in_progress",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success",
+      "run_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425602744",
+      "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425602744/job/121930456873",
+      "started_at": "2026-10-27T00:19:01Z",
+      "completed_at": "2026-10-27T01:31:28Z",
+      "runner_labels": [
+        "windows-2022"
+      ],
+      "runner_name": "GitHub Actions 1000004966",
+      "artifact": {
+        "id": 12702872258,
+        "name": "desktop-windows-cpu-65536",
+        "size_in_bytes": 6466,
+        "digest": "sha256:e5073cfa60e35571cf7d1b45dcf8f1d4f5783fca1d57d537b01267743ea02732",
+        "created_at": "2026-10-27T01:31:24Z"
+      },
+      "context_evidence_file": "windows-cpu-65536-final.json",
+      "context_json_sha256": "64c3e73f4b9e0e95ea4306b5438fe08940c750c82426b6a370707a83b4ef4f99",
+      "preservation": "Complete downloaded context.json copied byte-for-byte, without adding or removing fields.",
+      "job_log_sha256": "8aa2f5ba85fcfbc868dadbf336489fc14011a93819e90c3f8d051c8e0cd0b8ff",
+      "model_metadata_sha256": "fcb9fdbf9aa45c7daec5aad9d09d8060da8a4e3480f446baa3f62140d1374911",
+      "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+      "dll_sha256": "dbe0665e168c0b794bf35ef78aa80d9face84bd65db3f4be9ed1a823832c8d4e",
+      "os": "Windows-2022Server-10.0.20348-SP0",
+      "machine": "AMD64",
+      "cpu_backend": "cpu",
+      "cpu_model": null,
+      "cpu_model_note": "CPU brand/model was not reported in context artifact or job log.",
+      "threads": 4,
+      "dll_dependencies": null,
+      "dll_dependencies_note": "The workflow did not capture a DLL import/dependency listing.",
+      "step_conclusions": {
+        "Set up job": "success",
+        "Run actions/checkout@v4": "success",
+        "Require matching OS and GPU hardware": "success",
+        "Run ilammy/msvc-dev-cmd@v1": "success",
+        "Check acceptance observability": "success",
+        "Build Linux artifact": "skipped",
+        "Build Windows artifact": "success",
+        "Download immutable model fixture and verify hash": "success",
+        "Execute ABI regression and actual context acceptance": "success",
+        "Run actions/upload-artifact@v4": "success",
+        "Post Run actions/checkout@v4": "success",
+        "Complete job": "success"
+      },
+      "acceptance_summary": {
+        "prompt_tokens": 64509,
+        "second_prompt_tokens": 64576,
+        "second_cached_tokens": 64558,
+        "three_position_retrieval_both_turns": true,
+        "first_finish_reasons": [
+          "stop"
+        ],
+        "second_finish_reasons": [
+          "stop"
+        ],
+        "prefill_cancel_latency_seconds": 5.484000000000378,
+        "decode_cancel_latency_seconds": 0.09400000000005093,
+        "recovery_text": "ready",
+        "post_cancel_recovery_text": "ready",
+        "peak_rss_bytes": 2997501952
+      },
+      "effective_configuration_verified": true,
+      "upstream_checkout_verified": true
     },
     {
       "context": 131072,
@@ -125,5 +188,5 @@
     "gh api --allow-escape-sequences repos/gsmlg-app/lib_llama_cpp/actions/jobs/JOB_ID/logs",
     "gh api repos/gsmlg-app/lib_llama_cpp/actions/jobs/JOB_ID"
   ],
-  "updated_at": "2026-10-27T00:51:50.692605+00:00"
+  "updated_at": "2026-10-27T01:34:33.486740+00:00"
 }

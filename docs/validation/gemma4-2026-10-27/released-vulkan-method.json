@@ -68,5 +68,28 @@
     "The unmodified acceptance harness requires retrieval, positive prefix reuse, overflow rejection, actual partial-prefill/decode cancellation without polling, recovery, content and terminal usage.",
     "Public upstream introspection cannot prove actual FA/device placement; startup logs independently establish 36/36 offload.",
     "SHA reads warm the file cache before model loading. RSS and discrete GPU memory are separate measurements."
-  ]
+  ],
+  "observed_startup_configuration": {
+    "32768": {
+      "flash_attn": "enabled",
+      "log_line": 799,
+      "log_text": "llama_context: flash_attn    = enabled",
+      "offloaded_layers": 36,
+      "total_layers_including_output": 36
+    },
+    "65536": {
+      "flash_attn": "enabled",
+      "log_line": 799,
+      "log_text": "llama_context: flash_attn    = enabled",
+      "offloaded_layers": 36,
+      "total_layers_including_output": 36
+    },
+    "131072": {
+      "flash_attn": "enabled",
+      "log_line": 799,
+      "log_text": "llama_context: flash_attn    = enabled",
+      "offloaded_layers": 36,
+      "total_layers_including_output": 36
+    }
+  }
 }
