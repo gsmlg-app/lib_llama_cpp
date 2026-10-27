@@ -229,6 +229,14 @@ runs fast regressions without a model download. The existing release E2E gate
 also exercises Gemma direct/media/server/ABI/default-name loading on Linux and
 Windows CPU.
 
+The benchmark defaults to a two-hour limit per long inference. For slower desktop
+CPUs, set `--timeout-seconds` explicitly; the manual CI job allows five hours per
+long inference within its six-hour job limit. It still requires real output,
+retrieval, prefix reuse, cancellation and recovery. A timeout is a failed tier.
+Windows CPU CI uses 256/128 batches and available CPU threads capped at eight to
+bound cancellation work. Other manual CI configurations use 1024/256. Every
+result records its actual configuration; the earlier ms04 CPU table uses 1024/256.
+
 Each long-window run constructs a real >=95% window prompt, reserves 512 output
 tokens, retrieves distinct keys from the beginning/middle/end, completes a second
 turn, checks cached tokens, rejects an overflow and recovers after decode/prefill
@@ -267,6 +275,15 @@ CUDA toolkit or claim a toolkit-free CUDA deployment. Vulkan needs the system
 loader and a working vendor ICD/driver. Windows CPU needs the matching Microsoft
 VC++ runtime when the asset imports it. Linux needs compatible glibc/libstdc++.
 Build-tool availability is not a consumer runtime requirement.
+
+The release workflow selects CUDA **12.5.0**. Deploy its matching CUDA runtime,
+cuBLAS and driver dependencies rather than copying a CUDA 13 source-build setup.
+NVIDIA's [12.5 release notes](https://docs.nvidia.com/cuda/archive/12.5.0/cuda-toolkit-release-notes/index.html)
+list GA drivers Linux >=555.42.02 and Windows >=555.85. Their lower minor-version
+compatibility thresholds (525.60.13 / 528.33) have restrictions and are not tested
+by this project. The prepared Linux CUDA consumer uses installed 12.5 runtime
+redistributables with driver 595.71.05, without compiler/build tools; its actual
+published-asset result is tracked separately in the validation record.
 
 Build defaults disable host-native instruction tuning. That alone is not a
 promise of every historical x64 CPU: upstream x64 CPU defaults and actual asset

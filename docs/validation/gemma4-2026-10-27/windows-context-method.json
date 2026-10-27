@@ -1,0 +1,44 @@
+{
+  "source_commit": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+  "status": "blocked_before_context_harness",
+  "runs": [
+    {
+      "requested_context": 32768,
+      "run_id": 40419401772
+    },
+    {
+      "requested_context": 65536,
+      "run_id": 40419406152
+    },
+    {
+      "requested_context": 131072,
+      "run_id": 40419410050
+    }
+  ],
+  "workflow": ".github/workflows/desktop-context.yml",
+  "harness": "tools/desktop_context_benchmark.py",
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "model_revision": "a6807259ab0f1f77f666d635cfcc7d9d960bf39a",
+  "planned_checks": [
+    "Actual prompt token count at least 95 percent of requested context, prepared to fit with reserved output.",
+    "Three sentinel values retrieved on the initial turn and subsequent cached-history turn.",
+    "Second-turn usage and native cache timings recorded; harness does not assert cached_tokens is positive.",
+    "Context overflow rejected with context_overflow.",
+    "Observed prompt-progress prefill work before cancellation; no polling after cancellation; upstream barrier reached.",
+    "Decode cancellation after first output and successful recovery after both cancellation phases.",
+    "Peak resident memory sampled during execution; backend identity required by engine configuration."
+  ],
+  "actual_result": "All three runs built Windows artifacts and verified model download, then failed ABI regression before loading a native library. No context benchmark ran and no result artifacts were uploaded.",
+  "runtime_identity": "Windows Server 2022 image 20261022.344.1; Python 3.12.10 x64; CPU requested, actual backend unverified.",
+  "timeout_seconds_per_inference": 7200,
+  "diagnosis": "Case collision between MSVC Platform environment variable and workflow PLATFORM variable caused Bash to retain the Linux library path.",
+  "proposed_fix": "Rename workflow input environment variable to TARGET_PLATFORM and update corresponding shell comparisons; rerun only after parent applies and validates the fix.",
+  "code_changed": false,
+  "assertions_skipped": false,
+  "runs_retried": false,
+  "commands": [
+    "gh run view RUN_ID --json status,conclusion,jobs",
+    "gh run view RUN_ID --log",
+    "gh api repos/gsmlg-app/lib_llama_cpp/actions/runs/RUN_ID/artifacts"
+  ]
+}

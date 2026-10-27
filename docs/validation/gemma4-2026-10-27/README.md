@@ -42,7 +42,7 @@ The library's Nix store dependencies make it a host build, not a portable artifa
 | ms04 Linux x64 CPU | passed | passed | running/pending |
 | Linux x64 CUDA release asset | not run on matching GPU | not run | not run |
 | DGX Linux ARM64 Vulkan, GB10 | passed | passed | passed |
-| Windows CPU | entry point provided; CI short-context gate separate | not run | not run |
+| Windows CPU | long-tier harness failed before inference; short-context passed | same loader failure | same loader failure |
 | Windows CUDA/Vulkan physical GPU | not run | not run | not run |
 
 CUDA measurements use one slot, F16 K/V, shared/unified KV, compact SWA,
@@ -64,6 +64,8 @@ Barrier latency is an upper bound including the queue acknowledgement. RSS and
 GPU allocation overlap on unified memory and must not be added together. Speeds
 in the table are native timings; wall-clock throughput excluding TTFT is also
 saved independently in JSON.
+SHA verification reads the model before loading it. These load times therefore
+reflect a warm file cache; they do not measure a cold disk/application start.
 
 The Vulkan runs use the same model, one slot, F16/shared KV, compact SWA,
 1024/256 batches and eight CPU threads. The loader enumerated NVIDIA GB10
@@ -166,7 +168,20 @@ cancellation/recovery checks. The successful retry is recorded above.
   the same classification failure before the drive-path guard repair and passed
   afterward. Linux's corresponding [default-name gate](ci-linux-default-cli.json)
   passed, recovering after actual partial-prefill disconnect in 1.412 seconds.
-  Windows CLI acceptance must pass on the final source commit before release.
+  The final [Windows gate](windows-cpu-e2e-final.json) at `54df901` then passed:
+  11 direct tests (10 real-model, one scripted), four server API tests, all 15
+  native cases, and default-name CLI. The latter observed fresh partial prefill
+  and recovered after disconnect in 1.485 seconds. Its SIGTERM process termination
+  is distinct from native close/cleanup verification.
+- Three Windows near-window jobs failed before inference because MSVC's `Platform`
+  environment key shadowed Bash's `$PLATFORM`. The workflow now uses
+  `TARGET_PLATFORM`; original failures are retained in
+  [windows-context-method.json](windows-context-method.json). No long-window pass
+  is inferred from their successful DLL builds or model downloads.
+- Acceptance tooling now requires positive cached tokens on turn two, propagates
+  memory-sampler failures to the caller and types Win64 handles explicitly.
+  Native resource regression measures Windows process threads and working set;
+  Linux observability tests passed. Actual Windows observations require the rerun.
 - Local fast verification: 79 Flutter tests passed, 15 model/platform tests
   skipped without local native fixtures; 44 pure Dart tests passed with five
   environment-specific skips. Analyzer over `packages example`, formatting,

@@ -1,0 +1,351 @@
+{
+  "status": "passed",
+  "scope": "Completed Windows Gemma 4 E2B API E2E job. Does not certify long-context tiers or released package artifacts.",
+  "source_commit": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+  "llama_cpp_commit": "95b8b8ec1a9e77bcc7b3fb04da82c9f35cb12a79",
+  "workflow_file": ".github/workflows/e2e.yml",
+  "workflow_name": "End-to-End",
+  "workflow_run_id": 40419017859,
+  "workflow_run_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40419017859",
+  "workflow_run_status_at_observation": "in_progress",
+  "workflow_run_conclusion_at_observation": "",
+  "job_id": 121909031936,
+  "job_name": "Gemma 4 E2B API E2E (windows)",
+  "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40419017859/job/121909031936",
+  "job_status": "completed",
+  "job_conclusion": "success",
+  "run_attempt": 1,
+  "started_at": "2026-10-26T23:21:28Z",
+  "completed_at": "2026-10-26T23:35:42Z",
+  "runtime_identity": {
+    "os": "Microsoft Windows Server 2022",
+    "runner_labels": [
+      "windows-2022"
+    ],
+    "runner_image_version": "20261022.344.1",
+    "architecture": "x64",
+    "available_cpus": 4,
+    "backend": "cpu",
+    "context_size": 4096,
+    "cpu_layer_placement_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35
+    ],
+    "cpu_placement_evidence": "CLI native log assigns layer entries 0 through 35 to CPU and records CPU model, KV, output, and compute buffers."
+  },
+  "dependencies": {
+    "dart_pub_get": "passed",
+    "resolved_dependency_changes": 89,
+    "flutter_version": "3.41.7",
+    "compiler": "MSVC 19.44.35229.0",
+    "native_build_type": "Release",
+    "selected_resolved_versions": {
+      "ffi": "2.2.0",
+      "ffigen": "18.1.0",
+      "http": "1.6.0",
+      "test": "1.30.0"
+    },
+    "model_file": "google-gemma-4-E2B-it-Q4_K_M.gguf",
+    "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+    "projector_file": "mmproj-BF16.gguf",
+    "projector_sha256": "e8b6533e68c0e2b18c57e1cb570ded27a0d70f3421745125bdb210bf5cd4f1c6",
+    "model_and_projector_hash_checks": "passed",
+    "backend_enumeration_exports": "all 8 resolved",
+    "library_file": "lib_llama_cpp_windows.dll",
+    "library_sha256": null,
+    "library_digest_note": "The diagnostics artifact contains smoke JSON/log only; no binary checksum is preserved."
+  },
+  "direct_api_tests": {
+    "status": "passed",
+    "total": 11,
+    "real_model_tests": 10,
+    "scripted_tests": 1,
+    "command": "dart test packages/lib_llama_cpp/test/real_model_e2e_test.dart -r expanded",
+    "tests": [
+      "Gemma 4 E2B real model e2e handles text input",
+      "Gemma 4 E2B real model e2e handles prompts longer than one decode batch",
+      "Gemma 4 E2B real model e2e streams text deltas and completes",
+      "Gemma 4 E2B real model e2e cancels an active stream",
+      "Gemma 4 E2B real model e2e rejects rendered prompt plus output beyond context and recovers",
+      "Gemma 4 E2B real model e2e emits a forced structured tool call",
+      "Gemma 4 E2B real model e2e handles image input",
+      "Gemma 4 E2B real model e2e rejects media plus reserved output overflow and recovers",
+      "Gemma 4 E2B real model e2e handles audio input",
+      "Gemma 4 E2B real model e2e direct and server workers survive closing either native owner",
+      "streams structured tool-use events"
+    ],
+    "log_summary": "02:48 +11: All tests passed!",
+    "limitations": [
+      "The final structured tool-use events test uses a scripted engine; the preceding forced structured tool-call test uses the real model.",
+      "Existing peg-gemma4 sampler grammar omission is retained; passing tool template/parser behavior does not certify constrained decoding."
+    ]
+  },
+  "server_api_tests": {
+    "status": "passed",
+    "total": 4,
+    "command": "LIB_LLAMA_CPP_TEST_MODEL_ALIAS=gemma4-e2b dart test packages/lib_llama_cpp_server/test/native_server_e2e_test.dart -r expanded",
+    "tests": [
+      "Gemma 4 E2B native server API e2e GET /healthz",
+      "Gemma 4 E2B native server API e2e GET /v1/models",
+      "Gemma 4 E2B native server API e2e POST /v1/chat/completions non-streaming",
+      "Gemma 4 E2B native server API e2e POST /v1/chat/completions streaming"
+    ],
+    "log_summary": "00:08 +4: All tests passed!"
+  },
+  "native_subprocess_tests": {
+    "status": "passed",
+    "total": 15,
+    "command": "python packages/lib_llama_cpp_ffi/test/native/test_engine.py \"$LIB_LLAMA_CPP_TEST_LIBRARY\" \"$LIB_LLAMA_CPP_TEST_MODEL\"",
+    "passed_cases": [
+      "invalid_config",
+      "missing_model",
+      "shared_abi",
+      "wrapper_errors",
+      "native_ceiling",
+      "invalid_request",
+      "budget_boundary",
+      "queued_cancel",
+      "prefill_state",
+      "terminal_cancel",
+      "expiry",
+      "stream",
+      "nonstream",
+      "cancel",
+      "two_engines"
+    ],
+    "case_diagnostics": [
+      {
+        "case": "prefill_state",
+        "observed_partial_prefill": true
+      },
+      {
+        "case": "terminal_cancel",
+        "completed": 2,
+        "cancelled": 0,
+        "retained_tasks": 0
+      },
+      {
+        "case": "cancel",
+        "warmup_50": null,
+        "repeat_100": null,
+        "active_tasks": 0,
+        "retained_tasks": 0,
+        "pending_cancellations": 0,
+        "collector_threads": 1
+      }
+    ],
+    "unittest_summary": "Ran 1 test in 95.287s; OK (15 isolated subprocess subcases).",
+    "windows_resource_limit": "OS thread/RSS comparisons are unavailable: warmup_50 and repeat_100 are null on Windows. Native lifecycle counters are present."
+  },
+  "default_name_cli": {
+    "command": [
+      "dart",
+      "run",
+      "lib_llama_cpp_server",
+      "--model-path",
+      "D:\\a\\_temp/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+      "--ctx-size",
+      "4096",
+      "--gpu-layers",
+      "0",
+      "--backend",
+      "cpu",
+      "--threads",
+      "4",
+      "--threads-batch",
+      "4",
+      "--batch-size",
+      "32",
+      "--ubatch-size",
+      "32",
+      "--port",
+      "0"
+    ],
+    "library_lookup": "platform default name",
+    "available_cpus": 4,
+    "checks": [
+      "default-name load and non-stream inference",
+      "stream actual payload, finish reason, DONE",
+      "invalid request and overflow return HTTP 400",
+      "prefill client disconnect followed immediately by valid inference"
+    ],
+    "disconnect_prefill_progress": {
+      "total": 3014,
+      "cache": 4,
+      "processed": 36,
+      "time_ms": 655
+    },
+    "disconnect_recovery_seconds": 1.4850000000000136,
+    "status": "passed",
+    "shutdown": "SIGTERM process termination; graceful native cleanup is tested separately",
+    "exit_code": 1
+  },
+  "response_evidence": {
+    "nonstream_content": {
+      "status": "asserted_nonempty_and_passed",
+      "literal_value": null,
+      "basis": "Default-name smoke asserts nonempty choices[0].message.content; direct text/cancellation/overflow recovery tests also assert nonempty output."
+    },
+    "stream_content": {
+      "status": "asserted_actual_payload_and_passed",
+      "literal_value": null,
+      "basis": "CLI smoke and server API test require actual content/reasoning/tool payload rather than role-only or DONE-only SSE."
+    },
+    "finish": {
+      "status": "asserted_nonnull_finish_reason_and_DONE_and_passed",
+      "literal_finish_reason": null,
+      "basis": "CLI smoke and server streaming test assert a non-null finish_reason and data: [DONE]. Direct worker ownership regression also asserts a finish reason."
+    },
+    "usage": {
+      "status": "direct_api_usage_constraints_passed",
+      "raw_counts": null,
+      "assertions": [
+        "After active-stream cancellation: inputTokens > 0.",
+        "After text overflow recovery: inputTokens > 0 and outputTokens <= 64.",
+        "After media overflow recovery: inputTokens > 0 and outputTokens <= 48."
+      ],
+      "cli_usage_asserted": false,
+      "server_api_usage_asserted": false
+    },
+    "capture_limit": "CI retained pass summaries and native diagnostics, not response bodies or exact content/finish/usage values. No literal payload or token counts are inferred."
+  },
+  "step_conclusions": {
+    "Set up job": "success",
+    "Checkout": "success",
+    "Install Linux native build dependencies": "skipped",
+    "Setup Flutter": "success",
+    "Install Dart dependencies": "success",
+    "Build Linux native library": "skipped",
+    "Build Windows native library": "success",
+    "Download and verify Gemma 4 E2B model and projector": "success",
+    "Check embedded backend enumeration exports": "success",
+    "Run Gemma 4 E2B multimodal and tool E2E": "success",
+    "Run Gemma 4 E2B server API E2E": "success",
+    "Verify native exception isolation and lifecycle": "success",
+    "Verify CLI default desktop library lookup": "success",
+    "Preserve native and default-name consumer diagnostics": "success",
+    "Post Setup Flutter": "success",
+    "Post Checkout": "success",
+    "Complete job": "success"
+  },
+  "artifact": {
+    "id": 12696378437,
+    "name": "gemma-desktop-windows",
+    "size_in_bytes": 9298,
+    "digest": "sha256:1d79300b8eae8f44caf3b4eaa7fd43d1c0c6b61ffe9f8d877ae39379db04cad4",
+    "created_at": "2026-10-26T23:35:37Z",
+    "expired": false
+  },
+  "artifact_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40419017859/artifacts/12696378437",
+  "downloaded_files_sha256": {
+    "server-smoke.json": "b1c52140133e80a14aa47b3e6c70650afd93a79933d0918af5f5bb2ced78ffc1",
+    "server-smoke.log": "6240bad9fe522443c4b82bf080601695ce75ad6bbfc40b3557a4a7d5577e73df"
+  },
+  "job_log_sha256": "9e7fe265b0929427d8f1c03b59f8d12489df68420fa22348ef028fd0703517a8",
+  "log_evidence": [
+    {
+      "line": 12,
+      "text": "2026-10-26T23:21:29.2673288Z Microsoft Windows Server 2022"
+    },
+    {
+      "line": 117,
+      "text": "2026-10-26T23:21:43.9257108Z Submodule path 'third_party/llama.cpp': checked out '95b8b8ec1a9e77bcc7b3fb04da82c9f35cb12a79'"
+    },
+    {
+      "line": 380,
+      "text": "2026-10-26T23:23:13.3372357Z Changed 89 dependencies!"
+    },
+    {
+      "line": 401,
+      "text": "2026-10-26T23:23:26.9118163Z -- The CXX compiler identification is MSVC 19.44.35229.0"
+    },
+    {
+      "line": 4146,
+      "text": "2026-10-26T23:30:44.3591384Z D:\\a\\_temp/models/google-gemma-4-E2B-it-Q4_K_M.gguf: OK"
+    },
+    {
+      "line": 4147,
+      "text": "2026-10-26T23:30:48.1493160Z D:\\a\\_temp/models/mmproj-BF16.gguf: OK"
+    },
+    {
+      "line": 4157,
+      "text": "2026-10-26T23:30:48.1724928Z \u001b[36;1mprint('All direct FFI backend enumeration exports resolved')\u001b[0m"
+    },
+    {
+      "line": 12513,
+      "text": "2026-10-26T23:33:44.0341468Z 02:48 +11: All tests passed!"
+    },
+    {
+      "line": 14032,
+      "text": "2026-10-26T23:33:53.9766085Z 00:08 +4: All tests passed!"
+    },
+    {
+      "line": 14053,
+      "text": "2026-10-26T23:35:29.8287910Z Ran 1 test in 95.287s"
+    },
+    {
+      "line": 14071,
+      "text": "2026-10-26T23:35:29.8296982Z {\"case\": \"cancel\", \"warmup_50\": null, \"repeat_100\": null, \"active_tasks\": 0, \"retained_tasks\": 0, \"pending_cancellations\": 0, \"collector_threads\": 1}"
+    },
+    {
+      "line": 14131,
+      "text": "2026-10-26T23:35:38.0601250Z Artifact gemma-desktop-windows.zip successfully finalized. Artifact ID 12696378437"
+    }
+  ],
+  "distinct_from_context_runs": {
+    "run_ids": [
+      40419401772,
+      40419406152,
+      40419410050
+    ],
+    "status": "failed_before_native_library_load",
+    "context_tiers": [
+      32768,
+      65536,
+      131072
+    ],
+    "note": "Those desktop-context workflow failures remain preserved separately; this 4096-context E2E success does not replace their evidence."
+  },
+  "verification_commands": [
+    "gh api --allow-escape-sequences repos/gsmlg-app/lib_llama_cpp/actions/jobs/121909031936/logs",
+    "gh api repos/gsmlg-app/lib_llama_cpp/actions/jobs/121909031936",
+    "gh run download 40419017859 --name gemma-desktop-windows --dir OUTPUT_DIRECTORY"
+  ],
+  "code_changed": false,
+  "ci_started": false,
+  "observed_at": "2026-10-26T23:40:40.751044+00:00"
+}

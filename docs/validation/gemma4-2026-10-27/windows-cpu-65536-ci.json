@@ -1,0 +1,112 @@
+{
+  "status": "failed",
+  "acceptance_status": "not_run",
+  "failure_category": "workflow_environment",
+  "requested_context": 65536,
+  "source_commit": "54df901aca700ae4c0363c3877cffd4b2be6e4dc",
+  "workflow_file": ".github/workflows/desktop-context.yml",
+  "workflow_name": "Desktop context acceptance",
+  "workflow_run_id": 40419406152,
+  "workflow_run_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40419406152",
+  "workflow_status": "completed",
+  "workflow_conclusion": "failure",
+  "run_attempt": 1,
+  "job_id": 121909783888,
+  "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40419406152/job/121909783888",
+  "started_at": "2026-10-26T23:23:22Z",
+  "completed_at": "2026-10-26T23:30:59Z",
+  "runner_labels": [
+    "windows-2022"
+  ],
+  "runner_name": "GitHub Actions 1000004929",
+  "runtime_identity": {
+    "os": "Microsoft Windows Server 2022",
+    "runner_image": "windows-2022",
+    "runner_image_version": "20261022.344.1",
+    "python_version": "3.12.10",
+    "python_architecture": "x64",
+    "python_evidence": "ctypes traceback path",
+    "requested_backend": "cpu",
+    "actual_backend": null,
+    "actual_cpu_execution_confirmed": false
+  },
+  "step_conclusions": {
+    "Build Windows artifact": "success",
+    "Download immutable model fixture and verify hash": "success",
+    "Execute ABI regression and actual context acceptance": "failure",
+    "Run actions/upload-artifact@v4": "success"
+  },
+  "native_abi_regression": {
+    "status": "failed_before_library_load",
+    "subprocess_failures": 15,
+    "attempted_library": "D:\\a\\_temp\\prebuilt\\linux\\x64\\liblib_llama_cpp_linux.so",
+    "expected_library": "D:\\a\\_temp\\prebuilt\\windows\\x64\\lib_llama_cpp_windows.dll"
+  },
+  "context_acceptance": {
+    "executed": false,
+    "near_window": null,
+    "retrieval": null,
+    "cache": null,
+    "overflow": null,
+    "prefill_cancellation": null,
+    "decode_cancellation": null,
+    "recovery": null,
+    "peak_rss_bytes": null
+  },
+  "diagnosis": {
+    "observed": "The Windows ABI step tried the Linux shared-library path and failed every subprocess at ctypes.CDLL.",
+    "cause": "After MSVC environment setup, the step environment retains the name Platform with value windows. Bash variable names are case-sensitive, so the uppercase PLATFORM branch does not select the Windows DLL.",
+    "smallest_proposed_fix": "Use TARGET_PLATFORM instead of PLATFORM for workflow input environment variables and shell comparisons.",
+    "fix_applied": false,
+    "rerun_performed": false,
+    "local_shell_reproduction": "env -u PLATFORM Platform=windows bash reproduces selected=linux, retained_Platform=windows, uppercase_PLATFORM=unset."
+  },
+  "artifacts": {
+    "total_count": 0,
+    "artifacts": []
+  },
+  "log_sha256": "2ce20eb4de2ec229fc716614917c51531dfa429b3fa9e8b36ab8759ac6d339a1",
+  "log_evidence": [
+    {
+      "line": 12,
+      "text": "acceptance\tSet up job\t2026-10-26T23:23:23.5631809Z Microsoft Windows Server 2022"
+    },
+    {
+      "line": 17,
+      "text": "acceptance\tSet up job\t2026-10-26T23:23:23.5636269Z Image: windows-2022"
+    },
+    {
+      "line": 18,
+      "text": "acceptance\tSet up job\t2026-10-26T23:23:23.5637512Z Version: 20261022.344.1"
+    },
+    {
+      "line": 4038,
+      "text": "acceptance\tExecute ABI regression and actual context acceptance\t2026-10-26T23:30:54.7278054Z   Platform: windows"
+    },
+    {
+      "line": 4067,
+      "text": "acceptance\tExecute ABI regression and actual context acceptance\t2026-10-26T23:30:54.7307846Z   BACKEND: cpu"
+    },
+    {
+      "line": 4086,
+      "text": "acceptance\tExecute ABI regression and actual context acceptance\t2026-10-26T23:30:56.3713830Z   File \"C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\ctypes\\__init__.py\", line 379, in __init__"
+    },
+    {
+      "line": 4089,
+      "text": "acceptance\tExecute ABI regression and actual context acceptance\t2026-10-26T23:30:56.3715994Z FileNotFoundError: Could not find module 'D:\\a\\_temp\\prebuilt\\linux\\x64\\liblib_llama_cpp_linux.so' (or one of its dependencies). Try using the full path with constructor syntax."
+    },
+    {
+      "line": 4383,
+      "text": "acceptance\tExecute ABI regression and actual context acceptance\t2026-10-26T23:30:56.3868130Z FAILED (failures=15)"
+    },
+    {
+      "line": 4444,
+      "text": "acceptance\tRun actions/upload-artifact@v4\t2026-10-26T23:30:56.6016814Z ##[warning]No files were found with the provided path: results/. No artifacts will be uploaded."
+    }
+  ],
+  "retrieval_commands": [
+    "gh run view 40419406152 --log",
+    "gh api repos/gsmlg-app/lib_llama_cpp/actions/runs/40419406152/artifacts"
+  ],
+  "observed_at": "2026-10-26T23:33:38.322290+00:00"
+}
