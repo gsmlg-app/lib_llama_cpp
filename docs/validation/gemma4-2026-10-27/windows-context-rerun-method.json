@@ -1,0 +1,129 @@
+{
+  "status": "monitoring_remaining_tiers",
+  "source_commit": "f04e1a926a56d3eb99c851f7dce3a4d875920f6e",
+  "release_tag": "v0.7.5",
+  "release_tag_commit": "7ba54673295800b245960001e4128ebe141fd66a",
+  "production_native_equivalence": "git diff v0.7.5 f04e1a9 changes only acceptance tooling, workflows, and docs; no production native or Dart runtime files changed.",
+  "workflow_file": ".github/workflows/desktop-context.yml",
+  "harness": "tools/desktop_context_benchmark.py",
+  "runs": [
+    {
+      "context": 32768,
+      "run_id": 40425573853,
+      "job_id": 121930359776,
+      "status": "completed",
+      "conclusion": "success",
+      "run_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425573853",
+      "job_url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425573853/job/121930359776",
+      "started_at": "2026-10-27T00:18:45Z",
+      "completed_at": "2026-10-27T00:49:25Z",
+      "runner_labels": [
+        "windows-2022"
+      ],
+      "runner_name": "GitHub Actions 1000004965",
+      "artifact": {
+        "id": 12700209478,
+        "name": "desktop-windows-cpu-32768",
+        "size_in_bytes": 6476,
+        "digest": "sha256:8ee615c0ef04c37de8d72aaefbb2cb455a0588a2404e844dc28e3f72187ab2f1",
+        "created_at": "2026-10-27T00:49:20Z"
+      },
+      "context_evidence_file": "windows-cpu-32768-final.json",
+      "context_json_sha256": "d5748385ff8c1af6235baac57ebc4f085a810c0eca65e27680d3624e96758b34",
+      "preservation": "Complete downloaded context.json copied byte-for-byte, without adding or removing fields.",
+      "job_log_sha256": "c2aad4c65d27e754946183a9926fbc636c2cdcdcf91e55527d592fabdc31e533",
+      "model_metadata_sha256": "fcb9fdbf9aa45c7daec5aad9d09d8060da8a4e3480f446baa3f62140d1374911",
+      "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+      "dll_sha256": "3f95d8e1676a2b3dc8abac6bfddca24706cd2b7abbe73310ef3233027fd79eba",
+      "os": "Windows-2022Server-10.0.20348-SP0",
+      "machine": "AMD64",
+      "cpu_backend": "cpu",
+      "cpu_model": null,
+      "cpu_model_note": "CPU brand/model was not reported in context artifact or job log.",
+      "threads": 4,
+      "dll_dependencies": null,
+      "dll_dependencies_note": "The workflow did not capture a DLL import/dependency listing.",
+      "step_conclusions": {
+        "Set up job": "success",
+        "Run actions/checkout@v4": "success",
+        "Require matching OS and GPU hardware": "success",
+        "Run ilammy/msvc-dev-cmd@v1": "success",
+        "Check acceptance observability": "success",
+        "Build Linux artifact": "skipped",
+        "Build Windows artifact": "success",
+        "Download immutable model fixture and verify hash": "success",
+        "Execute ABI regression and actual context acceptance": "success",
+        "Run actions/upload-artifact@v4": "success",
+        "Post Run actions/checkout@v4": "success",
+        "Complete job": "success"
+      },
+      "acceptance_summary": {
+        "prompt_tokens": 31741,
+        "second_prompt_tokens": 31808,
+        "second_cached_tokens": 31790,
+        "three_position_retrieval_both_turns": true,
+        "first_finish_reasons": [
+          "stop"
+        ],
+        "second_finish_reasons": [
+          "stop"
+        ],
+        "prefill_cancel_latency_seconds": 5.4529999999999745,
+        "decode_cancel_latency_seconds": 0.06199999999989814,
+        "recovery_text": "ready",
+        "post_cancel_recovery_text": "ready",
+        "peak_rss_bytes": 2779369472
+      }
+    },
+    {
+      "context": 65536,
+      "run_id": 40425602744,
+      "job_id": 121930456873,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "context": 131072,
+      "run_id": 40425606793,
+      "job_id": 121930471298,
+      "status": "in_progress",
+      "conclusion": null
+    }
+  ],
+  "required_configuration": {
+    "backend": "cpu",
+    "n_gpu_layers": 0,
+    "n_batch": 256,
+    "n_ubatch": 128,
+    "cache_type_k": "f16",
+    "cache_type_v": "f16",
+    "swa_full": false,
+    "threads": "runner available logical CPUs, capped at 8"
+  },
+  "acceptance_checks": [
+    "Actual prompt >=95 percent of tier and fits rendered budget.",
+    "Three sentinel values present in both first and second responses.",
+    "Second-turn cached_tokens >0.",
+    "Actual nonempty content, finish reasons, and positive prompt/completion usage retained.",
+    "context_overflow rejected.",
+    "Observed fresh partial prefill, cancellation without polling, cancellation barrier and recovery.",
+    "Decode cancellation after first content and successful recovery.",
+    "Nonzero peak RSS.",
+    "Native 50/100 cancellation thread/RSS and idle task counters."
+  ],
+  "inference_timeout_seconds": 18000,
+  "workflow_timeout_minutes": 360,
+  "previous_failures_preserved": [
+    "windows-cpu-32768-ci.json",
+    "windows-cpu-65536-ci.json",
+    "windows-cpu-131072-ci.json"
+  ],
+  "no_ci_retry_or_cancellation": true,
+  "no_code_changes": true,
+  "retrieval_commands": [
+    "gh run download RUN_ID --name desktop-windows-cpu-CONTEXT --dir OUTPUT_DIRECTORY",
+    "gh api --allow-escape-sequences repos/gsmlg-app/lib_llama_cpp/actions/jobs/JOB_ID/logs",
+    "gh api repos/gsmlg-app/lib_llama_cpp/actions/jobs/JOB_ID"
+  ],
+  "updated_at": "2026-10-27T00:51:50.692605+00:00"
+}

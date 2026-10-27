@@ -1,0 +1,72 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "release_commit": "7ba54673295800b245960001e4128ebe141fd66a",
+  "archive_name": "lib_llama_cpp-prebuilt-vulkan-linux-0.7.5.tar.gz",
+  "archive_sha256": "ef62d9dd752021b2df021e7359f49b34b368c5c679b1a4cdc987d35df23ed07b",
+  "library_sha256": "0b91503832be05382da10be1f3a6c5683bb9ccaf090af1f21c77286566596e26",
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "harness": "tools/desktop_context_benchmark.py",
+  "harness_sha256": "51c3c6267a7351ee9feef66546823d3c38e13892153b58fe2aa8bd7ed36fcc0c",
+  "harness_source_commit": "35d98d17ea553d66bc9e0f4cecd6c08530b89104",
+  "gpu": "NVIDIA GeForce RTX 3050 6144 MiB",
+  "driver": "595.71.05",
+  "host": "ms04, NixOS 26.05 x64, i5-12600KF, 62 GiB",
+  "runtime": "Ubuntu 24.04.5, Python 3.12.3, glibc 2.39",
+  "image_id": "sha256:f3219c70d24423db87f7cd154b7c433a9fa26b8ab22cb6e747e30daa90b2813e",
+  "container_network": "none",
+  "pid_namespace": "host, allowing own process ID to match nvidia-smi per-process memory",
+  "other_gpu_processes": "Existing user text-embeddings process retained approximately 1248 MiB; it was not stopped. Hardware was shared, not dedicated.",
+  "configuration": {
+    "n_parallel": 1,
+    "n_batch": 1024,
+    "n_ubatch": 256,
+    "n_threads": 8,
+    "cache_type_k": "f16",
+    "cache_type_v": "f16",
+    "kv_unified": true,
+    "swa_full": false,
+    "flash_attn_requested": "on",
+    "n_gpu_layers_requested": 99,
+    "backend": "vulkan",
+    "require_backend": true
+  },
+  "measurements": [
+    {
+      "context": 32768,
+      "file": "released-vulkan-32768-final.json",
+      "sha256": "84e1a7348c1b3231a2efc0bf4c6a19b2bf2c69014335e70ced539148f85490e4",
+      "prompt_tokens": 31741,
+      "offload_log": "36/36 layers offloaded",
+      "status": "passed"
+    },
+    {
+      "context": 65536,
+      "file": "released-vulkan-65536-final.json",
+      "sha256": "5a77ce0193b83c97a19bf6582fc3135f6862a2dd29a1438d149df83d77e5b649",
+      "prompt_tokens": 64509,
+      "offload_log": "36/36 layers offloaded",
+      "status": "passed"
+    },
+    {
+      "context": 131072,
+      "file": "released-vulkan-131072-final.json",
+      "sha256": "127fec8e7aba69ed15bd3c53c761ac72a8063a6aaf4765415a5a9ca51038a53c",
+      "prompt_tokens": 130045,
+      "offload_log": "36/36 layers offloaded",
+      "status": "passed"
+    }
+  ],
+  "native_log_sha256": {
+    "32768": "be9293d98a4037c79c0d8578e86cd50abf3bb5692fcee7ad50bf70623728ae21",
+    "65536": "12e6c3ce7ce2cd0c67f195ce1d426f57c87d0a0af5ca942ca926d520ca0c088b",
+    "131072": "6190dd4ec7760e270b5293034b77c77001b9bf7bfc0ee88367928b65575abbb4"
+  },
+  "command_template": "python3 tools/desktop_context_benchmark.py --library ACTUAL_RELEASE_LIBRARY --model MODEL --context CONTEXT --backend vulkan --gpu-layers 99 --batch 1024 --ubatch 256 --threads 8 --flash-attn on --output OUTPUT.json",
+  "notes": [
+    "Actual published native member is checksum-verified before loading; no native compilation or source build substitution.",
+    "The unmodified acceptance harness requires retrieval, positive prefix reuse, overflow rejection, actual partial-prefill/decode cancellation without polling, recovery, content and terminal usage.",
+    "Public upstream introspection cannot prove actual FA/device placement; startup logs independently establish 36/36 offload.",
+    "SHA reads warm the file cache before model loading. RSS and discrete GPU memory are separate measurements."
+  ]
+}

@@ -1,0 +1,2 @@
+# Preserve downloaded Windows context evidence bytes, including CRLF.
+docs/validation/gemma4-2026-10-27/windows-cpu-*-final.json -text whitespace=cr-at-eol

@@ -39,10 +39,11 @@ The library's Nix store dependencies make it a host build, not a portable artifa
 | Host/backend | 32K | 64K | 128K |
 | --- | --- | --- | --- |
 | DGX Linux ARM64 CUDA | passed | passed | passed |
-| ms04 Linux x64 CPU | passed | passed | running/pending |
-| Linux x64 CUDA release asset | not run on matching GPU | not run | not run |
+| ms04 Linux x64 CPU | passed | passed | passed |
+| Linux x64 CUDA release asset | awaiting asset build | awaiting asset build | awaiting asset build |
 | DGX Linux ARM64 Vulkan, GB10 | passed | passed | passed |
-| Windows CPU | long-tier harness failed before inference; short-context passed | same loader failure | same loader failure |
+| Published Linux x64 Vulkan, RTX 3050 | passed | passed | passed |
+| Windows x64 CPU | passed | running | running |
 | Windows CUDA/Vulkan physical GPU | not run | not run | not run |
 
 CUDA measurements use one slot, F16 K/V, shared/unified KV, compact SWA,
@@ -84,14 +85,42 @@ and [template consistency](vulkan-template-consistency.json) are retained.
 All Vulkan terminal/task counters cleared. Prefill cancellation barriers were
 0.222–0.233 seconds; decode cancellation approximately 1.018 seconds.
 
+The **published Linux x64 Vulkan archive** is a separate artifact from the DGX
+source build above. On ms04's RTX 3050, it uses the same F16/shared-KV/compact-SWA
+1024/256 baseline and eight threads. Each passing run independently logged
+36/36 layers offloaded. The container uses the host PID namespace so the benchmark
+can match its actual process to `nvidia-smi`; RSS is host memory, distinct from
+the discrete GPU allocation. No native source/build tree is mounted.
+
+| Published Vulkan context | Prompt tokens | Load s | TTFT s | Prefill tok/s | Decode tok/s | Cached tokens, second turn | Second TTFT s | Peak RSS bytes | Peak VRAM bytes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| [32768](released-vulkan-32768-final.json) | 31741 | 3.842 | 37.237 | 853.17 | 47.45 | 31790 | 0.449 | 4093517824 | 1978662912 |
+| [65536](released-vulkan-65536-final.json) | 64509 | 3.771 | 154.150 | 418.67 | 28.88 | 64558 | 0.683 | 4094357504 | 2179989504 |
+| [131072](released-vulkan-131072-final.json) | 130045 | 3.889 | 687.234 | 189.27 | 18.10 | 130094 | 0.728 | 4089606144 | 2582642688 |
+
+All three tiers generated 50 tokens per turn and passed retrieval, overflow,
+cache reuse and recovery. Prefill cancellation barriers were 0.573 / 2.350 /
+1.054 seconds; decode barriers were 1.025 / 0.061 /
+1.028 seconds. [Artifact and run provenance](released-vulkan-method.json) records
+image/harness hashes and raw-log digests. An existing user embedding process
+retained approximately 1248 MiB of GPU memory during these measurements; the GPU
+was shared and the service was preserved. These are per-process measurements in
+a real desktop environment, not an isolated performance claim.
+
 CPU final acceptance uses six threads and the same 1024/256/F16/compact-SWA
-baseline. Both completed tiers generated 50 tokens, acknowledged actual
+baseline. All three tiers generated 50 tokens, acknowledged actual
 partial-prefill cancellation and recovered.
 
 | CPU context | Prompt tokens | Load s | TTFT s | Prefill tok/s | Decode tok/s | Cached tokens, second turn | Second TTFT s | Peak RSS bytes | Prefill cancel s |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | [32768](cpu-32768-final.json) | 31741 | 1.001 | 504.566 | 62.91 | 8.10 | 31790 | 0.915 | 5028495360 | 7.048 |
 | [65536](cpu-65536-final.json) | 64509 | 1.078 | 1731.132 | 37.27 | 4.66 | 64558 | 1.734 | 5477138432 | 7.139 |
+| [131072](cpu-131072-final.json) | 130045 | 1.244 | 6513.236 | 19.97 | 2.54 | 130094 | 3.270 | 6319157248 | 6.938 |
+
+The 128K [SWA log evidence](cpu-131072-swa-evidence.json) records actual checkpoint
+creation, invalidation and forced full reprocessing after the changed system
+prefix, followed by a valid checkpoint restore for a later short request.
+Token-prefix similarity alone was not used as a safe rewind condition.
 
 The earlier CPU 32K attempt retrieved all three keys (31741 input, 50 output,
 504.32 s TTFT, 62.94 prompt tok/s, 8.03 decode tok/s) and reused 31790 tokens on
@@ -99,6 +128,18 @@ turn two, but its cancellation probe timed out before its first 1024-token CPU
 batch completed. That attempt is **not** a completed tier. The harness now waits
 up to 120 seconds for actual `processed > 0`, preserving that assertion and the
 cancellation/recovery checks. The successful retry is recorded above.
+
+Windows x64 CPU 32K [actual result](windows-cpu-32768-final.json), run
+[40425573853](https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425573853),
+passed with 31741 prompt tokens and 50 output tokens: load 2.969 seconds,
+TTFT 1257.703 seconds, prefill 25.24 tok/s, decode 6.87 tok/s and peak RSS
+2779369472 bytes. Its second turn reused 31790 tokens with 1.969-second TTFT.
+The four-thread 256/128/F16/compact-SWA configuration acknowledged prefill
+cancellation in 5.453 seconds and decode cancellation in 0.062 seconds, then
+completed both recovery requests. The exact source/build identities, original
+failed attempts and rerun method are recorded in
+[windows-context-rerun-method.json](windows-context-rerun-method.json).
+The CPU brand was not recorded and is not inferred from the hosted-runner label.
 
 ## Correctness, cancellation and resources
 
@@ -117,6 +158,11 @@ cancellation/recovery checks. The successful retry is recorded above.
   all 15 cases with GPU placement required, retaining every original assertion
   and adding caps/offload checks. [Summary](native-vulkan-summary.json) and
   [the exact harness diff](vulkan-native-wrapper.diff) distinguish those runs.
+  The actual released Linux x64 Vulkan asset separately passed all 15 strict
+  GPU cases on RTX 3050 in 74.148 seconds. Its 50-to-100 cancellation trend
+  retained eight threads and grew only 4 KiB RSS, with task/cancellation counts
+  zero; [summary](released-vulkan-native-summary.json),
+  [strict-backend harness diff](released-vulkan-native-wrapper.diff).
 - Warmup 50 to repeat 100 cancellation requests: DGX CPU retained four threads
   and 3490408 KiB RSS; CUDA retained six threads and 3782612 KiB RSS. ms04 CPU
   retained four threads and 4383232 KiB RSS. Active/retained/pending counts returned
@@ -181,7 +227,10 @@ cancellation/recovery checks. The successful retry is recorded above.
 - Acceptance tooling now requires positive cached tokens on turn two, propagates
   memory-sampler failures to the caller and types Win64 handles explicitly.
   Native resource regression measures Windows process threads and working set;
-  Linux observability tests passed. Actual Windows observations require the rerun.
+  Linux observability tests passed. The Windows rerun passed all 15 native cases;
+  cancellation 50 to 100 retained seven threads and grew only 36 KiB RSS, with
+  all task/cancellation counts zero; see
+  [Windows resource results](windows-native-resources-final.json).
 - Local fast verification: 79 Flutter tests passed, 15 model/platform tests
   skipped without local native fixtures; 44 pure Dart tests passed with five
   environment-specific skips. Analyzer over `packages example`, formatting,
@@ -202,10 +251,68 @@ DGX. The published **v0.7.4** CPU archive's checksum was independently verified
 and its ARM64 library produced `ready` with 15 input/2 output tokens. That confirms
 the prior artifact's layout/loadability, not these fixes in a new release.
 
-The new release still requires exact-SHA E2E, all existing platform/package gates,
-publication, and consumption of its actual archive. CUDA runtime distribution
-uses matching installed NVIDIA redistributables plus driver; Vulkan uses the
-system loader/vendor ICD. A physical Windows host was unavailable locally.
+The [v0.7.5 release](https://github.com/gsmlg-app/lib_llama_cpp/releases/tag/v0.7.5)
+is tagged at `7ba54673295800b245960001e4128ebe141fd66a`, after exact-source E2E
+(`54df901`, all 13 jobs), all platform CPU builds and package checks.
+[Publication audit](publication-audit.json) confirms all nine exact/latest pub.dev
+versions are 0.7.5. Each downloaded archive matches its published checksum;
+39 public source files and every pubspec match the tag. Packaged Linux x64/ARM64
+and Windows CPU libraries match the GitHub archive byte for byte.
+
+The actual CPU archive SHA256 is
+`8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f`.
+Its [Linux ARM64 consumer](released-cpu-consumer.json) ran on Ubuntu 24.04.5 in
+an offline container without native build tools or a mounted source/build tree.
+It produced `ready`, `stop`, usage 15 input/2 output tokens, zero active/retained/
+pending/buffered work and a successful destroy. The container was removed.
+This is short-context published-artifact acceptance, separate from the long tiers.
+
+The released Linux CPU libraries require GLIBC >=2.38 and GLIBCXX >=3.4.32;
+Ubuntu 24.04 is the tested clean runtime. An older glibc/libstdc++ installation
+does not satisfy these assets merely because the CPU architecture matches.
+The [Linux x64 consumer](released-linux-x64-cpu-consumer.json) also passed in an
+offline Ubuntu 24.04.5 container without native build tools. Its response took
+0.356 seconds, with `ready`, `stop`, usage 15+2=17 and zero own-task/buffer counts.
+The container was removed. Upstream slot metrics are advisory sampled snapshots;
+their fields are not asserted to become atomically idle with the shim counters.
+
+The [Windows x64 consumer](released-windows-cpu-consumer.json), CI run
+[40427512054](https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40427512054),
+passed in an offline Windows Server Core/Python container with no C++ build tools.
+The actual release DLL produced `ready`, `stop`, four events and usage 15+2=17;
+load was 3.515 seconds, TTFT 0.594 seconds and response duration 0.672 seconds.
+Task/buffer/cancellation counts were zero and native destroy returned.
+The Microsoft VC++ x64 redistributable was 14.44.35211.0 with a verified Microsoft
+signature. Loaded runtime module paths/hashes are recorded: MSVCP140 from System32,
+VCRUNTIME140/140_1 from Python and UCRT from System32. The container used `--rm`;
+workflow cleanup succeeded. These consumer checks are separate from long-window tests.
+
+The exact successful Linux consumer files are retained in
+[release-consumer-fixture](release-consumer-fixture/README.md). Reproduce from the
+repository without compiling native code:
+
+```sh
+cd docs/validation/gemma4-2026-10-27/release-consumer-fixture
+docker build -t libllama-task-cpu-consumer:20261027-v075 .
+bash run-cpu-consumer.sh 0.7.5 "$RELEASE_ASSET_DIRECTORY" "$MODEL"
+gh workflow run desktop-release-consumer.yml --repo gsmlg-app/lib_llama_cpp \
+  --ref main -f version=0.7.5
+```
+
+The actual [Linux x64 Vulkan consumer](released-linux-vulkan-consumer.json) also
+passed on ms04's discrete RTX 3050 (6 GiB), driver 595.71.05. It used an offline
+Ubuntu 24.04.5 runtime with no native build tools, generated `ready`, emitted
+`stop` and usage 15+2=17, and cleared task/buffer/cancellation counts before
+destroy. Native logs prove **36/36 layers offloaded**, independently of the
+requested/compiled backend diagnostics. The NVIDIA container runtime required
+X11/Xext/EGL/GLVND runtime libraries and both Vulkan ICD and EGL vendor metadata;
+missing metadata caused an explicit required-backend error, never CPU fallback.
+Long-window runs of that release asset are recorded separately.
+
+CUDA runtime distribution uses matching installed NVIDIA redistributables plus
+driver; Vulkan uses the system loader/vendor ICD. Accelerated asset builds and
+their independent dependency/consumer checks are tracked separately.
+A physical Windows GPU host was unavailable locally.
 DGX's Vulkan GPU was confirmed through the native loader and then tested using
 an isolated build container, without changing the host driver or source pin.
 Accelerator compilation alone does not validate long context.

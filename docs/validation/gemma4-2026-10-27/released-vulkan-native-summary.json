@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "library_sha256": "0b91503832be05382da10be1f3a6c5683bb9ccaf090af1f21c77286566596e26",
+  "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+  "case_count": 15,
+  "cases": [
+    "budget_boundary",
+    "cancel",
+    "expiry",
+    "invalid_config",
+    "invalid_request",
+    "missing_model",
+    "native_ceiling",
+    "nonstream",
+    "prefill_state",
+    "queued_cancel",
+    "shared_abi",
+    "stream",
+    "terminal_cancel",
+    "two_engines",
+    "wrapper_errors"
+  ],
+  "suite": "One unittest aggregator launches 15 independent subprocess cases.",
+  "elapsed_seconds": 74.148,
+  "backend": "vulkan",
+  "require_backend": true,
+  "n_gpu_layers": 99,
+  "original_assertions_preserved": true,
+  "configuration_diff": "released-vulkan-native-wrapper.diff",
+  "original_harness_sha256": "12bb75e2bff938016d851331b3f6ac2cf43942670a20a1ef3841b7d99bcdee5d",
+  "effective_harness_sha256": "2afbc4ee9437b374ebf72ff3a5b9c9cbefb1f030d810009cf731c5699641b5cb",
+  "native_log_sha256": "8dc6275bc0d3176a090cdb6b07567ae90ff022f404c2ab43971fd81653b819f1",
+  "native_log_location": "ms04:/tmp/libllama-20261027-validation/libllama-v075-gpu-consumer/results/vulkan-native.log",
+  "resource_trend": {
+    "case": "cancel",
+    "warmup_50": [
+      8,
+      2947068
+    ],
+    "repeat_100": [
+      8,
+      2947072
+    ],
+    "active_tasks": 0,
+    "retained_tasks": 0,
+    "pending_cancellations": 0,
+    "collector_threads": 1
+  },
+  "rss_delta_kib": 4,
+  "offload_evidence": "The same actual artifact/configuration independently logged 36/36 offload during consumer and all three long-window runs. Native subtests check required backend/device and no degradation; their successful captured child stderr is not printed by the original aggregator.",
+  "command": "python3 /opt/native-test-vulkan.py /input-native/liblib_llama_cpp_linux.so /input/model.gguf in the same offline runtime container; only the test, actual release member and model are mounted."
+}

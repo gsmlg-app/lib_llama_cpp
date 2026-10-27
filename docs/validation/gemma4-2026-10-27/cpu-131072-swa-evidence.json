@@ -1,0 +1,46 @@
+{
+  "status": "observed",
+  "context": 131072,
+  "run": "cpu-131072-final.json",
+  "source_log": "ms04:/tmp/libllama-20261027-validation/results/cpu-131072-final.log",
+  "source_log_sha256": "185f79dbd64e1d57f31babc7280dd2a45bfbd4c6ccc676887a469cf36ab36779",
+  "events": [
+    {
+      "line": 1834,
+      "text": "slot create_check: id  0 | task 1 | created context checkpoint 1 of 32 (pos_min = 129017, pos_max = 129784, n_tokens = 129785, size = 9.009 MiB)"
+    },
+    {
+      "line": 2001,
+      "text": "slot create_check: id  0 | task 359 | created context checkpoint 2 of 32 (pos_min = 129326, pos_max = 130093, n_tokens = 130094, size = 9.009 MiB)"
+    },
+    {
+      "line": 2172,
+      "text": "slot update_slots: id  0 | task 464 | Checking checkpoint with [129326, 130093] against 0..."
+    },
+    {
+      "line": 2173,
+      "text": "slot update_slots: id  0 | task 464 | Checking checkpoint with [129017, 129784] against 0..."
+    },
+    {
+      "line": 2174,
+      "text": "slot update_slots: id  0 | task 464 | forcing full prompt re-processing due to lack of cache data (likely due to SWA or hybrid/recurrent memory, see https://github.com/ggml-org/llama.cpp/pull/13194#issuecomment-2868343055)"
+    },
+    {
+      "line": 2175,
+      "text": "slot update_slots: id  0 | task 464 | erased invalidated context checkpoint (pos_min = 129017, pos_max = 129784, n_tokens = 129785, n_swa = 512, pos_next = 0, size = 9.009 MiB)"
+    },
+    {
+      "line": 2176,
+      "text": "slot update_slots: id  0 | task 464 | erased invalidated context checkpoint (pos_min = 129326, pos_max = 130093, n_tokens = 130094, n_swa = 512, pos_next = 0, size = 9.009 MiB)"
+    },
+    {
+      "line": 2197,
+      "text": "slot update_slots: id  0 | task 472 | forcing full prompt re-processing due to lack of cache data (likely due to SWA or hybrid/recurrent memory, see https://github.com/ggml-org/llama.cpp/pull/13194#issuecomment-2868343055)"
+    },
+    {
+      "line": 2228,
+      "text": "slot update_slots: id  0 | task 478 | restored context checkpoint (pos_min = 0, pos_max = 10, n_tokens = 11, n_past = 4, size = 0.129 MiB)"
+    }
+  ],
+  "meaning": "Second turn reused 130094 actual tokens. The changed system prefix lacked valid compact-SWA checkpoint data; upstream invalidated old checkpoints and forced full reprocessing. A later short request restored an available checkpoint. No unconditional token-prefix rewind or context shift was used."
+}
