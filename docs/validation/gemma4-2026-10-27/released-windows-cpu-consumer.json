@@ -1,0 +1,387 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "release_commit": "7ba54673295800b245960001e4128ebe141fd66a",
+  "ci": {
+    "conclusion": "success",
+    "headSha": "35d98d17ea553d66bc9e0f4cecd6c08530b89104",
+    "jobs": [
+      {
+        "completedAt": "2026-10-27T00:40:23Z",
+        "conclusion": "success",
+        "databaseId": 121936863849,
+        "name": "consumer",
+        "startedAt": "2026-10-27T00:36:51Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-27T00:36:52Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-27T00:36:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:36:57Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-10-27T00:36:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:37:17Z",
+            "conclusion": "success",
+            "name": "Download actual release and immutable model",
+            "number": 3,
+            "startedAt": "2026-10-27T00:36:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:40:18Z",
+            "conclusion": "success",
+            "name": "Consume in an offline Windows runtime container",
+            "number": 4,
+            "startedAt": "2026-10-27T00:37:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:40:18Z",
+            "conclusion": "success",
+            "name": "Remove own container",
+            "number": 5,
+            "startedAt": "2026-10-27T00:40:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:40:19Z",
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 6,
+            "startedAt": "2026-10-27T00:40:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:40:21Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 12,
+            "startedAt": "2026-10-27T00:40:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-27T00:40:21Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 13,
+            "startedAt": "2026-10-27T00:40:21Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40427512054/job/121936863849"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40427512054"
+  },
+  "container": {
+    "image_id": "sha256:e44556de1e586e363c3661fcbe030ec89bc31a9703e7286d51c0df160f0614f8",
+    "repo_digests": [
+      "python@sha256:035418c04b5e8fcb13c6b23f6c801a52c510c43e8bf27e2379d26ad8c40c87a7"
+    ],
+    "os_version": "10.0.20348.3692",
+    "network": "none",
+    "isolation": "process",
+    "native_build_tools_installed": false,
+    "inputs": "Only checksummed public CPU archive, immutable model, Python harness, and signed VC++ redistributable. No native source/build tree.",
+    "cleanup": "docker --rm and workflow cleanup succeeded; no separate post-run inspect boolean was recorded."
+  },
+  "microsoft_vc_runtime": {
+    "sha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+    "version": "14.44.35211.0",
+    "publisher": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+  },
+  "consumer": {
+    "platform": "Windows-2022Server-10.0.20348-SP0",
+    "machine": "AMD64",
+    "python": "3.12.10",
+    "native_build_tools": {
+      "cmake": null,
+      "cc": null,
+      "gcc": null,
+      "g++": null,
+      "c++": null,
+      "clang": null,
+      "clang++": null,
+      "make": null,
+      "ninja": null,
+      "nvcc": null,
+      "cl": null,
+      "link": null,
+      "msbuild": null
+    },
+    "version": "0.7.5",
+    "archive_sha256": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f",
+    "member": "windows/x64/lib_llama_cpp_windows.dll",
+    "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+    "library_sha256": "11a4b1f0b36f52619f0313e8dee291a3508db4bb03153d55a3e1d2f80e0222ab",
+    "caps": {
+      "model_name": "model.gguf",
+      "chat_template": "present",
+      "native_n_ctx": 131072,
+      "rope_extrapolation": false,
+      "task_state_observation": "streaming: upstream prompt progress and decode results; nonstream: sampled active/decoding metrics, prefill phase unavailable",
+      "supports_tools": true,
+      "supports_parallel_tool_calls": true,
+      "supports_reasoning": true,
+      "chat_template_caps": {
+        "supports_object_arguments": true,
+        "supports_parallel_tool_calls": true,
+        "supports_preserve_reasoning": false,
+        "supports_string_content": true,
+        "supports_system_role": true,
+        "supports_tool_calls": true,
+        "supports_tools": true,
+        "supports_typed_content": false
+      },
+      "supports_vision": false,
+      "supports_audio": false,
+      "requested": {
+        "model_path": "C:\\input\\model.gguf",
+        "n_ctx": 512,
+        "n_batch": 64,
+        "n_ubatch": 64,
+        "n_threads": 2,
+        "n_threads_batch": 2,
+        "n_gpu_layers": 0,
+        "n_parallel": 1,
+        "backend": "cpu",
+        "require_backend": true
+      },
+      "unsupported": [],
+      "effective": {
+        "n_ctx": 512,
+        "slot_n_ctx": 512,
+        "n_batch": 64,
+        "n_ubatch": 64,
+        "n_threads": 2,
+        "n_threads_batch": 2,
+        "n_parallel": 1,
+        "cache_type_k": "f16",
+        "cache_type_v": "f16",
+        "swa_full": false,
+        "kv_unified": true,
+        "context_shift": false,
+        "flash_attn": null,
+        "n_gpu_layers": null
+      },
+      "result_retention_ms": 30000,
+      "available_devices": [
+        "CPU"
+      ],
+      "compiled_backends": [
+        "CPU"
+      ],
+      "device_info": [
+        {
+          "name": "CPU",
+          "backend": "CPU",
+          "type": "cpu"
+        }
+      ],
+      "selected_backend": "cpu",
+      "require_backend": true,
+      "degradation": "",
+      "backend": "cpu",
+      "device": null,
+      "offload": false,
+      "diagnostic_limits": [
+        "upstream public API does not expose actual flash attention, device placement, or offloaded layer count"
+      ]
+    },
+    "load_seconds": 3.5150000000001,
+    "budget": {
+      "prompt_tokens": 15,
+      "reserved_output_tokens": 16,
+      "effective_context": 512,
+      "usable_context": 511,
+      "fits": true
+    },
+    "inference": {
+      "text": "ready",
+      "reasoning": "",
+      "ttft_seconds": 0.5939999999999372,
+      "duration_seconds": 0.6719999999999118,
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 15,
+        "total_tokens": 17,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "decode_tokens_per_second_excluding_ttft": 12.820512820517006,
+      "native_timings": [
+        {
+          "cache_n": 0,
+          "prompt_n": 15,
+          "prompt_ms": 591.416,
+          "prompt_per_token_ms": 39.427733333333336,
+          "prompt_per_second": 25.362857954468595,
+          "predicted_n": 2,
+          "predicted_ms": 76.991,
+          "predicted_per_token_ms": 38.4955,
+          "predicted_per_second": 25.977062254029693
+        }
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "event_count": 4,
+      "request_ids": [
+        "chatcmpl-8kakLuIWB1asRAUBg4JnYwb1MuHb0O3C"
+      ]
+    },
+    "stats": {
+      "active_tasks": 0,
+      "retained_tasks": 0,
+      "tasks": [],
+      "pending_cancellations": 0,
+      "buffered_bytes": 0,
+      "buffered_events": 0,
+      "expired_results": 0,
+      "expiry_tombstones": 0,
+      "result_retention_ms": 30000,
+      "max_tasks": 64,
+      "max_event_bytes_per_task": 1048576,
+      "collector_threads": 1,
+      "submitted": 1,
+      "completed": 1,
+      "cancelled": 0,
+      "failed": 0,
+      "running": true,
+      "upstream_metrics": {
+        "idle": 1,
+        "processing": 0,
+        "deferred": 0,
+        "t_start": 3393840,
+        "n_prompt_tokens_processed_total": 15,
+        "t_tokens_generation_total": 76,
+        "n_tokens_predicted_total": 2,
+        "t_prompt_processing_total": 591,
+        "n_tokens_max": 16,
+        "n_prompt_tokens_processed": 15,
+        "t_prompt_processing": 591,
+        "n_tokens_predicted": 2,
+        "t_tokens_generation": 76,
+        "n_decode_total": 3,
+        "n_busy_slots_total": 3,
+        "slots": [
+          {
+            "id": 0,
+            "n_ctx": 512,
+            "speculative": false,
+            "is_processing": false,
+            "id_task": 1,
+            "n_prompt_tokens": 16,
+            "n_prompt_tokens_processed": 15,
+            "n_prompt_tokens_cache": 0,
+            "params": {
+              "seed": 4294967295,
+              "temperature": 0.0,
+              "dynatemp_range": 0.0,
+              "dynatemp_exponent": 1.0,
+              "top_k": 64,
+              "top_p": 0.949999988079071,
+              "min_p": 0.05000000074505806,
+              "top_n_sigma": -1.0,
+              "xtc_probability": 0.0,
+              "xtc_threshold": 0.10000000149011612,
+              "typical_p": 1.0,
+              "repeat_last_n": 64,
+              "repeat_penalty": 1.0,
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "dry_multiplier": 0.0,
+              "dry_base": 1.75,
+              "dry_allowed_length": 2,
+              "dry_penalty_last_n": 512,
+              "mirostat": 0,
+              "mirostat_tau": 5.0,
+              "mirostat_eta": 0.10000000149011612,
+              "max_tokens": 16,
+              "n_predict": 16,
+              "n_keep": 0,
+              "n_discard": 0,
+              "ignore_eos": false,
+              "stream": true,
+              "n_probs": 0,
+              "min_keep": 0,
+              "chat_format": "peg-gemma4",
+              "reasoning_format": "deepseek",
+              "reasoning_in_content": false,
+              "generation_prompt": "<|turn>model\n",
+              "samplers": [
+                "penalties",
+                "dry",
+                "top_n_sigma",
+                "top_k",
+                "typ_p",
+                "top_p",
+                "min_p",
+                "xtc",
+                "temperature"
+              ],
+              "speculative.types": "none",
+              "timings_per_token": false,
+              "post_sampling_probs": false,
+              "backend_sampling": false,
+              "lora": []
+            },
+            "next_token": [
+              {
+                "has_next_token": false,
+                "has_new_line": false,
+                "n_remain": 14,
+                "n_decoded": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "loaded_runtime_modules": {
+      "MSVCP140.dll": {
+        "path": "C:\\Windows\\SYSTEM32\\MSVCP140.dll",
+        "sha256": "0f885b509a685d2bbfa652fed26b5fb31d88fbdab0a978c641d1c7b8aa460aa9"
+      },
+      "VCRUNTIME140.dll": {
+        "path": "C:\\Python\\VCRUNTIME140.dll",
+        "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4"
+      },
+      "VCRUNTIME140_1.dll": {
+        "path": "C:\\Python\\VCRUNTIME140_1.dll",
+        "sha256": "6a99bc0128e0c7d6cbbf615fcc26909565e17d4ca3451b97f8987f9c6acbc6c8"
+      },
+      "ucrtbase.dll": {
+        "path": "C:\\Windows\\System32\\ucrtbase.dll",
+        "sha256": "31d49dcd6d5b8f9ba1e2a69fc487028c9c188deb70c3439ad59e10717edc8fea"
+      }
+    },
+    "engine_destroy_returned": true,
+    "extraction_cleanup_owner": "container removal after process exit",
+    "status": "passed"
+  },
+  "raw_evidence_sha256": {
+    "vc-runtime.json": "4ad71753f6213cddb59bcfa94cef069bc3df6301d78f088f8a615972eaf6466e",
+    "consumer.json": "08e0c02aa66309f69d7dd968c144edaed7ed9521f10702c0090684e762389b30",
+    "image.json": "e1d50950adcbd9df5b5b1e4a15b94032c703b2187c5412974819dae58d6be12e",
+    "run.json": "c01fa53bbd233a42ec032580d53261b0fdcf32fd37d5b9d8a2677f835ac2b18c",
+    "consumer.log": "f430fcd0e49a08f3371a75012479cee561913efc44023f28079480792172d40b"
+  },
+  "limits": [
+    "Short-context public Windows x64 CPU DLL acceptance; separate from near-window and physical GPU tests.",
+    "VCRUNTIME modules actually loaded from the Python distribution while MSVCP140 was loaded from System32; exact paths and hashes are captured."
+  ]
+}

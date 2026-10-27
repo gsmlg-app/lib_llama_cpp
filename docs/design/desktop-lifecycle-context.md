@@ -275,6 +275,13 @@ CUDA toolkit or claim a toolkit-free CUDA deployment. Vulkan needs the system
 loader and a working vendor ICD/driver. Windows CPU needs the matching Microsoft
 VC++ runtime when the asset imports it. Linux needs compatible glibc/libstdc++.
 Build-tool availability is not a consumer runtime requirement.
+The v0.7.5 Linux CPU assets require GLIBC >=2.38 and GLIBCXX >=3.4.32; the clean
+ARM64 consumer passed on Ubuntu 24.04.5. The Windows CPU asset imports MSVCP140,
+VCRUNTIME140/VCRUNTIME140_1 and UCRT. The manual `desktop-release-consumer.yml`
+job consumes its actual archive in a disposable Windows container with Python
+and the Microsoft VC++ x64 redistributable, checking content, finish, usage and
+native cleanup without C++ build tools. Published-asset evidence is maintained
+separately from source-build E2E and from near-window acceptance.
 
 The release workflow selects CUDA **12.5.0**. Deploy its matching CUDA runtime,
 cuBLAS and driver dependencies rather than copying a CUDA 13 source-build setup.
@@ -285,12 +292,15 @@ by this project. The prepared Linux CUDA consumer uses installed 12.5 runtime
 redistributables with driver 595.71.05, without compiler/build tools; its actual
 published-asset result is tracked separately in the validation record.
 
-Build defaults disable host-native instruction tuning. That alone is not a
-promise of every historical x64 CPU: upstream x64 CPU defaults and actual asset
-instruction requirements still apply (SSE/AVX/AVX2/FMA/F16C where enabled by its
-build). Linux ARM64 uses the compiled ARM ISA features. The validation record
-lists concrete consumer hosts and dependencies; unsupported architectures or ISA
-combinations are not inferred from a successful cross-build.
+Build defaults disable host-native instruction tuning. The actual v0.7.5 CPU
+build logs nevertheless enable **SSE4.2, AVX, AVX2, FMA, F16C and BMI2** on Linux
+x64, and `/arch:AVX2` with FMA/F16C/BMI2 on Windows x64. Deploy these assets to
+CPUs supporting those features. The ARM64 build reports no extra variant flags,
+and advanced dot-product/SVE/FP16-vector probes failed; a complete minimum ISA
+across every translation unit is not established. The tested Linux ARM64 host is
+DGX's Cortex-X925/Cortex-A725. Other ARM implementations require their own runtime
+check. Architecture labels and ELF baseline notes do not prove universal CPU
+compatibility.
 
 Release continues through the existing exact-SHA E2E, package, native build and
 publication gates. Release notes must keep fixes verified on tested combinations

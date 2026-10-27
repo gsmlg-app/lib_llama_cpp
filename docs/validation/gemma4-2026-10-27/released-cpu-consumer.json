@@ -1,0 +1,272 @@
+{
+  "status": "passed",
+  "verified_at_utc": "2026-10-27T00:19:35.906799+00:00",
+  "scope": "Actual public v0.7.5 CPU release archive; Linux ARM64 clean native consumer on DGX-Spark",
+  "release": {
+    "tag": "v0.7.5",
+    "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/tag/v0.7.5",
+    "release_id": 424904559,
+    "published_at": "2026-10-27T00:16:32Z",
+    "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+    "release_workflow_id": 40418993600,
+    "build_source_sha": "54df901"
+  },
+  "published_assets": [
+    {
+      "name": "lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+      "asset_id": 679915828,
+      "bytes": 37431522,
+      "sha256": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f",
+      "github_digest": "sha256:8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f"
+    },
+    {
+      "name": "lib_llama_cpp-prebuilt-0.7.5.tar.gz.sha256",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/releases/download/v0.7.5/lib_llama_cpp-prebuilt-0.7.5.tar.gz.sha256",
+      "asset_id": 679915831,
+      "bytes": 102,
+      "sha256": "558d5cb5d4b7d2eee38ecffa502d8d9560dd45483589fee135da7330ce2033b4",
+      "github_digest": "sha256:558d5cb5d4b7d2eee38ecffa502d8d9560dd45483589fee135da7330ce2033b4"
+    }
+  ],
+  "checksum_sidecar": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f  lib_llama_cpp-prebuilt-0.7.5.tar.gz\n",
+  "archive": {
+    "filename": "lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+    "bytes": 37431522,
+    "sha256": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f"
+  },
+  "library": {
+    "member": "linux/arm64/liblib_llama_cpp_linux.so",
+    "bytes": 8887336,
+    "sha256": "561e89455ffada10f954bfdf1a4b0fc8a636fe4604e512fc2edbc099a143f555",
+    "independently_matched_to_archive_member": true,
+    "dependencies_ldd": "\tlinux-vdso.so.1 (0x0000e3f31524e000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e3f314650000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e3f3145a0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e3f314560000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e3f3143a0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000e3f315200000)\n"
+  },
+  "model": {
+    "filename": "google-gemma-4-E2B-it-Q4_K_M.gguf",
+    "sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64"
+  },
+  "hardware": {
+    "host": "dgx-spark",
+    "architecture": "aarch64",
+    "kernel": "7.0.0-1019-nvidia",
+    "logical_cpus": 20,
+    "cpu_models": [
+      "Cortex-X925",
+      "Cortex-A725"
+    ],
+    "memory_total_kib": 127598768
+  },
+  "environment": {
+    "platform": "Linux-7.0.0-1019-nvidia-aarch64-with-glibc2.39",
+    "machine": "aarch64",
+    "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+    "python": "3.12.3",
+    "cpu_count": 20,
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "build_tools": {
+      "cmake": null,
+      "cc": null,
+      "gcc": null,
+      "g++": null,
+      "c++": null,
+      "clang": null,
+      "clang++": null,
+      "make": null,
+      "ninja": null,
+      "nvcc": null
+    }
+  },
+  "runtime_packages": "libc6:arm64\t2.39-0ubuntu8.9\nlibgcc-s1:arm64\t14.2.0-4ubuntu2~24.04.1\nlibgomp1:arm64\t14.2.0-4ubuntu2~24.04.1\nlibstdc++6:arm64\t14.2.0-4ubuntu2~24.04.1\npython3\t3.12.3-0ubuntu2.1\n",
+  "requested_native_config": {
+    "model_path": "/input/model.gguf",
+    "n_ctx": 512,
+    "n_batch": 64,
+    "n_ubatch": 64,
+    "n_threads": 2,
+    "n_threads_batch": 2,
+    "n_gpu_layers": 0,
+    "backend": "cpu",
+    "require_backend": true,
+    "n_parallel": 1
+  },
+  "native_caps": {
+    "model_name": "model.gguf",
+    "chat_template": "present",
+    "native_n_ctx": 131072,
+    "rope_extrapolation": false,
+    "task_state_observation": "streaming: upstream prompt progress and decode results; nonstream: sampled active/decoding metrics, prefill phase unavailable",
+    "supports_tools": true,
+    "supports_parallel_tool_calls": true,
+    "supports_reasoning": true,
+    "chat_template_caps": {
+      "supports_object_arguments": true,
+      "supports_parallel_tool_calls": true,
+      "supports_preserve_reasoning": false,
+      "supports_string_content": true,
+      "supports_system_role": true,
+      "supports_tool_calls": true,
+      "supports_tools": true,
+      "supports_typed_content": false
+    },
+    "supports_vision": false,
+    "supports_audio": false,
+    "requested": {
+      "model_path": "/input/model.gguf",
+      "n_ctx": 512,
+      "n_batch": 64,
+      "n_ubatch": 64,
+      "n_threads": 2,
+      "n_threads_batch": 2,
+      "n_gpu_layers": 0,
+      "backend": "cpu",
+      "require_backend": true,
+      "n_parallel": 1
+    },
+    "unsupported": [],
+    "effective": {
+      "n_ctx": 512,
+      "slot_n_ctx": 512,
+      "n_batch": 64,
+      "n_ubatch": 64,
+      "n_threads": 2,
+      "n_threads_batch": 2,
+      "n_parallel": 1,
+      "cache_type_k": "f16",
+      "cache_type_v": "f16",
+      "swa_full": false,
+      "kv_unified": true,
+      "context_shift": false,
+      "flash_attn": null,
+      "n_gpu_layers": null
+    },
+    "result_retention_ms": 30000,
+    "available_devices": [
+      "CPU"
+    ],
+    "compiled_backends": [
+      "CPU"
+    ],
+    "device_info": [
+      {
+        "name": "CPU",
+        "backend": "CPU",
+        "type": "cpu"
+      }
+    ],
+    "selected_backend": "cpu",
+    "require_backend": true,
+    "degradation": "",
+    "backend": "cpu",
+    "device": null,
+    "offload": false,
+    "diagnostic_limits": [
+      "upstream public API does not expose actual flash attention, device placement, or offloaded layer count"
+    ]
+  },
+  "prepared_budget": {
+    "prompt_tokens": 15,
+    "reserved_output_tokens": 16,
+    "effective_context": 512,
+    "usable_context": 511,
+    "fits": true
+  },
+  "inference": {
+    "text": "ready",
+    "finished": true,
+    "drained": true,
+    "events": 4,
+    "reasoning": "",
+    "finish_reasons": [
+      "stop"
+    ],
+    "usage": {
+      "completion_tokens": 2,
+      "prompt_tokens": 15,
+      "total_tokens": 17,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "seconds": 0.6619019230129197
+  },
+  "pre_destroy_native_counters": {
+    "active_tasks": 0,
+    "retained_tasks": 0,
+    "pending_cancellations": 0,
+    "buffered_bytes": 0,
+    "buffered_events": 0,
+    "completed": 1,
+    "cancelled": 0,
+    "failed": 0,
+    "collector_threads": 1
+  },
+  "teardown": {
+    "engine_destroy_returned": true,
+    "docker_process_exit_code": 0,
+    "container_name": "libllama-20261027-consumer-cpu-0-7-5",
+    "container_removed": true,
+    "runtime_image_retained": true
+  },
+  "checks": {
+    "published_archive_checksum": true,
+    "github_archive_digest": true,
+    "github_checksum_asset_digest": true,
+    "compiler_free_runtime": true,
+    "native_library_dependencies_resolved": true,
+    "required_cpu_backend_without_degradation": true,
+    "streaming_content": true,
+    "finish_reason": true,
+    "positive_consistent_usage": true,
+    "native_task_and_buffer_cleanup": true,
+    "engine_destroy_returned": true,
+    "docker_exit_zero": true,
+    "own_container_removed": true
+  },
+  "consumer_method": {
+    "image": "libllama-task-cpu-consumer:20261027-v075",
+    "image_id": "sha256:1872c530e12286ecbf89f97df2fa5d67a1cf264b4af7323e1a1a661899e8d31f",
+    "consumer_script_sha256": "f467c1e829558e2f235392582bc06262a862c9b2e7d27ec1da7309b6219b14ce",
+    "runner_script_sha256": "3cea0ef08e46a10ecd14e47df543d6795afa7b0355eef8593c313994c77a5f1b",
+    "command": "bash /tmp/libllama-20261027-validation/consumer-v075/run-cpu-consumer.sh 0.7.5 /tmp/libllama-20261027-validation/released-v075-cpu /tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+    "network": "none",
+    "read_only_inputs": [
+      "published release archive",
+      "published SHA256 sidecar",
+      "fixed GGUF model"
+    ],
+    "source_or_build_directory_mounted": false,
+    "library_extraction": "Only the regular linux/arm64 release member is extracted inside the container temporary directory.",
+    "local_source_build_substituted": false
+  },
+  "raw_evidence": {
+    "directory": "/tmp/libllama-20261027-validation/consumer-v075/results",
+    "consumer_json_sha256": "394c368cac7c4e55940bae16178ca6ca5cb68e5d65e380289b61f18737e2a025",
+    "native_log_sha256": "21dfdc2db7bc27b8d20532465788e951b9aedb33615ef66a4da93904954274bf",
+    "download_evidence": "/tmp/libllama-20261027-validation/released-v075-cpu/download-evidence.json"
+  },
+  "limits": [
+    "This verifies the published Linux ARM64 CPU library and one short streaming request, not other release platforms or accelerated consumers."
+  ]
+}

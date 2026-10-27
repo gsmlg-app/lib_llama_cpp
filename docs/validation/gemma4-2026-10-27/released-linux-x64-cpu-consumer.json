@@ -1,0 +1,305 @@
+{
+  "status": "passed",
+  "release_tag": "v0.7.5",
+  "release_commit": "7ba54673295800b245960001e4128ebe141fd66a",
+  "execution": {
+    "host": "ms04",
+    "image_id": "sha256:96e3a2a520fcb33d5ef81fb2118d65fedf404d40966c810d87dee7fe888fb0a9",
+    "image_tag": "libllama-task-cpu-consumer:20261027-v075",
+    "network": "none",
+    "native_build_tools_installed": false,
+    "source_build_substituted": false,
+    "fixture": "release-consumer-fixture",
+    "command": "bash run-cpu-consumer.sh 0.7.5 /tmp/libllama-20261027-validation/released-v075-local /tmp/libllama-20261027-validation/models/google-gemma-4-E2B-it-Q4_K_M.gguf",
+    "container_removed": true,
+    "cleanup_check": "docker container inspect libllama-20261027-consumer-cpu-0-7-5 returned No such container after successful --rm run."
+  },
+  "consumer": {
+    "environment": {
+      "platform": "Linux-6.18.48-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+      "python": "3.12.3",
+      "cpu_count": 16,
+      "cpu_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "build_tools": {
+        "cmake": null,
+        "cc": null,
+        "gcc": null,
+        "g++": null,
+        "c++": null,
+        "clang": null,
+        "clang++": null,
+        "make": null,
+        "ninja": null,
+        "nvcc": null
+      }
+    },
+    "version": "0.7.5",
+    "archive_name": "lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+    "archive_sha256": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f",
+    "member": "linux/x64/liblib_llama_cpp_linux.so",
+    "legacy_v074": false,
+    "scope": "Consumer of the supplied checksummed release archive",
+    "model_sha256": "e6d47b7c6316612da747c4e471d10f5f1b87c8bf6051332d80f4810d69196c64",
+    "library_sha256": "d9ea91a2d0e8474f95438235a5cc7dbbeaa81deb5555abc7991710a99c56beb2",
+    "ldd": "\tlinux-vdso.so.1 (0x000072f1ffdf0000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x000072f1ff137000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x000072f1ff04e000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x000072f1ff020000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000072f1fee0d000)\n\t/lib64/ld-linux-x86-64.so.2 (0x000072f1ffdf2000)\n",
+    "exports": {
+      "llcs_engine_create": true,
+      "llcs_engine_prepare": true,
+      "llcs_engine_caps": true,
+      "llcs_engine_submit": true,
+      "llcs_engine_poll": true,
+      "llcs_engine_destroy": true,
+      "llcs_engine_stats": true,
+      "llcs_string_free": true
+    },
+    "requested": {
+      "model_path": "/input/model.gguf",
+      "n_ctx": 512,
+      "n_batch": 64,
+      "n_ubatch": 64,
+      "n_threads": 2,
+      "n_threads_batch": 2,
+      "n_gpu_layers": 0,
+      "backend": "cpu",
+      "require_backend": true,
+      "n_parallel": 1
+    },
+    "caps": {
+      "model_name": "model.gguf",
+      "chat_template": "present",
+      "native_n_ctx": 131072,
+      "rope_extrapolation": false,
+      "task_state_observation": "streaming: upstream prompt progress and decode results; nonstream: sampled active/decoding metrics, prefill phase unavailable",
+      "supports_tools": true,
+      "supports_parallel_tool_calls": true,
+      "supports_reasoning": true,
+      "chat_template_caps": {
+        "supports_object_arguments": true,
+        "supports_parallel_tool_calls": true,
+        "supports_preserve_reasoning": false,
+        "supports_string_content": true,
+        "supports_system_role": true,
+        "supports_tool_calls": true,
+        "supports_tools": true,
+        "supports_typed_content": false
+      },
+      "supports_vision": false,
+      "supports_audio": false,
+      "requested": {
+        "model_path": "/input/model.gguf",
+        "n_ctx": 512,
+        "n_batch": 64,
+        "n_ubatch": 64,
+        "n_threads": 2,
+        "n_threads_batch": 2,
+        "n_gpu_layers": 0,
+        "backend": "cpu",
+        "require_backend": true,
+        "n_parallel": 1
+      },
+      "unsupported": [],
+      "effective": {
+        "n_ctx": 512,
+        "slot_n_ctx": 512,
+        "n_batch": 64,
+        "n_ubatch": 64,
+        "n_threads": 2,
+        "n_threads_batch": 2,
+        "n_parallel": 1,
+        "cache_type_k": "f16",
+        "cache_type_v": "f16",
+        "swa_full": false,
+        "kv_unified": true,
+        "context_shift": false,
+        "flash_attn": null,
+        "n_gpu_layers": null
+      },
+      "result_retention_ms": 30000,
+      "available_devices": [
+        "CPU"
+      ],
+      "compiled_backends": [
+        "CPU"
+      ],
+      "device_info": [
+        {
+          "name": "CPU",
+          "backend": "CPU",
+          "type": "cpu"
+        }
+      ],
+      "selected_backend": "cpu",
+      "require_backend": true,
+      "degradation": "",
+      "backend": "cpu",
+      "device": null,
+      "offload": false,
+      "diagnostic_limits": [
+        "upstream public API does not expose actual flash attention, device placement, or offloaded layer count"
+      ]
+    },
+    "budget": {
+      "prompt_tokens": 15,
+      "reserved_output_tokens": 16,
+      "effective_context": 512,
+      "usable_context": 511,
+      "fits": true
+    },
+    "inference": {
+      "text": "ready",
+      "finished": true,
+      "drained": true,
+      "events": 4,
+      "reasoning": "",
+      "finish_reasons": [
+        "stop"
+      ],
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 15,
+        "total_tokens": 17,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "seconds": 0.35566668095998466
+    },
+    "final_native_stats": {
+      "active_tasks": 0,
+      "retained_tasks": 0,
+      "tasks": [],
+      "pending_cancellations": 0,
+      "buffered_bytes": 0,
+      "buffered_events": 0,
+      "expired_results": 0,
+      "expiry_tombstones": 0,
+      "result_retention_ms": 30000,
+      "max_tasks": 64,
+      "max_event_bytes_per_task": 1048576,
+      "collector_threads": 1,
+      "submitted": 1,
+      "completed": 1,
+      "cancelled": 0,
+      "failed": 0,
+      "running": true,
+      "upstream_metrics": {
+        "idle": 0,
+        "processing": 1,
+        "deferred": 0,
+        "t_start": 637576169302,
+        "n_prompt_tokens_processed_total": 15,
+        "t_tokens_generation_total": 0,
+        "n_tokens_predicted_total": 0,
+        "t_prompt_processing_total": 299,
+        "n_tokens_max": 15,
+        "n_prompt_tokens_processed": 15,
+        "t_prompt_processing": 299,
+        "n_tokens_predicted": 0,
+        "t_tokens_generation": 0,
+        "n_decode_total": 2,
+        "n_busy_slots_total": 2,
+        "slots": [
+          {
+            "id": 0,
+            "n_ctx": 512,
+            "speculative": false,
+            "is_processing": true,
+            "id_task": 1,
+            "n_prompt_tokens": 15,
+            "n_prompt_tokens_processed": 15,
+            "n_prompt_tokens_cache": 0,
+            "params": {
+              "seed": 4294967295,
+              "temperature": 0.0,
+              "dynatemp_range": 0.0,
+              "dynatemp_exponent": 1.0,
+              "top_k": 64,
+              "top_p": 0.949999988079071,
+              "min_p": 0.05000000074505806,
+              "top_n_sigma": -1.0,
+              "xtc_probability": 0.0,
+              "xtc_threshold": 0.10000000149011612,
+              "typical_p": 1.0,
+              "repeat_last_n": 64,
+              "repeat_penalty": 1.0,
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "dry_multiplier": 0.0,
+              "dry_base": 1.75,
+              "dry_allowed_length": 2,
+              "dry_penalty_last_n": 512,
+              "mirostat": 0,
+              "mirostat_tau": 5.0,
+              "mirostat_eta": 0.10000000149011612,
+              "max_tokens": 16,
+              "n_predict": 16,
+              "n_keep": 0,
+              "n_discard": 0,
+              "ignore_eos": false,
+              "stream": true,
+              "n_probs": 0,
+              "min_keep": 0,
+              "chat_format": "peg-gemma4",
+              "reasoning_format": "deepseek",
+              "reasoning_in_content": false,
+              "generation_prompt": "<|turn>model\n",
+              "samplers": [
+                "penalties",
+                "dry",
+                "top_n_sigma",
+                "top_k",
+                "typ_p",
+                "top_p",
+                "min_p",
+                "xtc",
+                "temperature"
+              ],
+              "speculative.types": "none",
+              "timings_per_token": false,
+              "post_sampling_probs": false,
+              "backend_sampling": false,
+              "lora": []
+            },
+            "next_token": [
+              {
+                "has_next_token": true,
+                "has_new_line": false,
+                "n_remain": 15,
+                "n_decoded": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "teardown": {
+      "engine_destroy_returned": true
+    },
+    "status": "passed"
+  },
+  "raw_consumer_sha256": "6cef426b0294e926261177d07bda1568c8e61f08d92927cd63bc3bdefc80b517",
+  "limits": [
+    "Short-context public Linux x64 CPU library acceptance.",
+    "The final own-task counters are zero; upstream_metrics is a sampled advisory snapshot and is not asserted to be atomically idle."
+  ],
+  "raw_native_log_sha256": "c1a00bc1cf8678b064e8acd8ecc4d147688a7c90b9dd284a27743dbc509e73ed"
+}

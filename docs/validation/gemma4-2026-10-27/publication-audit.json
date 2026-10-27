@@ -1,0 +1,805 @@
+{
+  "status": "passed",
+  "verified_at_utc": "2026-10-27T00:31:32.527252+00:00",
+  "scope": "Published package/archive/source and native byte provenance audit; no inference executed by this audit",
+  "tag": "v0.7.5",
+  "tag_commit_sha": "7ba54673295800b245960001e4128ebe141fd66a",
+  "publication_workflow": {
+    "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182",
+    "headSha": "7ba54673295800b245960001e4128ebe141fd66a",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "publication_workflow_jobs": [
+    {
+      "name": "Publish lib_llama_cpp_ffi",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929609945"
+    },
+    {
+      "name": "Publish lib_llama_cpp_platform_interface",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929610420"
+    },
+    {
+      "name": "Wait for foundation packages",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929886615"
+    },
+    {
+      "name": "Publish lib_llama_cpp_ios",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929926812"
+    },
+    {
+      "name": "Publish lib_llama_cpp_linux",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929926847"
+    },
+    {
+      "name": "Publish lib_llama_cpp_server",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929926856"
+    },
+    {
+      "name": "Publish lib_llama_cpp_windows",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929926902"
+    },
+    {
+      "name": "Publish lib_llama_cpp_macos",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929927140"
+    },
+    {
+      "name": "Publish lib_llama_cpp_android",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121929927360"
+    },
+    {
+      "name": "Wait for lib_llama_cpp_server",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121930286759"
+    },
+    {
+      "name": "Wait for platform packages",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121930354841"
+    },
+    {
+      "name": "Publish lib_llama_cpp",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931123525"
+    },
+    {
+      "name": "Published Linux native consumer (arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931123708"
+    },
+    {
+      "name": "Published Linux native consumer (x64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931123716"
+    },
+    {
+      "name": "Wait for lib_llama_cpp",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931382159"
+    },
+    {
+      "name": "Fresh pub.dev build (macos)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931416392"
+    },
+    {
+      "name": "Fresh pub.dev build (windows)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931416518"
+    },
+    {
+      "name": "Fresh pub.dev build (linux)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/gsmlg-app/lib_llama_cpp/actions/runs/40425356182/job/121931416538"
+    }
+  ],
+  "cpu_release_archive": {
+    "path": "/tmp/libllama-20261027-validation/released-v075-cpu/lib_llama_cpp-prebuilt-0.7.5.tar.gz",
+    "sha256": "8278ccbcaf4f79389131f90f246e4d7c51bf4f8b3570c02cc591daced99d684f"
+  },
+  "packages": [
+    {
+      "name": "lib_llama_cpp",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:21:28.176342Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp-0.7.5.tar.gz",
+      "archive_bytes": 48806,
+      "archive_sha256": "f57853358a307a4330381f43d787ba680c5a66d2a6cbb856f509112109c72792",
+      "pub_api_archive_sha256": "f57853358a307a4330381f43d787ba680c5a66d2a6cbb856f509112109c72792",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp",
+        "description": "App-facing Flutter plugin facade and inference isolate scheduler for llama.cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5",
+          "flutter": ">=3.41.0"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "ffi": "^2.1.4",
+          "flutter": {
+            "sdk": "flutter"
+          },
+          "lib_llama_cpp_android": "^0.7.5",
+          "lib_llama_cpp_ffi": "^0.7.5",
+          "lib_llama_cpp_ios": "^0.7.5",
+          "lib_llama_cpp_linux": "^0.7.5",
+          "lib_llama_cpp_macos": "^0.7.5",
+          "lib_llama_cpp_platform_interface": "^0.7.5",
+          "lib_llama_cpp_server": "^0.7.5",
+          "lib_llama_cpp_windows": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "flutter_lints": "^6.0.0",
+          "flutter_test": {
+            "sdk": "flutter"
+          },
+          "plugin_platform_interface": "^2.1.8",
+          "test": "^1.26.3"
+        },
+        "flutter": {
+          "plugin": {
+            "platforms": {
+              "android": {
+                "default_package": "lib_llama_cpp_android"
+              },
+              "ios": {
+                "default_package": "lib_llama_cpp_ios"
+              },
+              "linux": {
+                "default_package": "lib_llama_cpp_linux"
+              },
+              "macos": {
+                "default_package": "lib_llama_cpp_macos"
+              },
+              "windows": {
+                "default_package": "lib_llama_cpp_windows"
+              }
+            }
+          }
+        }
+      },
+      "downloaded_pubspec_sha256": "fdbbaed81074f88236d668186ca7e8688bc7fe7326d29646715c88f055392a5f",
+      "downloaded_pubspec_text": "name: lib_llama_cpp\ndescription: App-facing Flutter plugin facade and inference isolate scheduler for llama.cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n  flutter: '>=3.41.0'\n\nresolution: workspace\n\ndependencies:\n  ffi: ^2.1.4\n  flutter:\n    sdk: flutter\n  lib_llama_cpp_android: ^0.7.5\n  lib_llama_cpp_ffi: ^0.7.5\n  lib_llama_cpp_ios: ^0.7.5\n  lib_llama_cpp_linux: ^0.7.5\n  lib_llama_cpp_macos: ^0.7.5\n  lib_llama_cpp_platform_interface: ^0.7.5\n  lib_llama_cpp_server: ^0.7.5\n  lib_llama_cpp_windows: ^0.7.5\n\ndev_dependencies:\n  flutter_lints: ^6.0.0\n  flutter_test:\n    sdk: flutter\n  plugin_platform_interface: ^2.1.8\n  test: ^1.26.3\n\nflutter:\n  plugin:\n    platforms:\n      android:\n        default_package: lib_llama_cpp_android\n      ios:\n        default_package: lib_llama_cpp_ios\n      linux:\n        default_package: lib_llama_cpp_linux\n      macos:\n        default_package: lib_llama_cpp_macos\n      windows:\n        default_package: lib_llama_cpp_windows\n",
+      "tag_pubspec_sha256": "fdbbaed81074f88236d668186ca7e8688bc7fe7326d29646715c88f055392a5f",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_android": "^0.7.5",
+          "lib_llama_cpp_ffi": "^0.7.5",
+          "lib_llama_cpp_ios": "^0.7.5",
+          "lib_llama_cpp_linux": "^0.7.5",
+          "lib_llama_cpp_macos": "^0.7.5",
+          "lib_llama_cpp_platform_interface": "^0.7.5",
+          "lib_llama_cpp_server": "^0.7.5",
+          "lib_llama_cpp_windows": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 18,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/src/tool_aware_streaming.dart": "aecfd8648c6570e5eb8ec42439408ae03f31be628b7eb2d85617422099075dbd",
+          "lib/src/token_text_decoder.dart": "ca1f881f52c4a49dd035a78a62df7b3b6e108b5ac7e4a0ddf9dc2d55b9d6f861",
+          "lib/src/inference_isolate.dart": "9f1c4ca9233093b6a791d0e70403267d4ef64d467325097acf80ba624987ff88",
+          "lib/src/llama_state.dart": "6042746ce0fee2bd7399bc8b51245b425b1d52d8d07000981f912f108391a4eb",
+          "lib/src/llama_content.dart": "ba5008d8aa8ad24dc8f1e294c601c97364f833a0213caf34978033351eed0dbb",
+          "lib/src/tool_call_fallback.dart": "4388a75c16a89d86fd2473c9e89fbb99e22e021c9a58ef09931f900136acdafa",
+          "lib/src/native_cancellation.dart": "7906d087aa3791e2846c6f57dd5f90177dbb5a96d2cf38d3491e7dd6f80195c1",
+          "lib/src/lib_llama_cpp.dart": "54b05337bab456418ce3929b6d9946c1e9f70b18356e94ed56c50c938a87fcc0",
+          "lib/src/llama_response.dart": "5c43b52ac7b4e318ebb1f38cd83259c0d2e1a82df25556e0ad01d91e21e15993",
+          "lib/src/llama_tool.dart": "df9c0042ecec954da4b22b7848a79458e30fd03acc3792a79831cefc5643d86e",
+          "lib/src/native_runtime.dart": "722f76a247aeaa91100f722b5ac18828f890c2e6188c2900b22ebf8bc96fbaaf",
+          "lib/src/openai/llama_openai_client.dart": "6df0ac3260a345184e75e0ced901d47bbd7bad957c75ca04c4999489f096b482",
+          "lib/src/openai/chat.dart": "71ccd65ac7e9e5e63fe453b004201643b2e564920a58f4bb8aa3caa92c946903",
+          "lib/src/openai/responses.dart": "7d1625fa59da51a4ef9cecabe081e71955854d9753b84dce9f11bea7957afbbd",
+          "lib/src/openai/errors.dart": "f1c77c5f08c4f5946f512d0000a5b6e63408dd6e0b74d586323c6c864bd4febd",
+          "lib/src/openai/model_config.dart": "123ea24011aabb4a7e717b64c316fbaab46da132acbc45ccd6f246dd42467ba7",
+          "lib/src/llama_command.dart": "159bb8346b0852436c1d51ad413a8d1d268d15310950f0f0ea566224cd999c56",
+          "lib/lib_llama_cpp.dart": "5cc453125773bb9fc90a336d8ebfe1d882972c5c333e2a4a9038d37625eb4f5c"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_android",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:18:15.912929Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_android/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_android",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_android-0.7.5.tar.gz",
+      "archive_bytes": 3910604,
+      "archive_sha256": "94f66914b721288cc085b8fd784966156b4ea5690e7efddce55e3682eb315877",
+      "pub_api_archive_sha256": "94f66914b721288cc085b8fd784966156b4ea5690e7efddce55e3682eb315877",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_android",
+        "description": "Android native build and Dart registration for lib_llama_cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5",
+          "flutter": ">=3.41.0"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "flutter": {
+            "sdk": "flutter"
+          },
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "flutter_lints": "^6.0.0",
+          "flutter_test": {
+            "sdk": "flutter"
+          },
+          "test": "^1.26.3"
+        },
+        "flutter": {
+          "plugin": {
+            "implements": "lib_llama_cpp",
+            "platforms": {
+              "android": {
+                "dartPluginClass": "LibLlamaCppAndroid",
+                "ffiPlugin": true
+              }
+            }
+          }
+        }
+      },
+      "downloaded_pubspec_sha256": "f336f34f027284ebb1070d01e20cb6c55b1bf06ae4b5482a53e0cc962aa35a5b",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_android\ndescription: Android native build and Dart registration for lib_llama_cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n  flutter: '>=3.41.0'\n\nresolution: workspace\n\ndependencies:\n  flutter:\n    sdk: flutter\n  lib_llama_cpp_platform_interface: ^0.7.5\n\ndev_dependencies:\n  flutter_lints: ^6.0.0\n  flutter_test:\n    sdk: flutter\n  test: ^1.26.3\n\nflutter:\n  plugin:\n    implements: lib_llama_cpp\n    platforms:\n      android:\n        dartPluginClass: LibLlamaCppAndroid\n        ffiPlugin: true\n",
+      "tag_pubspec_sha256": "f336f34f027284ebb1070d01e20cb6c55b1bf06ae4b5482a53e0cc962aa35a5b",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 1,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/lib_llama_cpp_android.dart": "835b0df405a427a50d796de883882bc153422b6ed1b287c9336d482726472bd4"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_ffi",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:17:18.257955Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_ffi/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_ffi",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_ffi-0.7.5.tar.gz",
+      "archive_bytes": 78799,
+      "archive_sha256": "f656e6dcec3f70f293c32671b9de2614ba3d57c9d3ccd0cc5866fc0f013fb3bb",
+      "pub_api_archive_sha256": "f656e6dcec3f70f293c32671b9de2614ba3d57c9d3ccd0cc5866fc0f013fb3bb",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_ffi",
+        "description": "Low-level Dart FFI bridge for llama.cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "ffi": "^2.1.4"
+        },
+        "dev_dependencies": {
+          "ffigen": "^18.1.0",
+          "lints": "^6.0.0",
+          "test": "^1.26.3"
+        }
+      },
+      "downloaded_pubspec_sha256": "a2ef8b3fe0b2a3cc924bdff6902c687e32c407dd9f980ee603f0856ced54f0ec",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_ffi\ndescription: Low-level Dart FFI bridge for llama.cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n\nresolution: workspace\n\ndependencies:\n  ffi: ^2.1.4\n\ndev_dependencies:\n  ffigen: ^18.1.0\n  lints: ^6.0.0\n  test: ^1.26.3\n",
+      "tag_pubspec_sha256": "a2ef8b3fe0b2a3cc924bdff6902c687e32c407dd9f980ee603f0856ced54f0ec",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {},
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 6,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/lib_llama_cpp_ffi.dart": "6c25fd3ed48b5acbda63a3e0ed6c53d5bd57617d72aa7dd5d4e4349bbe6957f8",
+          "lib/src/handles.dart": "6de1dc6917c1462618fe16109071a6690bcdf1fd97f689db48f6352485c24971",
+          "lib/src/native_types.dart": "575261c7763386787a665fbc81929e0cf2f76993e732f2c0aeb41f658fa98ed7",
+          "lib/src/loader.dart": "4c619634023ee4d53c006d737dece8a76e6867260de17606264afdcdd47c27e5",
+          "lib/src/native_library.dart": "e5ba2cc89609bd7cee4a4e340f309d8a4baa041e91074ce9180b7893f67c635b",
+          "lib/src/generated/llama_cpp_bindings.g.dart": "7882338c0db8a0a76e875f6659758ea798eb1ed234b654793aa008359f9ca794"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_ios",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:18:37.234971Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_ios/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_ios",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_ios-0.7.5.tar.gz",
+      "archive_bytes": 9782495,
+      "archive_sha256": "b091274f3a8d0f8a2dbf3554c07712ed33558c7831812b8788ef2c74fb322cb5",
+      "pub_api_archive_sha256": "b091274f3a8d0f8a2dbf3554c07712ed33558c7831812b8788ef2c74fb322cb5",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_ios",
+        "description": "iOS native build and Dart registration for lib_llama_cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5",
+          "flutter": ">=3.41.0"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "flutter": {
+            "sdk": "flutter"
+          },
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "flutter_lints": "^6.0.0",
+          "flutter_test": {
+            "sdk": "flutter"
+          },
+          "test": "^1.26.3"
+        },
+        "flutter": {
+          "plugin": {
+            "implements": "lib_llama_cpp",
+            "platforms": {
+              "ios": {
+                "dartPluginClass": "LibLlamaCppIos",
+                "ffiPlugin": true
+              }
+            }
+          }
+        }
+      },
+      "downloaded_pubspec_sha256": "2ca6719d1d26b05a2b9808c83fd0e1da91b40f290fa0de48ecbadae046b01863",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_ios\ndescription: iOS native build and Dart registration for lib_llama_cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n  flutter: '>=3.41.0'\n\nresolution: workspace\n\ndependencies:\n  flutter:\n    sdk: flutter\n  lib_llama_cpp_platform_interface: ^0.7.5\n\ndev_dependencies:\n  flutter_lints: ^6.0.0\n  flutter_test:\n    sdk: flutter\n  test: ^1.26.3\n\nflutter:\n  plugin:\n    implements: lib_llama_cpp\n    platforms:\n      ios:\n        dartPluginClass: LibLlamaCppIos\n        ffiPlugin: true\n",
+      "tag_pubspec_sha256": "2ca6719d1d26b05a2b9808c83fd0e1da91b40f290fa0de48ecbadae046b01863",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 1,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/lib_llama_cpp_ios.dart": "182b31bc316fa4bd52c8168728d6a09375ed189ef56a16e969288b031bc30ffe"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_linux",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:18:16.326652Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_linux/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_linux",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_linux-0.7.5.tar.gz",
+      "archive_bytes": 7673855,
+      "archive_sha256": "c18dd0342927f091b79cef64ac1848774bd76774dbf983f21bee22f9bce2abbd",
+      "pub_api_archive_sha256": "c18dd0342927f091b79cef64ac1848774bd76774dbf983f21bee22f9bce2abbd",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_linux",
+        "description": "Linux native build and Dart registration for lib_llama_cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5",
+          "flutter": ">=3.41.0"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "flutter": {
+            "sdk": "flutter"
+          },
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "flutter_lints": "^6.0.0",
+          "flutter_test": {
+            "sdk": "flutter"
+          },
+          "test": "^1.26.3"
+        },
+        "flutter": {
+          "plugin": {
+            "implements": "lib_llama_cpp",
+            "platforms": {
+              "linux": {
+                "dartPluginClass": "LibLlamaCppLinux",
+                "ffiPlugin": true
+              }
+            }
+          }
+        }
+      },
+      "downloaded_pubspec_sha256": "14e9453ee9a57a2d3b9cda712f769946c6f51b6e8258859dbb3acf1ee2d01c77",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_linux\ndescription: Linux native build and Dart registration for lib_llama_cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n  flutter: '>=3.41.0'\n\nresolution: workspace\n\ndependencies:\n  flutter:\n    sdk: flutter\n  lib_llama_cpp_platform_interface: ^0.7.5\n\ndev_dependencies:\n  flutter_lints: ^6.0.0\n  flutter_test:\n    sdk: flutter\n  test: ^1.26.3\n\nflutter:\n  plugin:\n    implements: lib_llama_cpp\n    platforms:\n      linux:\n        dartPluginClass: LibLlamaCppLinux\n        ffiPlugin: true\n",
+      "tag_pubspec_sha256": "14e9453ee9a57a2d3b9cda712f769946c6f51b6e8258859dbb3acf1ee2d01c77",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 1,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/lib_llama_cpp_linux.dart": "d13d244672b2fd7aad8ff1d5113eee422ea53d3528c911cc9f4cb98ea8078e30"
+        }
+      },
+      "cpu_native_bytes": [
+        {
+          "package_member": "linux/prebuilt/x64/liblib_llama_cpp_linux.so",
+          "release_member": "linux/x64/liblib_llama_cpp_linux.so",
+          "bytes": 10009416,
+          "sha256": "d9ea91a2d0e8474f95438235a5cc7dbbeaa81deb5555abc7991710a99c56beb2",
+          "matches_cpu_release_member": true
+        },
+        {
+          "package_member": "linux/prebuilt/arm64/liblib_llama_cpp_linux.so",
+          "release_member": "linux/arm64/liblib_llama_cpp_linux.so",
+          "bytes": 8887336,
+          "sha256": "561e89455ffada10f954bfdf1a4b0fc8a636fe4604e512fc2edbc099a143f555",
+          "matches_cpu_release_member": true
+        }
+      ]
+    },
+    {
+      "name": "lib_llama_cpp_macos",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:18:19.616930Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_macos/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_macos",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_macos-0.7.5.tar.gz",
+      "archive_bytes": 26483684,
+      "archive_sha256": "6b42c0d677601b48de50aec543f456c6d83e5f907e37898ff30e9105a81ad9a3",
+      "pub_api_archive_sha256": "6b42c0d677601b48de50aec543f456c6d83e5f907e37898ff30e9105a81ad9a3",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_macos",
+        "description": "macOS native build and Dart registration for lib_llama_cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5",
+          "flutter": ">=3.41.0"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "flutter": {
+            "sdk": "flutter"
+          },
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "flutter_lints": "^6.0.0",
+          "flutter_test": {
+            "sdk": "flutter"
+          },
+          "test": "^1.26.3"
+        },
+        "flutter": {
+          "plugin": {
+            "implements": "lib_llama_cpp",
+            "platforms": {
+              "macos": {
+                "dartPluginClass": "LibLlamaCppMacos",
+                "ffiPlugin": true
+              }
+            }
+          }
+        }
+      },
+      "downloaded_pubspec_sha256": "8e79ea2ed4a11e1910b8c67b87732c42d558b6fdbb5d4e5aede2ec0bc64aef6c",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_macos\ndescription: macOS native build and Dart registration for lib_llama_cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n  flutter: '>=3.41.0'\n\nresolution: workspace\n\ndependencies:\n  flutter:\n    sdk: flutter\n  lib_llama_cpp_platform_interface: ^0.7.5\n\ndev_dependencies:\n  flutter_lints: ^6.0.0\n  flutter_test:\n    sdk: flutter\n  test: ^1.26.3\n\nflutter:\n  plugin:\n    implements: lib_llama_cpp\n    platforms:\n      macos:\n        dartPluginClass: LibLlamaCppMacos\n        ffiPlugin: true\n",
+      "tag_pubspec_sha256": "8e79ea2ed4a11e1910b8c67b87732c42d558b6fdbb5d4e5aede2ec0bc64aef6c",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 1,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/lib_llama_cpp_macos.dart": "ccebe167a8486cd7ca26fc701f897ffbeff73da5dc17b43e9f753fd12e2a96a4"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_platform_interface",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:17:18.581810Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_platform_interface/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_platform_interface",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_platform_interface-0.7.5.tar.gz",
+      "archive_bytes": 3180,
+      "archive_sha256": "f8f0728ca6e7f3b8c8673b916f9797d83d47c2f56e80a4a45e1c543b20dcd8da",
+      "pub_api_archive_sha256": "f8f0728ca6e7f3b8c8673b916f9797d83d47c2f56e80a4a45e1c543b20dcd8da",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_platform_interface",
+        "description": "Platform interface for the lib_llama_cpp federated Flutter FFI plugin.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "plugin_platform_interface": "^2.1.8"
+        },
+        "dev_dependencies": {
+          "lints": "^6.0.0",
+          "test": "^1.26.3"
+        }
+      },
+      "downloaded_pubspec_sha256": "c3314a6230a8e953e18cf61c2a60d486670cafd693458075f99539d729f5f847",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_platform_interface\ndescription: Platform interface for the lib_llama_cpp federated Flutter FFI plugin.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n\nresolution: workspace\n\ndependencies:\n  plugin_platform_interface: ^2.1.8\n\ndev_dependencies:\n  lints: ^6.0.0\n  test: ^1.26.3\n",
+      "tag_pubspec_sha256": "c3314a6230a8e953e18cf61c2a60d486670cafd693458075f99539d729f5f847",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {},
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 3,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/src/llama_cpp_library.dart": "2c946667240ced66730c1176557a5d560be940079cfce039e2e6434005b90743",
+          "lib/src/lib_llama_cpp_platform.dart": "2cc056654d9acabedeb5a4ab2e306f2af207eb674ce9923d6eb78052aa17ddfd",
+          "lib/lib_llama_cpp_platform_interface.dart": "18e5d4c183a1a1e5dfb8d8e5dcace36d749b35e2d4ec3117cb185638f23016c0"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_server",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:18:23.373559Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_server/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_server",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_server-0.7.5.tar.gz",
+      "archive_bytes": 23792,
+      "archive_sha256": "91476dd3ecb11ae9022537a8fadc88861b328decff954114e9fbae2b40b8c057",
+      "pub_api_archive_sha256": "91476dd3ecb11ae9022537a8fadc88861b328decff954114e9fbae2b40b8c057",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_server",
+        "description": "Local OpenAI-compatible HTTP server for lib_llama_cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "ffi": "^2.1.4",
+          "lib_llama_cpp_ffi": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "test": "^1.26.3"
+        }
+      },
+      "downloaded_pubspec_sha256": "e8c19cdc1505cfd58ea45681c4312a7ff759b51cf7b50460ef53d8267d7810be",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_server\ndescription: Local OpenAI-compatible HTTP server for lib_llama_cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n\nresolution: workspace\n\ndependencies:\n  ffi: ^2.1.4\n  lib_llama_cpp_ffi: ^0.7.5\n\ndev_dependencies:\n  test: ^1.26.3\n",
+      "tag_pubspec_sha256": "e8c19cdc1505cfd58ea45681c4312a7ff759b51cf7b50460ef53d8267d7810be",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_ffi": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 7,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/src/http_server.dart": "248bf912b31bb9f806a296f37da56d135bbcae128aa8d9fb647c3d4193842870",
+          "lib/src/backend.dart": "1ead02f318c5c86ca9ba3b663a8204bcd3f3f24d44a940f40fc5bdb4c31e3678",
+          "lib/src/openai_client.dart": "8c00c6b099773f9f361e9e5e07dde27affdeecbc431fb1aa7d097d8e3ac84cc0",
+          "lib/src/llcs_worker_engine.dart": "93c8f216ff07b1ed6731924c81131583eab31c5e9b4d0983721e422a2f57ebbf",
+          "lib/src/config.dart": "673d556722e873198c143ba9ae66bd69dbbf1b1027f08dfdbc02f874b5760c31",
+          "lib/src/llcs_engine.dart": "d49b233ca561f02215c91812c5881ccd7116540e14bcd7af5fb8fd52f5b1ed5d",
+          "lib/lib_llama_cpp_server.dart": "18cabcb196f53deb7815b62381e8f5371975467b6003c1748dd9b651f26ba0fe"
+        }
+      },
+      "cpu_native_bytes": []
+    },
+    {
+      "name": "lib_llama_cpp_windows",
+      "exact_version": "0.7.5",
+      "latest_version": "0.7.5",
+      "published": "2026-10-27T00:18:04.725813Z",
+      "metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_windows/versions/0.7.5",
+      "latest_metadata_url": "https://pub.dev/api/packages/lib_llama_cpp_windows",
+      "archive_url": "https://pub.dev/api/archives/lib_llama_cpp_windows-0.7.5.tar.gz",
+      "archive_bytes": 2736445,
+      "archive_sha256": "a29d72b73c0e17e7f4e2c8668daba76b17ad5b66a16857e228ac10dce248bab0",
+      "pub_api_archive_sha256": "a29d72b73c0e17e7f4e2c8668daba76b17ad5b66a16857e228ac10dce248bab0",
+      "archive_digest_matched": true,
+      "archive_pubspec": {
+        "name": "lib_llama_cpp_windows",
+        "description": "Windows native build and Dart registration for lib_llama_cpp.",
+        "version": "0.7.5",
+        "repository": "https://github.com/gsmlg-app/lib_llama_cpp",
+        "environment": {
+          "sdk": "^3.11.5",
+          "flutter": ">=3.41.0"
+        },
+        "resolution": "workspace",
+        "dependencies": {
+          "flutter": {
+            "sdk": "flutter"
+          },
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {
+          "flutter_lints": "^6.0.0",
+          "flutter_test": {
+            "sdk": "flutter"
+          },
+          "test": "^1.26.3"
+        },
+        "flutter": {
+          "plugin": {
+            "implements": "lib_llama_cpp",
+            "platforms": {
+              "windows": {
+                "dartPluginClass": "LibLlamaCppWindows",
+                "ffiPlugin": true
+              }
+            }
+          }
+        }
+      },
+      "downloaded_pubspec_sha256": "3f1379a59dd880b4b22b927fe53a4613a033fc3a6dc4cb2aff7eb745bd44df77",
+      "downloaded_pubspec_text": "name: lib_llama_cpp_windows\ndescription: Windows native build and Dart registration for lib_llama_cpp.\nversion: 0.7.5\nrepository: https://github.com/gsmlg-app/lib_llama_cpp\n\nenvironment:\n  sdk: ^3.11.5\n  flutter: '>=3.41.0'\n\nresolution: workspace\n\ndependencies:\n  flutter:\n    sdk: flutter\n  lib_llama_cpp_platform_interface: ^0.7.5\n\ndev_dependencies:\n  flutter_lints: ^6.0.0\n  flutter_test:\n    sdk: flutter\n  test: ^1.26.3\n\nflutter:\n  plugin:\n    implements: lib_llama_cpp\n    platforms:\n      windows:\n        dartPluginClass: LibLlamaCppWindows\n        ffiPlugin: true\n",
+      "tag_pubspec_sha256": "3f1379a59dd880b4b22b927fe53a4613a033fc3a6dc4cb2aff7eb745bd44df77",
+      "pubspec_bytes_match_tag": true,
+      "internal_constraints": {
+        "dependencies": {
+          "lib_llama_cpp_platform_interface": "^0.7.5"
+        },
+        "dev_dependencies": {},
+        "dependency_overrides": {}
+      },
+      "internal_constraints_match_tag": true,
+      "lib_source": {
+        "file_count": 1,
+        "all_paths_and_bytes_match_tag": true,
+        "file_sha256": {
+          "lib/lib_llama_cpp_windows.dart": "c59c571f32d5dfeae2ada98abb286aa466f4a592201fbe358b3c654d3b57ecbe"
+        }
+      },
+      "cpu_native_bytes": [
+        {
+          "package_member": "windows/prebuilt/x64/lib_llama_cpp_windows.dll",
+          "release_member": "windows/x64/lib_llama_cpp_windows.dll",
+          "bytes": 6664192,
+          "sha256": "11a4b1f0b36f52619f0313e8dee291a3508db4bb03153d55a3e1d2f80e0222ab",
+          "matches_cpu_release_member": true
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Published native-byte identity and dependency constraints do not establish runtime inference on another platform.",
+    "Only lib/ files are source-compared; generated bundled native files are compared separately for Linux x64/arm64 and Windows CPU.",
+    "Internal constraints are compared to the release tag; package resolution/build evidence is the separately recorded successful publication workflow."
+  ],
+  "checks": {
+    "nine_exact_and_latest_versions": true,
+    "all_archive_checksums": true,
+    "all_lib_sources_match_tag": true,
+    "internal_constraints_match_tag": true,
+    "linux_x64_arm64_and_windows_cpu_native_bytes_match_release": true,
+    "publication_workflow_success": true
+  },
+  "audit_started_at_utc": "2026-10-27T00:25:24.469527+00:00",
+  "public_tag_ref": {
+    "ref": "refs/tags/v0.7.5",
+    "node_id": "REF_kwDOSUiFKrByZWZzL3RhZ3MvdjAuNy41",
+    "url": "https://api.github.com/repos/gsmlg-app/lib_llama_cpp/git/refs/tags/v0.7.5",
+    "object": {
+      "sha": "7ba54673295800b245960001e4128ebe141fd66a",
+      "type": "commit",
+      "url": "https://api.github.com/repos/gsmlg-app/lib_llama_cpp/git/commits/7ba54673295800b245960001e4128ebe141fd66a"
+    }
+  },
+  "frozen_consumer_fixture": {
+    "path": "release-consumer-fixture/",
+    "copied_from": "dgx-spark:/tmp/libllama-20261027-validation/consumer-v075/",
+    "original_bytes_preserved": true,
+    "sha256": {
+      "consumer.py": "f467c1e829558e2f235392582bc06262a862c9b2e7d27ec1da7309b6219b14ce",
+      "Dockerfile": "ce418067963db4327f155ad64f00bf98d472940f0da2538dc72363353ba1893a",
+      "run-cpu-consumer.sh": "3cea0ef08e46a10ecd14e47df543d6795afa7b0355eef8593c313994c77a5f1b"
+    },
+    "inference_evidence": "released-cpu-consumer.json"
+  },
+  "raw_evidence": {
+    "directory": "dgx-spark:/tmp/libllama-20261027-validation/released-v075-audit/",
+    "package_snapshots": "pub/<package>/package.json, version.json, archive-pubspec.yaml and original .tar.gz archive",
+    "audit_script_sha256": "30ff7ae7846129cc3c8242ce72b539f81a20201c95f4999784968afb20bbc071",
+    "tag_package_manifest_sha256": "79eed54a9ffe2d38d31c363a4ef83718a7a147462f376fa2f4fd667f73f35b4a",
+    "publication_workflow_snapshot_sha256": "e78cbb3118236a20f239781d6fbf135010fc50940ee41d55ffc65b8909c0bc77"
+  }
+}
